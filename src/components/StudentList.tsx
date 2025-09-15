@@ -9,7 +9,7 @@ import { Student } from '@/types';
 import { calculateStudentStats } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 const StudentList = () => {
@@ -361,8 +361,7 @@ const StudentList = () => {
                       ) : (
                         <Badge 
                           variant="outline" 
-                          className={`text-xs cursor-pointer hover:bg-muted/50 ${currentMode === 'input' ? 'hover:border-primary' : ''}`}
-                          onClick={() => currentMode === 'input' && handleNumberEditStart(student)}
+                          className="text-xs"
                         >
                           {student.number}번
                         </Badge>
@@ -389,8 +388,11 @@ const StudentList = () => {
                   </div>
                   
                   {currentMode === 'input' && !isEditing && !isEditingNumber && <div className="flex space-x-1">
-                      <Button size="sm" variant="ghost" onClick={() => handleEditStart(student)} className="h-8 w-8 p-0">
-                        <Edit2 className="h-3 w-3" />
+                      <Button size="sm" variant="ghost" onClick={() => handleNumberEditStart(student)} className="h-8 w-8 p-0" title="번호 수정">
+                        <Hash className="h-3 w-3" />
+                      </Button>
+                      <Button size="sm" variant="ghost" onClick={() => handleEditStart(student)} className="h-8 w-8 p-0" title="이름 수정">
+                        <Type className="h-3 w-3" />
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => handleToggleVisibility(student)} className="h-8 w-8 p-0">
                         {student.isHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
