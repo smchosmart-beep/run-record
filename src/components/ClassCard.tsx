@@ -39,7 +39,12 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
           <div className="text-right">
             <div className="flex items-center text-sm text-muted-foreground">
               <Calendar className="h-3 w-3 mr-1" />
-              {classroom.createdAt.getFullYear()}
+              {(() => {
+                const year = classroom.createdAt.getFullYear();
+                const month = classroom.createdAt.getMonth(); // 0-based (0=January)
+                // 3월(month=2) 이전이면 이전 학년도
+                return month < 2 ? year - 1 : year;
+              })()}학년도
             </div>
           </div>
         </div>
