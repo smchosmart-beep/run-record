@@ -158,7 +158,7 @@ const Auth = () => {
                     <Input
                       id="login-username"
                       type="text"
-                      placeholder="ID"
+                      placeholder="ID를 입력하세요"
                       value={loginUsername}
                       onChange={(e) => setLoginUsername(e.target.value)}
                       required
