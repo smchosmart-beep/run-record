@@ -8,14 +8,26 @@ import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord } from '@/types';
 import { generateRecordId } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
-import { AlertCircle, Edit, Plus, ToggleLeft, ToggleRight, Eye } from 'lucide-react';
+import { AlertCircle, Edit, Plus, ToggleLeft, ToggleRight, Eye, Trash2, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 const RecordInput = () => {
   const { currentClassroom, updateClassroom, currentMode, setMode } = useApp();
   const { toast } = useToast();
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
   if (!currentClassroom) return null;
@@ -129,6 +141,40 @@ const RecordInput = () => {
         const prevInput = document.getElementById(prevCellId) as HTMLInputElement;
         prevInput?.focus();
       }
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      // Move to previous student in same column
+      if (studentIndex > 0) {
+        const prevStudent = activeStudents[studentIndex - 1];
+        const prevCellId = getCellId(prevStudent.id, slotIndex);
+        const prevInput = document.getElementById(prevCellId) as HTMLInputElement;
+        prevInput?.focus();
+      }
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      // Move to next student in same column
+      if (studentIndex < activeStudents.length - 1) {
+        const nextStudent = activeStudents[studentIndex + 1];
+        const nextCellId = getCellId(nextStudent.id, slotIndex);
+        const nextInput = document.getElementById(nextCellId) as HTMLInputElement;
+        nextInput?.focus();
+      }
+    } else if (e.key === 'ArrowLeft') {
+      e.preventDefault();
+      // Move to previous column (previous slot)
+      if (slotIndex > 0) {
+        const prevCellId = getCellId(studentId, slotIndex - 1);
+        const prevInput = document.getElementById(prevCellId) as HTMLInputElement;
+        prevInput?.focus();
+      }
+    } else if (e.key === 'ArrowRight') {
+      e.preventDefault();
+      // Move to next column (next slot)
+      if (slotIndex < currentClassroom.maxRecordSlots - 1) {
+        const nextCellId = getCellId(studentId, slotIndex + 1);
+        const nextInput = document.getElementById(nextCellId) as HTMLInputElement;
+        nextInput?.focus();
+      }
     }
   }, [activeStudents, currentClassroom.maxRecordSlots]);
 
@@ -169,6 +215,49 @@ const RecordInput = () => {
       maxRecordSlots: currentClassroom.maxRecordSlots + 1,
       updatedAt: new Date(),
     });
+    
+    toast({
+      title: "회차 추가 완료",
+      description: `${currentClassroom.maxRecordSlots + 1}회차가 추가되었습니다.`,
+    });
+  };
+
+  const deleteLastRecordSlot = () => {
+    if (currentClassroom.maxRecordSlots <= 1) {
+      toast({
+        title: "삭제 불가",
+        description: "최소 1회차는 유지되어야 합니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const lastSlotIndex = currentClassroom.maxRecordSlots - 1;
+    
+    // Count records that will be deleted
+    const recordsToDelete = currentClassroom.students.reduce((count, student) => {
+      return count + student.records.filter(r => r.slotIndex === lastSlotIndex).length;
+    }, 0);
+
+    // Remove all records from the last slot
+    const updatedStudents = currentClassroom.students.map(student => ({
+      ...student,
+      records: student.records.filter(r => r.slotIndex !== lastSlotIndex)
+    }));
+
+    updateClassroom({
+      ...currentClassroom,
+      students: updatedStudents,
+      maxRecordSlots: currentClassroom.maxRecordSlots - 1,
+      updatedAt: new Date(),
+    });
+
+    toast({
+      title: "회차 삭제 완료",
+      description: `${currentClassroom.maxRecordSlots}회차와 관련 기록 ${recordsToDelete}개가 삭제되었습니다.`,
+    });
+
+    setShowDeleteDialog(false);
   };
 
   // Cleanup timeout on unmount
@@ -203,8 +292,12 @@ const RecordInput = () => {
                 <span>다음 회차</span>
               </div>
               <div className="flex items-center gap-2">
-                <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift+Tab</kbd>
-                <span>이전 회차</span>
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">↑↓</kbd>
+                <span>학생 이동</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">←→</kbd>
+                <span>회차 이동</span>
               </div>
             </div>
           )}
@@ -235,17 +328,54 @@ const RecordInput = () => {
             )}
           </Button>
           
-          {/* Add Slot Button */}
+          {/* Record Slot Management Buttons */}
           {currentMode === 'input' && (
-            <Button
-              onClick={addRecordSlot}
-              variant="outline"
-              size="sm"
-              disabled={currentClassroom.maxRecordSlots >= 15}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              회차 추가
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={addRecordSlot}
+                variant="outline"
+                size="sm"
+                disabled={currentClassroom.maxRecordSlots >= 15}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                회차 추가
+              </Button>
+              
+              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={currentClassroom.maxRecordSlots <= 1}
+                    className="border-destructive text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    회차 삭제
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>회차 삭제 확인</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      {currentClassroom.maxRecordSlots}회차를 삭제하시겠습니까?
+                      <br />
+                      <span className="font-medium text-foreground">
+                        해당 회차의 모든 기록이 함께 삭제됩니다.
+                      </span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={deleteLastRecordSlot}
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    >
+                      삭제
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           )}
         </div>
       </div>
