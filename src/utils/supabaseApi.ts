@@ -352,33 +352,111 @@ export async function deleteStudent(studentId: string): Promise<void> {
 }
 
 /**
- * 학생 번호를 안전하게 변경하는 함수 (unique constraint 충돌 방지)
+ * 학생 번호를 원자적으로 변경/스왑하는 함수
+ * - 동일 반(classroom) 내 번호 중복을 안전하게 처리 (스왑 지원)
+ * - 임시 음수 번호를 사용해 중간 충돌 방지
+ * - 실패 시 최대한 롤백 시도
+ */
+export async function updateStudentNumberAtomically(
+  studentId: string,
+  classroomId: string,
+  newNumber: number
+): Promise<void> {
+  // 현재 학생 정보 조회 (기존 번호 확보)
+  const { data: target, error: targetErr } = await supabase
+    .from('students')
+    .select('id, number')
+    .eq('id', studentId)
+    .eq('classroom_id', classroomId)
+    .single();
+
+  if (targetErr || !target) {
+    console.error('학생 조회 실패:', targetErr);
+    throw targetErr || new Error('학생을 찾을 수 없습니다');
+  }
+
+  const oldNumber = target.number as number;
+  if (oldNumber === newNumber) return; // 변경 없음
+
+  // 임시 음수 번호 생성 (충돌 가능성 극히 낮음)
+  const tempA = -Math.floor(Date.now() % 1_000_000 + Math.random() * 1_000 + 1);
+
+  // 새 번호를 이미 가진 학생(점유자) 조회
+  const { data: occupant, error: occErr } = await supabase
+    .from('students')
+    .select('id')
+    .eq('classroom_id', classroomId)
+    .eq('number', newNumber)
+    .maybeSingle();
+
+  if (occErr) {
+    console.error('점유자 조회 실패:', occErr);
+    throw occErr;
+  }
+
+  // 1) 대상 학생을 임시 번호로 이동
+  const { error: step1 } = await supabase
+    .from('students')
+    .update({ number: tempA })
+    .eq('id', studentId)
+    .eq('classroom_id', classroomId);
+  if (step1) {
+    console.error('임시 번호 설정 실패:', step1);
+    throw step1;
+  }
+
+  let occupantUpdated = false;
+  try {
+    // 2) 점유자가 있으면 점유자를 oldNumber로 이동 (스왑 준비)
+    if (occupant?.id) {
+      const { error: step2 } = await supabase
+        .from('students')
+        .update({ number: oldNumber })
+        .eq('id', occupant.id)
+        .eq('classroom_id', classroomId);
+      if (step2) {
+        console.error('점유자 이동 실패, 롤백 시도:', step2);
+        // 롤백: 대상 학생을 원래 번호로 되돌림
+        await supabase.from('students').update({ number: oldNumber }).eq('id', studentId).eq('classroom_id', classroomId);
+        throw step2;
+      }
+      occupantUpdated = true;
+    }
+
+    // 3) 대상 학생을 새 번호로 설정
+    const { error: step3 } = await supabase
+      .from('students')
+      .update({ number: newNumber })
+      .eq('id', studentId)
+      .eq('classroom_id', classroomId);
+    if (step3) {
+      console.error('대상 최종 번호 설정 실패, 롤백 시도:', step3);
+      // 롤백: 점유자를 다시 newNumber로, 대상 학생을 oldNumber로
+      if (occupantUpdated && occupant?.id) {
+        await supabase.from('students').update({ number: newNumber }).eq('id', occupant.id).eq('classroom_id', classroomId);
+      }
+      await supabase.from('students').update({ number: oldNumber }).eq('id', studentId).eq('classroom_id', classroomId);
+      throw step3;
+    }
+  } catch (e) {
+    throw e;
+  }
+}
+
+/**
+ * (호환용) 기존 안전 변경 함수: classroomId를 조회하여 원자적 변경 호출
  */
 export async function updateStudentNumberSafely(studentId: string, newNumber: number): Promise<void> {
-  // 2단계 업데이트로 unique constraint 충돌 방지
-  // 1단계: 임시로 매우 큰 번호로 변경
-  const tempNumber = 999999;
-  
-  const { error: tempError } = await supabase
+  const { data: s, error } = await supabase
     .from('students')
-    .update({ number: tempNumber })
-    .eq('id', studentId);
-
-  if (tempError) {
-    console.error('Error setting temporary number:', tempError);
-    throw tempError;
+    .select('classroom_id')
+    .eq('id', studentId)
+    .single();
+  if (error || !s) {
+    console.error('학생의 반 조회 실패:', error);
+    throw error || new Error('학생 정보를 찾을 수 없습니다');
   }
-
-  // 2단계: 실제 원하는 번호로 변경
-  const { error: finalError } = await supabase
-    .from('students')
-    .update({ number: newNumber })
-    .eq('id', studentId);
-
-  if (finalError) {
-    console.error('Error setting final number:', finalError);
-    throw finalError;
-  }
+  return updateStudentNumberAtomically(studentId, s.classroom_id as string, newNumber);
 }
 
 export async function updateStudentRecords(studentId: string, records: Record[]): Promise<void> {

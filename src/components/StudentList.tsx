@@ -11,13 +11,9 @@ import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
 import { Plus, Eye, EyeOff, Edit2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { deleteStudent, updateStudentNumberSafely } from '@/utils/supabaseApi';
+import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 const StudentList = () => {
-  const {
-    currentClassroom,
-    updateClassroom,
-    currentMode
-  } = useApp();
+  const { currentClassroom, updateClassroom, currentMode, refreshClassrooms } = useApp();
   const {
     toast
   } = useToast();
@@ -86,19 +82,11 @@ const StudentList = () => {
     }
 
     try {
-      // 안전한 번호 변경 (unique constraint 충돌 방지)
-      await updateStudentNumberSafely(studentId, newNumber);
+      // 반 내 스왑을 포함한 원자적 변경 수행
+      await updateStudentNumberAtomically(studentId, currentClassroom.id, newNumber);
 
-      // 로컬 상태 업데이트 (번호만 변경, 재정렬 없음)
-      const updatedStudents = currentClassroom.students.map(student =>
-        student.id === studentId
-          ? { ...student, number: newNumber }
-          : student
-      );
-
-      updateClassroom(currentClassroom.id, {
-        students: updatedStudents,
-      });
+      // 최신 데이터로 새로 고침 (전체 업데이트 호출 지양)
+      await refreshClassrooms();
       
       setEditingStudentNumber(null);
       setEditNumber('');
