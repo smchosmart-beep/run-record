@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useApp } from '@/contexts/AppContext';
@@ -10,6 +10,7 @@ import ClassCard from '@/components/ClassCard';
 const Dashboard = () => {
   const { user, logout, classrooms, setCurrentClassroom } = useApp();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const navigate = useNavigate();
 
   if (!user) {
     return <Navigate to="/login" replace />;
@@ -17,7 +18,7 @@ const Dashboard = () => {
 
   const handleClassSelect = (classroom: any) => {
     setCurrentClassroom(classroom);
-    window.location.href = '/classroom';
+    navigate('/classroom');
   };
 
   return (
