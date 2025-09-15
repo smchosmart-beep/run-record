@@ -51,7 +51,7 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("사용자명 또는 비밀번호가 틀렸습니다");
+          toast.error("ID 또는 비밀번호가 틀렸습니다");
         } else if (error.message.includes("Email not confirmed")) {
           toast.error("이메일 확인이 필요합니다. 관리자에게 문의하거나 Supabase 대시보드에서 이메일 확인을 비활성화해주세요.", {
             duration: 8000,
@@ -104,7 +104,7 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes("User already registered")) {
-          toast.error("이미 사용 중인 사용자명입니다");
+          toast.error("이미 사용 중인 ID입니다");
         } else {
           toast.error(error.message);
         }
@@ -154,11 +154,11 @@ const Auth = () => {
                   </CardDescription>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="login-username">사용자명</Label>
+                    <Label htmlFor="login-username">ID</Label>
                     <Input
                       id="login-username"
                       type="text"
-                      placeholder="사용자명"
+                      placeholder="ID"
                       value={loginUsername}
                       onChange={(e) => setLoginUsername(e.target.value)}
                       required
@@ -198,11 +198,11 @@ const Auth = () => {
                   </CardDescription>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signup-username">사용자명</Label>
+                    <Label htmlFor="signup-username">ID</Label>
                     <Input
                       id="signup-username"
                       type="text"
-                      placeholder="홍길동"
+                      placeholder="hong123"
                       value={signupUsername}
                       onChange={(e) => setSignupUsername(e.target.value)}
                       required
@@ -238,7 +238,7 @@ const Auth = () => {
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>테스트용 계정</p>
-          <p>사용자명: demo</p>
+          <p>ID: demo</p>
           <p>비밀번호: demo123</p>
         </div>
       </div>
