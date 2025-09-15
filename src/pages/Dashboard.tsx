@@ -49,7 +49,7 @@ const Dashboard = () => {
               <div className="flex items-center space-x-2">
                 <Timer className="h-6 w-6 text-primary" />
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  SpeedUp
+                  RRR
                 </h1>
               </div>
               <span className="text-muted-foreground">|</span>
