@@ -1,0 +1,146 @@
+import { Student } from '@/types';
+
+export interface NumberChangePreview {
+  affectedStudents: Array<{
+    id: string;
+    name: string;
+    oldNumber: number;
+    newNumber: number;
+  }>;
+  totalChanges: number;
+}
+
+/**
+ * 학생 번호 변경 시 다른 학생들의 번호를 자동으로 재정렬하는 함수
+ * @param students 전체 학생 목록
+ * @param targetStudentId 번호를 변경할 학생 ID
+ * @param newNumber 새로운 번호
+ * @returns 업데이트된 학생 목록과 변경 내역
+ */
+export function reorderStudentNumbers(
+  students: Student[], 
+  targetStudentId: string, 
+  newNumber: number
+): { updatedStudents: Student[]; preview: NumberChangePreview } {
+  const sortedStudents = [...students].sort((a, b) => a.number - b.number);
+  const targetStudent = students.find(s => s.id === targetStudentId);
+  
+  if (!targetStudent) {
+    throw new Error('대상 학생을 찾을 수 없습니다.');
+  }
+
+  const oldNumber = targetStudent.number;
+  
+  // 번호가 같으면 변경 없음
+  if (oldNumber === newNumber) {
+    return {
+      updatedStudents: students,
+      preview: { affectedStudents: [], totalChanges: 0 }
+    };
+  }
+
+  // 새 번호가 기존 번호와 겹치는지 확인
+  const numberExists = students.some(s => s.id !== targetStudentId && s.number === newNumber);
+  if (numberExists) {
+    throw new Error(`${newNumber}번은 이미 사용중입니다.`);
+  }
+
+  const updatedStudents: Student[] = [];
+  const affectedStudents: NumberChangePreview['affectedStudents'] = [];
+
+  sortedStudents.forEach(student => {
+    if (student.id === targetStudentId) {
+      // 대상 학생의 번호 변경
+      updatedStudents.push({ ...student, number: newNumber });
+      affectedStudents.push({
+        id: student.id,
+        name: student.name,
+        oldNumber: oldNumber,
+        newNumber: newNumber
+      });
+    } else {
+      let newStudentNumber = student.number;
+
+      // 번호가 증가하는 경우 (15 → 51)
+      if (newNumber > oldNumber) {
+        // 기존 번호보다 큰 번호들을 뒤로 밀기
+        if (student.number > oldNumber && student.number <= newNumber) {
+          newStudentNumber = student.number - 1;
+          affectedStudents.push({
+            id: student.id,
+            name: student.name,
+            oldNumber: student.number,
+            newNumber: newStudentNumber
+          });
+        }
+      } 
+      // 번호가 감소하는 경우 (51 → 15)
+      else {
+        // 기존 번호보다 작은 번호들을 앞으로 밀기
+        if (student.number >= newNumber && student.number < oldNumber) {
+          newStudentNumber = student.number + 1;
+          affectedStudents.push({
+            id: student.id,
+            name: student.name,
+            oldNumber: student.number,
+            newNumber: newStudentNumber
+          });
+        }
+      }
+
+      updatedStudents.push({ ...student, number: newStudentNumber });
+    }
+  });
+
+  // 번호 순으로 정렬
+  updatedStudents.sort((a, b) => a.number - b.number);
+
+  return {
+    updatedStudents,
+    preview: {
+      affectedStudents,
+      totalChanges: affectedStudents.length
+    }
+  };
+}
+
+/**
+ * 번호 변경 미리보기 생성
+ * @param students 전체 학생 목록
+ * @param targetStudentId 번호를 변경할 학생 ID
+ * @param newNumber 새로운 번호
+ * @returns 변경될 학생들의 미리보기
+ */
+export function getNumberChangePreview(
+  students: Student[], 
+  targetStudentId: string, 
+  newNumber: number
+): NumberChangePreview {
+  try {
+    const { preview } = reorderStudentNumbers(students, targetStudentId, newNumber);
+    return preview;
+  } catch (error) {
+    return { affectedStudents: [], totalChanges: 0 };
+  }
+}
+
+/**
+ * 번호 유효성 검사
+ * @param number 검사할 번호
+ * @returns 유효성 검사 결과
+ */
+export function validateStudentNumber(number: number): { isValid: boolean; message?: string } {
+  if (number < 1) {
+    return { isValid: false, message: '번호는 1 이상이어야 합니다.' };
+  }
+  
+  if (number > 999) {
+    return { isValid: false, message: '번호는 999 이하여야 합니다.' };
+  }
+
+  if (!Number.isInteger(number)) {
+    return { isValid: false, message: '번호는 정수여야 합니다.' };
+  }
+
+  return { isValid: true };
+}
