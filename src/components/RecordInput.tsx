@@ -7,11 +7,11 @@ import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord } from '@/types';
 import { generateRecordId } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
-import { Save, RotateCcw, AlertCircle } from 'lucide-react';
+import { Save, RotateCcw, AlertCircle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const RecordInput = () => {
-  const { currentClassroom, updateClassroom, currentMode } = useApp();
+  const { currentClassroom, updateClassroom, currentMode, setMode } = useApp();
   const { toast } = useToast();
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -133,10 +133,18 @@ const RecordInput = () => {
       <Card className="text-center py-12">
         <CardContent>
           <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <CardTitle className="text-xl mb-2">입력 모드로 전환하세요</CardTitle>
-          <p className="text-muted-foreground">
-            기록을 입력하려면 상단의 "입력 모드" 버튼을 클릭하세요.
+          <CardTitle className="text-xl mb-2">입력 모드가 필요합니다</CardTitle>
+          <p className="text-muted-foreground mb-6">
+            학생들의 달리기 기록을 입력하려면 입력 모드로 전환해야 합니다.
           </p>
+          <Button
+            onClick={() => setMode('input')}
+            variant="speed"
+            size="lg"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            입력 모드로 전환
+          </Button>
         </CardContent>
       </Card>
     );
