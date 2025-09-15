@@ -11,7 +11,7 @@ import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
 import { Plus, Eye, EyeOff, Edit2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { deleteStudent } from '@/utils/supabaseApi';
+import { deleteStudent, updateStudentNumberSafely } from '@/utils/supabaseApi';
 const StudentList = () => {
   const {
     currentClassroom,
@@ -25,8 +25,6 @@ const StudentList = () => {
   const [editName, setEditName] = useState('');
   const [editingStudentNumber, setEditingStudentNumber] = useState<string | null>(null);
   const [editNumber, setEditNumber] = useState('');
-  const [showNumberConfirmDialog, setShowNumberConfirmDialog] = useState(false);
-  const [numberChangePreview, setNumberChangePreview] = useState<any>(null);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newStudentName, setNewStudentName] = useState('');
   const [newStudentNumber, setNewStudentNumber] = useState('');
@@ -73,7 +71,7 @@ const StudentList = () => {
     setEditNumber(student.number.toString());
   };
 
-  const handleNumberEditSave = (studentId: string) => {
+  const handleNumberEditSave = async (studentId: string) => {
     const newNumber = parseInt(editNumber);
     
     // 유효성 검사
@@ -88,60 +86,38 @@ const StudentList = () => {
     }
 
     try {
-      // 번호 변경 미리보기 생성
-      const { updatedStudents, preview } = reorderStudentNumbers(
-        currentClassroom.students, 
-        studentId, 
-        newNumber
+      // 안전한 번호 변경 (unique constraint 충돌 방지)
+      await updateStudentNumberSafely(studentId, newNumber);
+
+      // 로컬 상태 업데이트 (번호만 변경, 재정렬 없음)
+      const updatedStudents = currentClassroom.students.map(student =>
+        student.id === studentId
+          ? { ...student, number: newNumber }
+          : student
       );
 
-      if (preview.totalChanges <= 1) {
-        // 변경사항이 1개 이하면 즉시 적용
-        applyNumberChange(updatedStudents);
-      } else {
-        // 변경사항이 많으면 확인 다이얼로그 표시
-        setNumberChangePreview({ updatedStudents, preview, studentId, newNumber });
-        setShowNumberConfirmDialog(true);
-      }
-    } catch (error) {
+      updateClassroom(currentClassroom.id, {
+        students: updatedStudents,
+      });
+      
+      setEditingStudentNumber(null);
+      setEditNumber('');
+      
       toast({
-        title: "번호 변경 오류",
-        description: error instanceof Error ? error.message : "번호 변경 중 오류가 발생했습니다.",
+        title: "번호 변경 완료",
+        description: "학생 번호가 성공적으로 변경되었습니다."
+      });
+    } catch (error) {
+      console.error('Error updating student number:', error);
+      toast({
+        title: "번호 변경 실패",
+        description: "번호 변경 중 오류가 발생했습니다.",
         variant: "destructive"
       });
     }
   };
 
-  const applyNumberChange = (updatedStudents: Student[]) => {
-    updateClassroom(currentClassroom.id, {
-      students: updatedStudents,
-    });
-    
-    setEditingStudentNumber(null);
-    setEditNumber('');
-    setShowNumberConfirmDialog(false);
-    setNumberChangePreview(null);
-    
-    toast({
-      title: "번호 변경 완료",
-      description: "학생 번호가 성공적으로 변경되었습니다."
-    });
-  };
-
   const handleNumberEditCancel = () => {
-    setEditingStudentNumber(null);
-    setEditNumber('');
-  };
-
-  const handleNumberConfirmApply = () => {
-    if (numberChangePreview) {
-      applyNumberChange(numberChangePreview.updatedStudents);
-    }
-  };
-
-  const handleNumberConfirmCancel = () => {
-    setShowNumberConfirmDialog(false);
-    setNumberChangePreview(null);
     setEditingStudentNumber(null);
     setEditNumber('');
   };
@@ -483,42 +459,6 @@ const StudentList = () => {
             <p className="text-muted-foreground">등록된 학생이 없습니다.</p>
           </CardContent>
         </Card>}
-
-      {/* 번호 변경 확인 다이얼로그 */}
-      <AlertDialog open={showNumberConfirmDialog} onOpenChange={setShowNumberConfirmDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>번호 변경 확인</AlertDialogTitle>
-            <AlertDialogDescription asChild>
-              <div className="space-y-3">
-                <p>번호를 변경하면 다른 학생들의 번호도 자동으로 조정됩니다.</p>
-                {numberChangePreview && (
-                  <div className="space-y-2">
-                    <p className="font-semibold text-sm">변경될 학생들:</p>
-                    <div className="max-h-32 overflow-y-auto space-y-1">
-                      {numberChangePreview.preview.affectedStudents.map((student: any) => (
-                        <div key={student.id} className="text-sm p-2 bg-muted rounded">
-                          <span className="font-medium">{student.name}</span>: 
-                          <span className="ml-1">{student.oldNumber}번</span>
-                          <span className="mx-1">→</span>
-                          <span className="font-semibold text-primary">{student.newNumber}번</span>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      총 {numberChangePreview.preview.totalChanges}명의 번호가 변경됩니다.
-                    </p>
-                  </div>
-                )}
-              </div>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={handleNumberConfirmCancel}>취소</AlertDialogCancel>
-            <AlertDialogAction onClick={handleNumberConfirmApply}>변경하기</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
 
       {/* 학생 삭제 확인 다이얼로그 */}
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>

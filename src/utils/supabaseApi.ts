@@ -351,6 +351,36 @@ export async function deleteStudent(studentId: string): Promise<void> {
   }
 }
 
+/**
+ * 학생 번호를 안전하게 변경하는 함수 (unique constraint 충돌 방지)
+ */
+export async function updateStudentNumberSafely(studentId: string, newNumber: number): Promise<void> {
+  // 2단계 업데이트로 unique constraint 충돌 방지
+  // 1단계: 임시로 매우 큰 번호로 변경
+  const tempNumber = 999999;
+  
+  const { error: tempError } = await supabase
+    .from('students')
+    .update({ number: tempNumber })
+    .eq('id', studentId);
+
+  if (tempError) {
+    console.error('Error setting temporary number:', tempError);
+    throw tempError;
+  }
+
+  // 2단계: 실제 원하는 번호로 변경
+  const { error: finalError } = await supabase
+    .from('students')
+    .update({ number: newNumber })
+    .eq('id', studentId);
+
+  if (finalError) {
+    console.error('Error setting final number:', finalError);
+    throw finalError;
+  }
+}
+
 export async function updateStudentRecords(studentId: string, records: Record[]): Promise<void> {
   // Delete existing records for this student
   const { error: deleteError } = await supabase
