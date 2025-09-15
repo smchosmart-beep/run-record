@@ -285,6 +285,9 @@ const Auth = () => {
           </Tabs>
         </Card>
 
+        <div className="mt-6 text-center text-xs text-muted-foreground">
+          <p>© 파튀김 선생님이 모든 권리 보유.</p>
+        </div>
       </div>
     </div>
   );
