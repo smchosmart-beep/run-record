@@ -40,10 +40,8 @@ const StudentList = () => {
       ...student,
       name: editName.trim()
     } : student);
-    updateClassroom({
-      ...currentClassroom,
+    updateClassroom(currentClassroom.id, {
       students: updatedStudents,
-      updatedAt: new Date()
     });
     setEditingStudent(null);
     setEditName('');
@@ -62,10 +60,8 @@ const StudentList = () => {
       ...s,
       isHidden: !s.isHidden
     } : s);
-    updateClassroom({
-      ...currentClassroom,
+    updateClassroom(currentClassroom.id, {
       students: updatedStudents,
-      updatedAt: new Date()
     });
     toast({
       title: student.isHidden ? "학생 활성화" : "학생 숨김",
@@ -74,10 +70,8 @@ const StudentList = () => {
   };
   const addRecordSlot = () => {
     if (currentMode !== 'input') return;
-    updateClassroom({
-      ...currentClassroom,
+    updateClassroom(currentClassroom.id, {
       maxRecordSlots: currentClassroom.maxRecordSlots + 1,
-      updatedAt: new Date()
     });
     toast({
       title: "기록 슬롯 추가",

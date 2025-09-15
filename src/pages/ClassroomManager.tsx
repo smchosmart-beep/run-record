@@ -14,7 +14,7 @@ const ClassroomManager = () => {
   const [activeTab, setActiveTab] = useState('students');
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
 
   if (!currentClassroom) {

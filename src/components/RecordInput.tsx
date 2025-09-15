@@ -73,10 +73,8 @@ const RecordInput = () => {
         s.id === student.id ? { ...s, records: updatedRecords } : s
       );
 
-      updateClassroom({
-        ...currentClassroom,
+      updateClassroom(currentClassroom.id, {
         students: updatedStudents,
-        updatedAt: new Date(),
       });
 
       // Clear input and error
@@ -189,10 +187,8 @@ const RecordInput = () => {
       s.id === student.id ? { ...s, records: updatedRecords } : s
     );
 
-    updateClassroom({
-      ...currentClassroom,
+    updateClassroom(currentClassroom.id, {
       students: updatedStudents,
-      updatedAt: new Date(),
     });
 
     // Clear input
@@ -210,10 +206,8 @@ const RecordInput = () => {
       return;
     }
 
-    updateClassroom({
-      ...currentClassroom,
+    updateClassroom(currentClassroom.id, {
       maxRecordSlots: currentClassroom.maxRecordSlots + 1,
-      updatedAt: new Date(),
     });
     
     toast({
@@ -245,11 +239,9 @@ const RecordInput = () => {
       records: student.records.filter(r => r.slotIndex !== lastSlotIndex)
     }));
 
-    updateClassroom({
-      ...currentClassroom,
+    updateClassroom(currentClassroom.id, {
       students: updatedStudents,
       maxRecordSlots: currentClassroom.maxRecordSlots - 1,
-      updatedAt: new Date(),
     });
 
     toast({

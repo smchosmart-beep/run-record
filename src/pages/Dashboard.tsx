@@ -8,13 +8,18 @@ import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 
 const Dashboard = () => {
-  const { user, logout, classrooms, setCurrentClassroom } = useApp();
+  const { user, logout, classrooms, setCurrentClassroom, isLoading } = useApp();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const navigate = useNavigate();
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/auth" replace />;
   }
+
+  const handleLogout = async () => {
+    await logout();
+    navigate('/');
+  };
 
   const handleClassSelect = (classroom: any) => {
     setCurrentClassroom(classroom);
@@ -39,7 +44,7 @@ const Dashboard = () => {
             </div>
             
             <Button
-              onClick={logout}
+              onClick={handleLogout}
               variant="ghost"
               size="sm"
               className="text-muted-foreground hover:text-foreground"

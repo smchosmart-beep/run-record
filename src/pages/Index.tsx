@@ -1,7 +1,17 @@
 import { Timer, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
+import { useApp } from "@/contexts/AppContext";
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useApp();
+
+  // Redirect to dashboard if user is already logged in
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
       <div className="text-center max-w-2xl mx-auto px-4">
@@ -25,10 +35,9 @@ const Index = () => {
         
         <div className="space-y-4">
           <Button 
-            variant="speed" 
+            onClick={() => navigate('/auth')}
             size="lg" 
-            className="text-lg px-8 py-3"
-            onClick={() => window.location.href = '/login'}
+            className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
           >
             시작하기
             <ArrowRight className="h-5 w-5 ml-2" />

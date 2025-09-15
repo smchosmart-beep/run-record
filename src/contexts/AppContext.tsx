@@ -1,26 +1,24 @@
-// App Context for global state management
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { AppData, User, ClassRoom, AppMode } from '@/types';
-import { loadAppData, saveAppData } from '@/utils/storage';
-import { useToast } from '@/hooks/use-toast';
+import { User, ClassRoom, AppMode } from '@/types';
+import { supabase } from "@/integrations/supabase/client";
+import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getUserProfile } from '@/utils/supabaseApi';
+import { toast } from 'sonner';
+import type { Session } from '@supabase/supabase-js';
 
 interface AppContextType {
-  // State
   user: User | null;
+  session: Session | null;
   classrooms: ClassRoom[];
   currentClassroom: ClassRoom | null;
   currentMode: AppMode;
-  
-  // Actions
-  login: (username: string, password: string) => boolean;
-  logout: () => void;
+  isLoading: boolean;
+  logout: () => Promise<void>;
   setCurrentClassroom: (classroom: ClassRoom | null) => void;
   setMode: (mode: AppMode) => void;
-  addClassroom: (classroom: ClassRoom) => void;
-  updateClassroom: (classroom: ClassRoom) => void;
-  deleteClassroom: (classId: string) => void;
-  saveData: () => boolean;
+  addClassroom: (classroom: ClassRoom) => Promise<void>;
+  updateClassroom: (classroomId: string, updates: Partial<ClassRoom>) => Promise<void>;
+  deleteClassroom: (classroomId: string) => Promise<void>;
+  refreshClassrooms: () => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -33,153 +31,190 @@ export function useApp() {
   return context;
 }
 
-interface AppProviderProps {
-  children: ReactNode;
-}
-
-export function AppProvider({ children }: AppProviderProps) {
-  const [appData, setAppData] = useState<AppData>(() => loadAppData());
+const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [classrooms, setClassrooms] = useState<ClassRoom[]>([]);
   const [currentClassroom, setCurrentClassroomState] = useState<ClassRoom | null>(null);
-  const { toast } = useToast();
+  const [currentMode, setCurrentMode] = useState<AppMode>('view');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Load current classroom on startup
+  // Initialize auth state
   useEffect(() => {
-    if (appData.user?.currentClassId) {
-      const classroom = appData.classrooms.find(c => c.id === appData.user?.currentClassId);
-      setCurrentClassroomState(classroom || null);
-    }
-  }, [appData.user?.currentClassId, appData.classrooms]);
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Fetch user profile
+          try {
+            const profile = await getUserProfile();
+            setUser({
+              id: profile.id,
+              username: profile.username,
+            });
+          } catch (error) {
+            console.error('Error fetching user profile:', error);
+          }
+        } else {
+          setUser(null);
+          setClassrooms([]);
+          setCurrentClassroomState(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
 
-  const login = (username: string, password: string): boolean => {
-    // Simple authentication for Stage 1
-    if (username === 'teacher01' && password === '1234') {
-      const user: User = {
-        id: 'user_1',
-        username,
-      };
-      
-      setAppData(prev => ({ ...prev, user }));
-      toast({
-        title: "로그인 성공",
-        description: `${username}님, 환영합니다!`,
-      });
-      return true;
-    }
-    
-    toast({
-      title: "로그인 실패",
-      description: "아이디 또는 비밀번호가 잘못되었습니다.",
-      variant: "destructive",
+    // Check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (!session) {
+        setIsLoading(false);
+      }
     });
-    return false;
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Load classrooms when user is authenticated
+  useEffect(() => {
+    if (user && session) {
+      refreshClassrooms();
+    }
+  }, [user, session]);
+
+  const refreshClassrooms = async () => {
+    if (!user || !session) return;
+
+    try {
+      setIsLoading(true);
+      const data = await getClassrooms();
+      setClassrooms(data);
+    } catch (error) {
+      console.error('Error loading classrooms:', error);
+      toast.error('학급 데이터를 불러오는데 실패했습니다');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const logout = () => {
-    setAppData(prev => ({ ...prev, user: null }));
-    setCurrentClassroomState(null);
-    toast({
-      title: "로그아웃",
-      description: "성공적으로 로그아웃되었습니다.",
-    });
+  const logout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Logout error:', error);
+        toast.error('로그아웃 중 오류가 발생했습니다');
+        return;
+      }
+      
+      // Clear local state
+      setUser(null);
+      setSession(null);
+      setClassrooms([]);
+      setCurrentClassroomState(null);
+      setCurrentMode('view');
+      
+      toast.success('로그아웃되었습니다');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error('로그아웃 중 오류가 발생했습니다');
+    }
   };
 
   const setCurrentClassroom = (classroom: ClassRoom | null) => {
     setCurrentClassroomState(classroom);
-    
-    if (appData.user) {
-      const updatedUser = { ...appData.user, currentClassId: classroom?.id };
-      setAppData(prev => ({ ...prev, user: updatedUser }));
-    }
   };
 
   const setMode = (mode: AppMode) => {
-    setAppData(prev => ({ ...prev, currentMode: mode }));
+    setCurrentMode(mode);
   };
 
-  const addClassroom = (classroom: ClassRoom) => {
-    setAppData(prev => ({
-      ...prev,
-      classrooms: [...prev.classrooms, classroom]
-    }));
-    
-    toast({
-      title: "학급 생성 완료",
-      description: `${classroom.school} ${classroom.grade}학년 ${classroom.className}반이 생성되었습니다.`,
-    });
-  };
-
-  const updateClassroom = (classroom: ClassRoom) => {
-    setAppData(prev => ({
-      ...prev,
-      classrooms: prev.classrooms.map(c => c.id === classroom.id ? classroom : c)
-    }));
-    
-    // Update current classroom if it's the one being updated
-    if (currentClassroom?.id === classroom.id) {
-      setCurrentClassroomState(classroom);
+  const addClassroom = async (classroom: ClassRoom) => {
+    try {
+      setIsLoading(true);
+      const newClassroom = await createClassroom(classroom);
+      setClassrooms(prev => [newClassroom, ...prev]);
+      toast.success('학급이 성공적으로 생성되었습니다');
+    } catch (error) {
+      console.error('Error creating classroom:', error);
+      toast.error('학급 생성에 실패했습니다');
+      throw error;
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const deleteClassroom = (classId: string) => {
-    setAppData(prev => ({
-      ...prev,
-      classrooms: prev.classrooms.filter(c => c.id !== classId)
-    }));
-    
-    if (currentClassroom?.id === classId) {
-      setCurrentClassroomState(null);
+  const updateClassroomData = async (classroomId: string, updates: Partial<ClassRoom>) => {
+    try {
+      await updateClassroom(classroomId, updates);
+      
+      // Update local state
+      setClassrooms(prev =>
+        prev.map(classroom =>
+          classroom.id === classroomId
+            ? { ...classroom, ...updates, updatedAt: new Date() }
+            : classroom
+        )
+      );
+      
+      // Update current classroom if it's the one being updated
+      if (currentClassroom?.id === classroomId) {
+        setCurrentClassroomState(prev => 
+          prev ? { ...prev, ...updates, updatedAt: new Date() } : null
+        );
+      }
+      
+      toast.success('학급 정보가 업데이트되었습니다');
+    } catch (error) {
+      console.error('Error updating classroom:', error);
+      toast.error('학급 업데이트에 실패했습니다');
+      throw error;
     }
-    
-    toast({
-      title: "학급 삭제 완료",
-      description: "학급이 삭제되었습니다.",
-    });
   };
 
-  const saveData = (): boolean => {
-    const success = saveAppData(appData);
-    if (success) {
-      toast({
-        title: "저장 완료",
-        description: "데이터가 성공적으로 저장되었습니다.",
-      });
-    } else {
-      toast({
-        title: "저장 실패",
-        description: "데이터 저장에 실패했습니다.",
-        variant: "destructive",
-      });
+  const deleteClassroomData = async (classroomId: string) => {
+    try {
+      await deleteClassroom(classroomId);
+      
+      // Update local state
+      setClassrooms(prev => prev.filter(classroom => classroom.id !== classroomId));
+      
+      // If the deleted classroom was the current one, clear it
+      if (currentClassroom?.id === classroomId) {
+        setCurrentClassroom(null);
+      }
+      
+      toast.success('학급이 삭제되었습니다');
+    } catch (error) {
+      console.error('Error deleting classroom:', error);
+      toast.error('학급 삭제에 실패했습니다');
+      throw error;
     }
-    return success;
   };
 
-  // Auto-save every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      saveAppData(appData);
-    }, 30000);
-
-    return () => clearInterval(interval);
-  }, [appData]);
-
-  const contextValue: AppContextType = {
-    user: appData.user,
-    classrooms: appData.classrooms,
+  const value = {
+    user,
+    session,
+    classrooms,
     currentClassroom,
-    currentMode: appData.currentMode,
-    login,
+    currentMode,
+    isLoading,
     logout,
     setCurrentClassroom,
     setMode,
-    addClassroom,
-    updateClassroom,
-    deleteClassroom,
-    saveData,
+    addClassroom: addClassroom,
+    updateClassroom: updateClassroomData,
+    deleteClassroom: deleteClassroomData,
+    refreshClassrooms,
   };
 
   return (
-    <AppContext.Provider value={contextValue}>
+    <AppContext.Provider value={value}>
       {children}
     </AppContext.Provider>
   );
-}
+};
+
+export { AppProvider };
