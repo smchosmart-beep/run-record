@@ -317,13 +317,13 @@ const RecordInput = () => {
           >
             {currentMode === 'view' ? (
               <>
-                <Eye className="h-4 w-4 mr-2" />
-                보기 모드 활성
+                <Edit className="h-4 w-4 mr-2" />
+                입력 모드로 전환
               </>
             ) : (
               <>
-                <Edit className="h-4 w-4 mr-2" />
-                입력 모드 활성
+                <Eye className="h-4 w-4 mr-2" />
+                보기 모드로 전환
               </>
             )}
           </Button>
