@@ -285,12 +285,6 @@ const Auth = () => {
           </Tabs>
         </Card>
 
-        <div className="mt-6 text-center text-sm text-muted-foreground">
-          <p>테스트용 계정</p>
-          <p>ID: demo</p>
-          <p>비밀번호: demo123</p>
-          <p className="mt-2 text-xs">로그인이 안 되면 잠시 후 다시 시도해주세요</p>
-        </div>
       </div>
     </div>
   );
