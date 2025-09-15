@@ -170,6 +170,7 @@ const Auth = () => {
                     <Input
                       id="login-password"
                       type="password"
+                      placeholder="6자 이상"
                       value={loginPassword}
                       onChange={(e) => setLoginPassword(e.target.value)}
                       required
