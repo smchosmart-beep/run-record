@@ -14,7 +14,138 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      classrooms: {
+        Row: {
+          class_name: string
+          created_at: string
+          grade: number
+          id: string
+          max_record_slots: number
+          school: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          class_name: string
+          created_at?: string
+          grade: number
+          id?: string
+          max_record_slots?: number
+          school: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          grade?: number
+          id?: string
+          max_record_slots?: number
+          school?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classrooms_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          id: string
+          updated_at?: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      records: {
+        Row: {
+          id: string
+          is_dnf: boolean
+          recorded_at: string
+          slot_index: number
+          student_id: string
+          time_ms: number | null
+        }
+        Insert: {
+          id?: string
+          is_dnf?: boolean
+          recorded_at?: string
+          slot_index: number
+          student_id: string
+          time_ms?: number | null
+        }
+        Update: {
+          id?: string
+          is_dnf?: boolean
+          recorded_at?: string
+          slot_index?: number
+          student_id?: string
+          time_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "records_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      students: {
+        Row: {
+          classroom_id: string
+          created_at: string
+          id: string
+          is_hidden: boolean
+          name: string
+          number: number
+        }
+        Insert: {
+          classroom_id: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          name: string
+          number: number
+        }
+        Update: {
+          classroom_id?: string
+          created_at?: string
+          id?: string
+          is_hidden?: boolean
+          name?: string
+          number?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "students_classroom_id_fkey"
+            columns: ["classroom_id"]
+            isOneToOne: false
+            referencedRelation: "classrooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
