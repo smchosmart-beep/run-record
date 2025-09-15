@@ -176,7 +176,7 @@ const Auth = () => {
             <CardHeader className="space-y-1 pb-4">
               <TabsList className="grid w-full grid-cols-2 mb-4">
                 <TabsTrigger value="login">로그인</TabsTrigger>
-                <TabsTrigger value="signup">회원가입</TabsTrigger>
+                <TabsTrigger value="signup">계정생성</TabsTrigger>
               </TabsList>
             </CardHeader>
 
@@ -241,7 +241,7 @@ const Auth = () => {
             <TabsContent value="signup">
               <form onSubmit={handleSignup}>
                 <CardContent className="space-y-4">
-                  <CardTitle>회원가입</CardTitle>
+                  <CardTitle>계정생성</CardTitle>
                   <CardDescription>
                     새 계정을 만들어 시작하세요
                   </CardDescription>
