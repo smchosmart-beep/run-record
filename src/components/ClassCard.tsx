@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ClassRoom } from '@/types';
-import { Users, Calendar, Trophy, ArrowRight } from 'lucide-react';
+import { Users, Calendar, Trophy, ArrowRight, Trash2 } from 'lucide-react';
 import { calculateClassRankings, getClassBestRecord } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
+import { useApp } from '@/contexts/AppContext';
 
 interface ClassCardProps {
   classroom: ClassRoom;
@@ -12,6 +14,9 @@ interface ClassCardProps {
 }
 
 const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { deleteClassroom } = useApp();
+  
   const activeStudents = classroom.students.filter(s => !s.isHidden);
   const studentsWithRecords = activeStudents.filter(s => 
     s.records.some(r => r.time !== null && !r.isDNF)
@@ -23,6 +28,17 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
   const totalRecords = activeStudents.reduce((sum, s) => 
     sum + s.records.filter(r => r.time !== null && !r.isDNF).length, 0
   );
+
+  const handleDelete = async () => {
+    setDeleteLoading(true);
+    try {
+      await deleteClassroom(classroom.id);
+    } catch (error) {
+      console.error('Failed to delete classroom:', error);
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
@@ -36,16 +52,56 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
               {classroom.grade}학년 {classroom.className}
             </CardDescription>
           </div>
-          <div className="text-right">
-            <div className="flex items-center text-sm text-muted-foreground">
-              <Calendar className="h-3 w-3 mr-1" />
-              {(() => {
-                const year = classroom.createdAt.getFullYear();
-                const month = classroom.createdAt.getMonth(); // 0-based (0=January)
-                // 3월(month=2) 이전이면 이전 학년도
-                return month < 2 ? year - 1 : year;
-              })()}학년도
+          <div className="flex items-center space-x-2">
+            <div className="text-right">
+              <div className="flex items-center text-sm text-muted-foreground">
+                <Calendar className="h-3 w-3 mr-1" />
+                {(() => {
+                  const year = classroom.createdAt.getFullYear();
+                  const month = classroom.createdAt.getMonth(); // 0-based (0=January)
+                  // 3월(month=2) 이전이면 이전 학년도
+                  return month < 2 ? year - 1 : year;
+                })()}학년도
+              </div>
             </div>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  aria-label="학급 삭제"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>학급 삭제 확인</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    <strong>{classroom.school} {classroom.grade}학년 {classroom.className}</strong>을(를) 삭제하시겠습니까?
+                    <br />
+                    <br />
+                    <span className="text-destructive font-medium">
+                      해당 학급의 모든 학생과 기록이 영구히 삭제됩니다.
+                    </span>
+                    <br />
+                    이 작업은 되돌릴 수 없습니다.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={handleDelete}
+                    disabled={deleteLoading}
+                  >
+                    {deleteLoading ? '삭제 중...' : '삭제'}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </CardHeader>
