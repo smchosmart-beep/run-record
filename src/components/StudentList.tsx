@@ -8,9 +8,10 @@ import { useApp } from '@/contexts/AppContext';
 import { Student } from '@/types';
 import { calculateStudentStats } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
-import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber, reorderAfterDeletion } from '@/utils/studentUtils';
+import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
 import { Plus, Eye, EyeOff, Edit2, Trash2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { deleteStudent } from '@/utils/supabaseApi';
 const StudentList = () => {
   const {
     currentClassroom,
@@ -254,19 +255,32 @@ const StudentList = () => {
     setShowDeleteDialog(true);
   };
 
-  const handleDeleteConfirm = () => {
+  const handleDeleteConfirm = async () => {
     if (!studentToDelete) return;
 
-    const updatedStudents = reorderAfterDeletion(currentClassroom.students, studentToDelete.id);
-    
-    updateClassroom(currentClassroom.id, {
-      students: updatedStudents
-    });
+    try {
+      // 데이터베이스에서 직접 학생과 기록 삭제
+      await deleteStudent(studentToDelete.id);
+      
+      // 로컬 상태에서도 학생 제거
+      const updatedStudents = currentClassroom.students.filter(s => s.id !== studentToDelete.id);
+      
+      updateClassroom(currentClassroom.id, {
+        students: updatedStudents
+      });
 
-    toast({
-      title: "학생 삭제 완료",
-      description: `${studentToDelete.name}이 삭제되었습니다.`
-    });
+      toast({
+        title: "학생 삭제 완료",
+        description: `${studentToDelete.name}이 삭제되었습니다.`
+      });
+    } catch (error) {
+      console.error('Error deleting student:', error);
+      toast({
+        title: "삭제 실패",
+        description: "학생 삭제 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
 
     setShowDeleteDialog(false);
     setStudentToDelete(null);
@@ -519,7 +533,7 @@ const StudentList = () => {
                     • 학생의 모든 기록이 함께 삭제됩니다
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    • 뒤에 있는 학생들의 번호가 자동으로 앞당겨집니다
+                    • 학생 번호는 그대로 유지됩니다
                   </p>
                   <p className="text-sm text-destructive font-medium">
                     이 작업은 되돌릴 수 없습니다.

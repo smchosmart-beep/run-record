@@ -327,6 +327,30 @@ export async function deleteClassroom(classroomId: string): Promise<void> {
   }
 }
 
+export async function deleteStudent(studentId: string): Promise<void> {
+  // 학생의 모든 기록을 먼저 삭제
+  const { error: recordsError } = await supabase
+    .from('records')
+    .delete()
+    .eq('student_id', studentId);
+
+  if (recordsError) {
+    console.error('Error deleting student records:', recordsError);
+    throw recordsError;
+  }
+
+  // 학생 삭제
+  const { error: studentError } = await supabase
+    .from('students')
+    .delete()
+    .eq('id', studentId);
+
+  if (studentError) {
+    console.error('Error deleting student:', studentError);
+    throw studentError;
+  }
+}
+
 export async function updateStudentRecords(studentId: string, records: Record[]): Promise<void> {
   // Delete existing records for this student
   const { error: deleteError } = await supabase
