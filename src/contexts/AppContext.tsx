@@ -41,23 +41,36 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   // Initialize auth state
   useEffect(() => {
+    console.log('Initializing auth state...');
+    
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      (event, session) => {
+        console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         
         if (session?.user) {
-          // Fetch user profile
-          try {
-            const profile = await getUserProfile();
-            setUser({
-              id: profile.id,
-              username: profile.username,
-            });
-          } catch (error) {
-            console.error('Error fetching user profile:', error);
-          }
+          // Defer getUserProfile call to prevent deadlock
+          setTimeout(() => {
+            getUserProfile()
+              .then(profile => {
+                console.log('User profile fetched:', profile.username);
+                setUser({
+                  id: profile.id,
+                  username: profile.username,
+                });
+              })
+              .catch(error => {
+                console.error('Error fetching user profile:', error);
+                // Fallback to basic user info from session
+                setUser({
+                  id: session.user.id,
+                  username: session.user.email?.split('@')[0] || 'Unknown',
+                });
+              });
+          }, 0);
         } else {
+          console.log('No session, clearing user data');
           setUser(null);
           setClassrooms([]);
           setCurrentClassroomState(null);
@@ -69,13 +82,17 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('Initial session check:', session?.user?.id);
       setSession(session);
       if (!session) {
         setIsLoading(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      console.log('Cleaning up auth state listener');
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Load classrooms when user is authenticated

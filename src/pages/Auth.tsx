@@ -40,16 +40,29 @@ const Auth = () => {
     }
 
     setIsLoading(true);
+    console.log('Starting login process for:', loginUsername);
+    
+    // Create timeout promise to prevent infinite loading
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Login timeout')), 30000); // 30 second timeout
+    });
+
     try {
       // Convert username to email format for Supabase
       const email = `${loginUsername}@speedup.app`;
+      console.log('Attempting login with email:', email);
       
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password: loginPassword,
-      });
+      // Race between login and timeout
+      const { error } = await Promise.race([
+        supabase.auth.signInWithPassword({
+          email,
+          password: loginPassword,
+        }),
+        timeoutPromise
+      ]) as any;
 
       if (error) {
+        console.error('Login error:', error);
         if (error.message.includes("Invalid login credentials")) {
           toast.error("ID 또는 비밀번호가 틀렸습니다");
         } else if (error.message.includes("Email not confirmed")) {
@@ -57,18 +70,28 @@ const Auth = () => {
             duration: 8000,
             description: "Authentication > Providers > Email에서 'Confirm email' 설정을 OFF로 변경"
           });
+        } else if (error.message.includes("Network")) {
+          toast.error("네트워크 연결을 확인해주세요");
         } else {
           toast.error(error.message);
         }
         return;
       }
 
+      console.log('Login successful, navigating to dashboard');
       toast.success("로그인되었습니다!");
       navigate('/dashboard');
     } catch (error: any) {
-      toast.error("로그인 중 오류가 발생했습니다");
       console.error('Login error:', error);
+      if (error.message === 'Login timeout') {
+        toast.error("로그인 시간이 초과되었습니다. 네트워크 연결을 확인하고 다시 시도해주세요.");
+      } else if (error.message?.includes("Network") || error.message?.includes("fetch")) {
+        toast.error("네트워크 오류가 발생했습니다. 연결을 확인하고 다시 시도해주세요.");
+      } else {
+        toast.error("로그인 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      }
     } finally {
+      console.log('Login process completed');
       setIsLoading(false);
     }
   };
@@ -178,7 +201,7 @@ const Auth = () => {
                   </div>
                 </CardContent>
                 
-                <CardFooter>
+                <CardFooter className="flex flex-col gap-2">
                   <Button 
                     type="submit" 
                     className="w-full" 
@@ -186,6 +209,19 @@ const Auth = () => {
                   >
                     {isLoading ? "로그인 중..." : "로그인"}
                   </Button>
+                  {isLoading && (
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        setIsLoading(false);
+                        toast.info("로그인이 취소되었습니다");
+                      }}
+                    >
+                      취소
+                    </Button>
+                  )}
                 </CardFooter>
               </form>
             </TabsContent>
@@ -241,6 +277,7 @@ const Auth = () => {
           <p>테스트용 계정</p>
           <p>ID: demo</p>
           <p>비밀번호: demo123</p>
+          <p className="mt-2 text-xs">로그인이 안 되면 잠시 후 다시 시도해주세요</p>
         </div>
       </div>
     </div>
