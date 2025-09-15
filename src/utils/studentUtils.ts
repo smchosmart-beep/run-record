@@ -39,12 +39,6 @@ export function reorderStudentNumbers(
     };
   }
 
-  // 새 번호가 기존 번호와 겹치는지 확인
-  const numberExists = students.some(s => s.id !== targetStudentId && s.number === newNumber);
-  if (numberExists) {
-    throw new Error(`${newNumber}번은 이미 사용중입니다.`);
-  }
-
   const updatedStudents: Student[] = [];
   const affectedStudents: NumberChangePreview['affectedStudents'] = [];
 
@@ -61,11 +55,12 @@ export function reorderStudentNumbers(
     } else {
       let newStudentNumber = student.number;
 
-      // 번호가 증가하는 경우 (15 → 51)
+      // 번호가 증가하는 경우 (16 → 51)
       if (newNumber > oldNumber) {
-        // 기존 번호보다 큰 번호들을 뒤로 밀기
-        if (student.number > oldNumber && student.number <= newNumber) {
-          newStudentNumber = student.number - 1;
+        // 기존 번호보다 뒤에 있는 모든 학생들을 새 번호 뒤로 연속 배치
+        if (student.number > oldNumber) {
+          const offset = student.number - oldNumber; // 17-16=1, 18-16=2, ...
+          newStudentNumber = newNumber + offset; // 51+1=52, 51+2=53, ...
           affectedStudents.push({
             id: student.id,
             name: student.name,
@@ -74,9 +69,9 @@ export function reorderStudentNumbers(
           });
         }
       } 
-      // 번호가 감소하는 경우 (51 → 15)
+      // 번호가 감소하는 경우 (51 → 16)
       else {
-        // 기존 번호보다 작은 번호들을 앞으로 밀기
+        // 새 번호 이상이면서 기존 번호보다 작은 모든 학생들을 뒤로 밀기
         if (student.number >= newNumber && student.number < oldNumber) {
           newStudentNumber = student.number + 1;
           affectedStudents.push({
