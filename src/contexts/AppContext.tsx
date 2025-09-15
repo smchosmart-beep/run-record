@@ -129,6 +129,14 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       console.log('✅ 학급 데이터 로딩 완료:', data.length, '개 학급');
       setClassrooms(data);
       
+      // Update currentClassroom if it exists and was refreshed
+      if (currentClassroom) {
+        const refreshedClassroom = data.find(c => c.id === currentClassroom.id);
+        if (refreshedClassroom) {
+          setCurrentClassroomState(refreshedClassroom);
+        }
+      }
+      
       if (data.length === 0) {
         toast.success('첫 번째 학급을 만들어보세요!');
       }

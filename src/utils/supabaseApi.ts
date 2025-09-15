@@ -272,11 +272,10 @@ export async function updateClassroom(classroomId: string, updates: Partial<Clas
         const existingStudent = currentStudents?.find(s => s.id === student.id);
         
         if (existingStudent) {
-          // Update existing student
+          // Update existing student (exclude number field - use updateStudentNumberAtomically for number changes)
           const { error: updateError } = await supabase
             .from('students')
             .update({
-              number: student.number,
               name: student.name,
               is_hidden: student.isHidden,
             })
