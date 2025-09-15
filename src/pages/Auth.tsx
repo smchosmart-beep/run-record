@@ -277,7 +277,7 @@ const Auth = () => {
                     className="w-full" 
                     disabled={isLoading}
                   >
-                    {isLoading ? "가입 중..." : "회원가입"}
+                    {isLoading ? "가입 중..." : "계정생성"}
                   </Button>
                 </CardFooter>
               </form>
