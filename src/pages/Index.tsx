@@ -43,6 +43,13 @@ const Index = () => {
             <ArrowRight className="h-5 w-5 ml-2" />
           </Button>
         </div>
+        
+        <div className="mt-16 pt-8 border-t border-muted-foreground/20">
+          <div className="text-center text-sm text-muted-foreground space-y-1">
+            <p>기획자 : 배구왕 조태현 선생님</p>
+            <p>개발자 : 파튀김</p>
+          </div>
+        </div>
       </div>
     </div>
   );
