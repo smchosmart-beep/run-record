@@ -14,11 +14,10 @@ const Auth = () => {
   const navigate = useNavigate();
 
   // Login form state
-  const [loginEmail, setLoginEmail] = useState("");
+  const [loginUsername, setLoginUsername] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
 
   // Signup form state
-  const [signupEmail, setSignupEmail] = useState("");
   const [signupPassword, setSignupPassword] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
 
@@ -35,21 +34,24 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!loginEmail || !loginPassword) {
+    if (!loginUsername || !loginPassword) {
       toast.error("모든 필드를 입력해주세요");
       return;
     }
 
     setIsLoading(true);
     try {
+      // Convert username to email format for Supabase
+      const email = `${loginUsername}@speedup.local`;
+      
       const { error } = await supabase.auth.signInWithPassword({
-        email: loginEmail,
+        email,
         password: loginPassword,
       });
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          toast.error("이메일 또는 비밀번호가 틀렸습니다");
+          toast.error("사용자명 또는 비밀번호가 틀렸습니다");
         } else {
           toast.error(error.message);
         }
@@ -68,7 +70,7 @@ const Auth = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!signupEmail || !signupPassword || !signupUsername) {
+    if (!signupPassword || !signupUsername) {
       toast.error("모든 필드를 입력해주세요");
       return;
     }
@@ -80,10 +82,12 @@ const Auth = () => {
 
     setIsLoading(true);
     try {
+      // Convert username to email format for Supabase
+      const email = `${signupUsername}@speedup.local`;
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { error } = await supabase.auth.signUp({
-        email: signupEmail,
+        email,
         password: signupPassword,
         options: {
           emailRedirectTo: redirectUrl,
@@ -95,15 +99,15 @@ const Auth = () => {
 
       if (error) {
         if (error.message.includes("User already registered")) {
-          toast.error("이미 가입된 이메일입니다");
+          toast.error("이미 사용 중인 사용자명입니다");
         } else {
           toast.error(error.message);
         }
         return;
       }
 
-      toast.success("회원가입이 완료되었습니다! 이메일을 확인해주세요.");
-      // Don't navigate immediately - user needs to confirm email
+      toast.success("회원가입이 완료되었습니다! 바로 로그인할 수 있습니다.");
+      // Switch to login tab after successful signup
     } catch (error: any) {
       toast.error("회원가입 중 오류가 발생했습니다");
       console.error('Signup error:', error);
@@ -145,13 +149,13 @@ const Auth = () => {
                   </CardDescription>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">이메일</Label>
+                    <Label htmlFor="login-username">사용자명</Label>
                     <Input
-                      id="login-email"
-                      type="email"
-                      placeholder="email@example.com"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
+                      id="login-username"
+                      type="text"
+                      placeholder="사용자명"
+                      value={loginUsername}
+                      onChange={(e) => setLoginUsername(e.target.value)}
                       required
                     />
                   </div>
@@ -201,18 +205,6 @@ const Auth = () => {
                   </div>
                   
                   <div className="space-y-2">
-                    <Label htmlFor="signup-email">이메일</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      placeholder="email@example.com"
-                      value={signupEmail}
-                      onChange={(e) => setSignupEmail(e.target.value)}
-                      required
-                    />
-                  </div>
-                  
-                  <div className="space-y-2">
                     <Label htmlFor="signup-password">비밀번호</Label>
                     <Input
                       id="signup-password"
@@ -241,7 +233,7 @@ const Auth = () => {
 
         <div className="mt-6 text-center text-sm text-muted-foreground">
           <p>테스트용 계정</p>
-          <p>이메일: demo@example.com</p>
+          <p>사용자명: demo</p>
           <p>비밀번호: demo123</p>
         </div>
       </div>
