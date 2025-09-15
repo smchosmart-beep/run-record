@@ -8,7 +8,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord } from '@/types';
 import { generateRecordId } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
-import { AlertCircle, Edit } from 'lucide-react';
+import { AlertCircle, Edit, Plus, ToggleLeft, ToggleRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const RecordInput = () => {
@@ -154,6 +154,23 @@ const RecordInput = () => {
     setInputValues(prev => ({ ...prev, [key]: '' }));
   };
 
+  const addRecordSlot = () => {
+    if (currentClassroom.maxRecordSlots >= 15) {
+      toast({
+        title: "최대 회차 제한",
+        description: "최대 15회까지만 추가할 수 있습니다.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    updateClassroom({
+      ...currentClassroom,
+      maxRecordSlots: currentClassroom.maxRecordSlots + 1,
+      updatedAt: new Date(),
+    });
+  };
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -163,49 +180,68 @@ const RecordInput = () => {
     };
   }, []);
 
-  if (currentMode !== 'input') {
-    return (
-      <Card className="text-center py-12">
-        <CardContent>
-          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-          <CardTitle className="text-xl mb-2">입력 모드가 필요합니다</CardTitle>
-          <p className="text-muted-foreground mb-6">
-            학생들의 달리기 기록을 입력하려면 입력 모드로 전환해야 합니다.
-          </p>
-          <Button
-            onClick={() => setMode('input')}
-            variant="speed"
-            size="lg"
-          >
-            <Edit className="h-4 w-4 mr-2" />
-            입력 모드로 전환
-          </Button>
-        </CardContent>
-      </Card>
-    );
-  }
-
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h3 className="text-2xl font-bold text-foreground mb-2">기록 입력</h3>
-        <p className="text-muted-foreground mb-4">
-          시간 형식: 1:23.45 (분:초.백분의초), 72.34 (초.백분의초), DNF (기록없음)
-        </p>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-2">
-            <kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd>
-            <span>다음 학생</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <kbd className="px-2 py-1 bg-muted rounded text-xs">Tab</kbd>
-            <span>다음 회차</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift+Tab</kbd>
-            <span>이전 회차</span>
-          </div>
+      {/* Header with Mode Toggle and Controls */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-2xl font-bold text-foreground mb-2">기록 관리</h3>
+          <p className="text-muted-foreground mb-4">
+            {currentMode === 'input' 
+              ? "시간 형식: 1:23.45 (분:초.백분의초), 72.34 (초.백분의초), DNF (기록없음)"
+              : "학생들의 기록을 확인하세요. 수정하려면 입력 모드로 전환하세요."
+            }
+          </p>
+          {currentMode === 'input' && (
+            <div className="flex items-center gap-4 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd>
+                <span>다음 학생</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Tab</kbd>
+                <span>다음 회차</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift+Tab</kbd>
+                <span>이전 회차</span>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        <div className="flex items-center gap-3">
+          {/* Mode Toggle */}
+          <Button
+            onClick={() => setMode(currentMode === 'input' ? 'view' : 'input')}
+            variant={currentMode === 'input' ? 'default' : 'outline'}
+            size="sm"
+          >
+            {currentMode === 'input' ? (
+              <>
+                <ToggleRight className="h-4 w-4 mr-2" />
+                입력 모드
+              </>
+            ) : (
+              <>
+                <ToggleLeft className="h-4 w-4 mr-2" />
+                보기 모드
+              </>
+            )}
+          </Button>
+          
+          {/* Add Slot Button */}
+          {currentMode === 'input' && (
+            <Button
+              onClick={addRecordSlot}
+              variant="outline"
+              size="sm"
+              disabled={currentClassroom.maxRecordSlots >= 15}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              회차 추가
+            </Button>
+          )}
         </div>
       </div>
 
@@ -216,10 +252,10 @@ const RecordInput = () => {
             <Table>
               <TableHeader className="sticky top-0 bg-background z-10">
                 <TableRow>
-                  <TableHead className="w-16 bg-muted/50 sticky left-0 z-20 border-r">번호</TableHead>
-                  <TableHead className="w-32 bg-muted/50 sticky left-16 z-20 border-r">이름</TableHead>
+                  <TableHead className="w-12 bg-muted/50 sticky left-0 z-20 border-r">번호</TableHead>
+                  <TableHead className="w-28 bg-muted/50 sticky left-12 z-20 border-r">이름</TableHead>
                   {Array.from({ length: currentClassroom.maxRecordSlots }, (_, i) => (
-                    <TableHead key={i} className="w-32 text-center">
+                    <TableHead key={i} className="w-20 text-center">
                       {i + 1}회차
                     </TableHead>
                   ))}
@@ -231,7 +267,7 @@ const RecordInput = () => {
                     <TableCell className="font-medium bg-muted/20 sticky left-0 z-10 border-r">
                       <Badge variant="outline">{student.number}</Badge>
                     </TableCell>
-                    <TableCell className="font-medium bg-muted/20 sticky left-16 z-10 border-r">
+                    <TableCell className="font-medium bg-muted/20 sticky left-12 z-10 border-r">
                       {student.name}
                     </TableCell>
                     {Array.from({ length: currentClassroom.maxRecordSlots }, (_, slotIndex) => {
@@ -247,14 +283,16 @@ const RecordInput = () => {
                               <span className="font-medium text-sm">
                                 {existingRecord.isDNF ? 'DNF' : formatTime(existingRecord.time!)}
                               </span>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => clearRecord(student, slotIndex)}
-                              >
-                                ×
-                              </Button>
+                              {currentMode === 'input' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  onClick={() => clearRecord(student, slotIndex)}
+                                >
+                                  ×
+                                </Button>
+                              )}
                             </div>
                           ) : (
                             <div className="relative">
@@ -265,13 +303,14 @@ const RecordInput = () => {
                                 onChange={(e) => handleInputChange(student.id, slotIndex, e.target.value)}
                                 onBlur={(e) => handleInputBlur(student.id, slotIndex, e.target.value)}
                                 onKeyDown={(e) => handleKeyDown(e, student.id, slotIndex)}
+                                disabled={currentMode !== 'input'}
                                 className={`h-8 text-sm ${
                                   hasError 
                                     ? 'border-destructive bg-destructive/5' 
                                     : hasInput 
                                       ? 'border-primary bg-primary/5' 
                                       : 'border-border'
-                                }`}
+                                } ${currentMode !== 'input' ? 'cursor-not-allowed opacity-50' : ''}`}
                               />
                               {hasError && (
                                 <div className="absolute top-full left-0 z-50 mt-1 p-2 bg-destructive text-destructive-foreground text-xs rounded shadow-lg whitespace-nowrap">
@@ -314,14 +353,16 @@ const RecordInput = () => {
                           <span className="font-medium">
                             {existingRecord.isDNF ? 'DNF' : formatTime(existingRecord.time!)}
                           </span>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0"
-                            onClick={() => clearRecord(student, slotIndex)}
-                          >
-                            ×
-                          </Button>
+                          {currentMode === 'input' && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-6 w-6 p-0"
+                              onClick={() => clearRecord(student, slotIndex)}
+                            >
+                              ×
+                            </Button>
+                          )}
                         </div>
                       ) : (
                         <div>
@@ -330,7 +371,10 @@ const RecordInput = () => {
                             value={inputValues[key] || ''}
                             onChange={(e) => handleInputChange(student.id, slotIndex, e.target.value)}
                             onBlur={(e) => handleInputBlur(student.id, slotIndex, e.target.value)}
-                            className={`h-8 text-sm ${hasError ? 'border-destructive' : ''}`}
+                            disabled={currentMode !== 'input'}
+                            className={`h-8 text-sm ${hasError ? 'border-destructive' : ''} ${
+                              currentMode !== 'input' ? 'cursor-not-allowed opacity-50' : ''
+                            }`}
                           />
                           {hasError && (
                             <p className="text-xs text-destructive mt-1">{errors[key]}</p>
