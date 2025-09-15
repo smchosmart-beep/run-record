@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,6 +25,7 @@ interface CreateClassModalProps {
 const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) => {
   const { addClassroom, setCurrentClassroom } = useApp();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [school, setSchool] = useState('');
   const [grade, setGrade] = useState('');
@@ -129,6 +131,9 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) 
       setStudentNames('');
       
       onClose();
+      
+      // Navigate to classroom page to show student list
+      navigate('/classroom');
     } catch (error) {
       toast({
         title: "생성 실패",
