@@ -61,31 +61,7 @@ const ClassroomManager = () => {
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                currentMode === 'input' 
-                  ? 'bg-accent/10 text-accent' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
-                {currentMode === 'input' ? '입력 모드' : '보기 모드'}
-              </div>
-              
-              <Button
-                onClick={handleModeToggle}
-                variant={currentMode === 'input' ? 'accent' : 'success'}
-                size="sm"
-              >
-                {currentMode === 'input' ? (
-                  <>
-                    <Eye className="h-4 w-4 mr-2" />
-                    보기 모드
-                  </>
-                ) : (
-                  <>
-                    <Edit className="h-4 w-4 mr-2" />
-                    입력 모드
-                  </>
-                )}
-              </Button>
+              {/* Mode switching is now handled in RecordInput component */}
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord } from '@/types';
 import { generateRecordId } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
-import { AlertCircle, Edit, Plus, ToggleLeft, ToggleRight } from 'lucide-react';
+import { AlertCircle, Edit, Plus, ToggleLeft, ToggleRight, Eye } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const RecordInput = () => {
@@ -214,18 +214,23 @@ const RecordInput = () => {
           {/* Mode Toggle */}
           <Button
             onClick={() => setMode(currentMode === 'input' ? 'view' : 'input')}
-            variant={currentMode === 'input' ? 'default' : 'outline'}
+            variant={currentMode === 'view' ? 'default' : 'outline'}
             size="sm"
+            className={`transition-all duration-200 ${
+              currentMode === 'view' 
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                : 'border-2 border-primary text-primary hover:bg-primary/10'
+            }`}
           >
-            {currentMode === 'input' ? (
+            {currentMode === 'view' ? (
               <>
-                <ToggleRight className="h-4 w-4 mr-2" />
-                입력 모드
+                <Eye className="h-4 w-4 mr-2" />
+                보기 모드 활성
               </>
             ) : (
               <>
-                <ToggleLeft className="h-4 w-4 mr-2" />
-                보기 모드
+                <Edit className="h-4 w-4 mr-2" />
+                입력 모드 활성
               </>
             )}
           </Button>
