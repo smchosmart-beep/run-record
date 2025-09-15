@@ -39,7 +39,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
           <div className="text-right">
             <div className="flex items-center text-sm text-muted-foreground">
               <Calendar className="h-3 w-3 mr-1" />
-              {classroom.createdAt.toLocaleDateString()}
+              {classroom.createdAt.getFullYear()}
             </div>
           </div>
         </div>
