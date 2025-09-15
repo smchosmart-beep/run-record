@@ -1,13 +1,14 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord } from '@/types';
 import { generateRecordId } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
-import { Save, RotateCcw, AlertCircle, Edit } from 'lucide-react';
+import { AlertCircle, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const RecordInput = () => {
@@ -15,7 +16,7 @@ const RecordInput = () => {
   const { toast } = useToast();
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [currentSlot, setCurrentSlot] = useState(0);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
   if (!currentClassroom) return null;
 
@@ -26,6 +27,53 @@ const RecordInput = () => {
   const getInputKey = (studentId: string, slotIndex: number) => 
     `${studentId}_${slotIndex}`;
 
+  const getCellId = (studentId: string, slotIndex: number) =>
+    `cell-${studentId}-${slotIndex}`;
+
+  // Debounced auto-save function
+  const debouncedSave = useCallback((student: Student, slotIndex: number, value: string) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    saveTimeoutRef.current = setTimeout(() => {
+      if (!value.trim()) return;
+
+      const validation = validateTimeInput(value);
+      if (!validation.isValid) return;
+
+      const isDNF = value.toUpperCase() === 'DNF';
+      const time = isDNF ? null : parseTimeInput(value);
+
+      const newRecord: StudentRecord = {
+        id: generateRecordId(),
+        time,
+        isDNF,
+        recordedAt: new Date(),
+        slotIndex,
+      };
+
+      // Remove any existing record for this slot
+      const updatedRecords = student.records.filter(r => r.slotIndex !== slotIndex);
+      updatedRecords.push(newRecord);
+
+      const updatedStudents = currentClassroom.students.map(s =>
+        s.id === student.id ? { ...s, records: updatedRecords } : s
+      );
+
+      updateClassroom({
+        ...currentClassroom,
+        students: updatedStudents,
+        updatedAt: new Date(),
+      });
+
+      // Clear input and error
+      const key = getInputKey(student.id, slotIndex);
+      setInputValues(prev => ({ ...prev, [key]: '' }));
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    }, 1000);
+  }, [currentClassroom, updateClassroom]);
+
   const handleInputChange = useCallback((studentId: string, slotIndex: number, value: string) => {
     const key = getInputKey(studentId, slotIndex);
     setInputValues(prev => ({ ...prev, [key]: value }));
@@ -34,7 +82,13 @@ const RecordInput = () => {
     if (errors[key]) {
       setErrors(prev => ({ ...prev, [key]: '' }));
     }
-  }, [errors]);
+
+    // Find student and trigger debounced save
+    const student = activeStudents.find(s => s.id === studentId);
+    if (student) {
+      debouncedSave(student, slotIndex, value);
+    }
+  }, [errors, activeStudents, debouncedSave]);
 
   const handleInputBlur = useCallback((studentId: string, slotIndex: number, value: string) => {
     if (!value.trim()) return;
@@ -47,58 +101,39 @@ const RecordInput = () => {
     }
   }, []);
 
-  const saveRecord = (student: Student, slotIndex: number) => {
-    const key = getInputKey(student.id, slotIndex);
-    const inputValue = inputValues[key]?.trim();
-
-    if (!inputValue) {
-      toast({
-        title: "입력 오류",
-        description: "기록을 입력해주세요.",
-        variant: "destructive",
-      });
-      return;
+  const handleKeyDown = useCallback((e: React.KeyboardEvent, studentId: string, slotIndex: number) => {
+    const studentIndex = activeStudents.findIndex(s => s.id === studentId);
+    
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      // Move to next student in same column
+      if (studentIndex < activeStudents.length - 1) {
+        const nextStudent = activeStudents[studentIndex + 1];
+        const nextCellId = getCellId(nextStudent.id, slotIndex);
+        const nextInput = document.getElementById(nextCellId) as HTMLInputElement;
+        nextInput?.focus();
+      }
+    } else if (e.key === 'Tab' && !e.shiftKey) {
+      e.preventDefault();
+      // Move to next column (next slot)
+      if (slotIndex < currentClassroom.maxRecordSlots - 1) {
+        const nextCellId = getCellId(studentId, slotIndex + 1);
+        const nextInput = document.getElementById(nextCellId) as HTMLInputElement;
+        nextInput?.focus();
+      }
+    } else if (e.key === 'Tab' && e.shiftKey) {
+      e.preventDefault();
+      // Move to previous column (previous slot)
+      if (slotIndex > 0) {
+        const prevCellId = getCellId(studentId, slotIndex - 1);
+        const prevInput = document.getElementById(prevCellId) as HTMLInputElement;
+        prevInput?.focus();
+      }
     }
+  }, [activeStudents, currentClassroom.maxRecordSlots]);
 
-    const validation = validateTimeInput(inputValue);
-    if (!validation.isValid) {
-      setErrors(prev => ({ ...prev, [key]: validation.error! }));
-      return;
-    }
-
-    const isDNF = inputValue.toUpperCase() === 'DNF';
-    const time = isDNF ? null : parseTimeInput(inputValue);
-
-    const newRecord: StudentRecord = {
-      id: generateRecordId(),
-      time,
-      isDNF,
-      recordedAt: new Date(),
-      slotIndex,
-    };
-
-    // Remove any existing record for this slot
-    const updatedRecords = student.records.filter(r => r.slotIndex !== slotIndex);
-    updatedRecords.push(newRecord);
-
-    const updatedStudents = currentClassroom.students.map(s =>
-      s.id === student.id ? { ...s, records: updatedRecords } : s
-    );
-
-    updateClassroom({
-      ...currentClassroom,
-      students: updatedStudents,
-      updatedAt: new Date(),
-    });
-
-    // Clear input and error
-    setInputValues(prev => ({ ...prev, [key]: '' }));
-    setErrors(prev => ({ ...prev, [key]: '' }));
-
-    toast({
-      title: "기록 저장",
-      description: `${student.name}의 기록이 저장되었습니다.`,
-    });
+  const getExistingRecord = (student: Student, slotIndex: number): StudentRecord | null => {
+    return student.records.find(r => r.slotIndex === slotIndex) || null;
   };
 
   const clearRecord = (student: Student, slotIndex: number) => {
@@ -117,16 +152,16 @@ const RecordInput = () => {
     // Clear input
     const key = getInputKey(student.id, slotIndex);
     setInputValues(prev => ({ ...prev, [key]: '' }));
-
-    toast({
-      title: "기록 삭제",
-      description: `${student.name}의 기록이 삭제되었습니다.`,
-    });
   };
 
-  const getExistingRecord = (student: Student, slotIndex: number): StudentRecord | null => {
-    return student.records.find(r => r.slotIndex === slotIndex) || null;
-  };
+  // Cleanup timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
 
   if (currentMode !== 'input') {
     return (
@@ -158,164 +193,157 @@ const RecordInput = () => {
         <p className="text-muted-foreground mb-4">
           시간 형식: 1:23.45 (분:초.백분의초), 72.34 (초.백분의초), DNF (기록없음)
         </p>
-        
-        {/* Slot Selector */}
-        <div className="flex flex-wrap gap-2 mb-4">
-          {Array.from({ length: currentClassroom.maxRecordSlots }, (_, i) => (
-            <Button
-              key={i}
-              variant={currentSlot === i ? "speed" : "outline"}
-              size="sm"
-              onClick={() => setCurrentSlot(i)}
-            >
-              {i + 1}회차
-            </Button>
-          ))}
+        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2">
+            <kbd className="px-2 py-1 bg-muted rounded text-xs">Enter</kbd>
+            <span>다음 학생</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <kbd className="px-2 py-1 bg-muted rounded text-xs">Tab</kbd>
+            <span>다음 회차</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <kbd className="px-2 py-1 bg-muted rounded text-xs">Shift+Tab</kbd>
+            <span>이전 회차</span>
+          </div>
         </div>
       </div>
 
-      {/* Mobile View */}
-      <div className="md:hidden space-y-4">
-        {activeStudents.map(student => {
-          const existingRecord = getExistingRecord(student, currentSlot);
-          const key = getInputKey(student.id, currentSlot);
-          const hasError = !!errors[key];
+      {/* Excel-style Table */}
+      <Card>
+        <CardContent className="p-0">
+          <div className="overflow-auto max-h-[70vh]">
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="w-16 bg-muted/50 sticky left-0 z-20 border-r">번호</TableHead>
+                  <TableHead className="w-32 bg-muted/50 sticky left-16 z-20 border-r">이름</TableHead>
+                  {Array.from({ length: currentClassroom.maxRecordSlots }, (_, i) => (
+                    <TableHead key={i} className="w-32 text-center">
+                      {i + 1}회차
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeStudents.map((student, studentIndex) => (
+                  <TableRow key={student.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium bg-muted/20 sticky left-0 z-10 border-r">
+                      <Badge variant="outline">{student.number}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium bg-muted/20 sticky left-16 z-10 border-r">
+                      {student.name}
+                    </TableCell>
+                    {Array.from({ length: currentClassroom.maxRecordSlots }, (_, slotIndex) => {
+                      const existingRecord = getExistingRecord(student, slotIndex);
+                      const key = getInputKey(student.id, slotIndex);
+                      const hasError = !!errors[key];
+                      const hasInput = !!inputValues[key];
 
-          return (
+                      return (
+                        <TableCell key={slotIndex} className="p-1 relative group">
+                          {existingRecord ? (
+                            <div className="flex items-center justify-between h-8 px-2 bg-success/10 rounded border border-success/20">
+                              <span className="font-medium text-sm">
+                                {existingRecord.isDNF ? 'DNF' : formatTime(existingRecord.time!)}
+                              </span>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-5 w-5 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => clearRecord(student, slotIndex)}
+                              >
+                                ×
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="relative">
+                              <Input
+                                id={getCellId(student.id, slotIndex)}
+                                placeholder="00.00"
+                                value={inputValues[key] || ''}
+                                onChange={(e) => handleInputChange(student.id, slotIndex, e.target.value)}
+                                onBlur={(e) => handleInputBlur(student.id, slotIndex, e.target.value)}
+                                onKeyDown={(e) => handleKeyDown(e, student.id, slotIndex)}
+                                className={`h-8 text-sm ${
+                                  hasError 
+                                    ? 'border-destructive bg-destructive/5' 
+                                    : hasInput 
+                                      ? 'border-primary bg-primary/5' 
+                                      : 'border-border'
+                                }`}
+                              />
+                              {hasError && (
+                                <div className="absolute top-full left-0 z-50 mt-1 p-2 bg-destructive text-destructive-foreground text-xs rounded shadow-lg whitespace-nowrap">
+                                  {errors[key]}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Mobile View for small screens */}
+      <div className="md:hidden">
+        <div className="space-y-4">
+          {activeStudents.map(student => (
             <Card key={student.id} className="p-4">
-              <div className="flex justify-between items-center mb-3">
-                <div className="flex items-center space-x-2">
-                  <Badge variant="outline">{student.number}번</Badge>
-                  <span className="font-semibold">{student.name}</span>
-                </div>
-                <Badge variant="secondary">{currentSlot + 1}회차</Badge>
+              <div className="flex items-center space-x-2 mb-3">
+                <Badge variant="outline">{student.number}번</Badge>
+                <span className="font-semibold">{student.name}</span>
               </div>
+              <div className="grid grid-cols-2 gap-2">
+                {Array.from({ length: currentClassroom.maxRecordSlots }, (_, slotIndex) => {
+                  const existingRecord = getExistingRecord(student, slotIndex);
+                  const key = getInputKey(student.id, slotIndex);
+                  const hasError = !!errors[key];
 
-              <div className="space-y-3">
-                {existingRecord ? (
-                  <div className="flex items-center justify-between p-2 bg-muted rounded">
-                    <span className="font-medium">
-                      {existingRecord.isDNF ? 'DNF' : formatTime(existingRecord.time!)}
-                    </span>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => clearRecord(student, currentSlot)}
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      삭제
-                    </Button>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Input
-                      placeholder="1:23.45 또는 DNF"
-                      value={inputValues[key] || ''}
-                      onChange={(e) => handleInputChange(student.id, currentSlot, e.target.value)}
-                      onBlur={(e) => handleInputBlur(student.id, currentSlot, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          saveRecord(student, currentSlot);
-                        }
-                      }}
-                      className={hasError ? 'border-destructive' : ''}
-                    />
-                    {hasError && (
-                      <p className="text-sm text-destructive">{errors[key]}</p>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="success"
-                      onClick={() => saveRecord(student, currentSlot)}
-                      disabled={!inputValues[key]?.trim()}
-                      className="w-full"
-                    >
-                      <Save className="h-3 w-3 mr-1" />
-                      저장
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Desktop Table View */}
-      <div className="hidden md:block">
-        <Card>
-          <CardHeader>
-            <CardTitle>{currentSlot + 1}회차 기록 입력</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {activeStudents.map(student => {
-                const existingRecord = getExistingRecord(student, currentSlot);
-                const key = getInputKey(student.id, currentSlot);
-                const hasError = !!errors[key];
-
-                return (
-                  <div key={student.id} className="flex items-center space-x-4 p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3 w-32">
-                      <Badge variant="outline">{student.number}번</Badge>
-                      <span className="font-medium">{student.name}</span>
-                    </div>
-
-                    <div className="flex-1">
+                  return (
+                    <div key={slotIndex} className="space-y-1">
+                      <label className="text-xs text-muted-foreground">{slotIndex + 1}회차</label>
                       {existingRecord ? (
-                        <div className="flex items-center space-x-3">
-                          <span className="font-medium text-lg">
+                        <div className="flex items-center justify-between p-2 bg-success/10 rounded text-sm">
+                          <span className="font-medium">
                             {existingRecord.isDNF ? 'DNF' : formatTime(existingRecord.time!)}
                           </span>
-                          <Badge variant="secondary" className="text-xs">
-                            {existingRecord.recordedAt.toLocaleString()}
-                          </Badge>
                           <Button
                             size="sm"
-                            variant="outline"
-                            onClick={() => clearRecord(student, currentSlot)}
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                            onClick={() => clearRecord(student, slotIndex)}
                           >
-                            <RotateCcw className="h-3 w-3 mr-1" />
-                            삭제
+                            ×
                           </Button>
                         </div>
                       ) : (
-                        <div className="flex items-center space-x-3">
-                          <div className="flex-1 max-w-xs">
-                            <Input
-                              placeholder="1:23.45 또는 DNF"
-                              value={inputValues[key] || ''}
-                              onChange={(e) => handleInputChange(student.id, currentSlot, e.target.value)}
-                              onBlur={(e) => handleInputBlur(student.id, currentSlot, e.target.value)}
-                              onKeyDown={(e) => {
-                                if (e.key === 'Enter') {
-                                  saveRecord(student, currentSlot);
-                                }
-                              }}
-                              className={hasError ? 'border-destructive' : ''}
-                            />
-                            {hasError && (
-                              <p className="text-sm text-destructive mt-1">{errors[key]}</p>
-                            )}
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="success"
-                            onClick={() => saveRecord(student, currentSlot)}
-                            disabled={!inputValues[key]?.trim()}
-                          >
-                            <Save className="h-3 w-3 mr-1" />
-                            저장
-                          </Button>
+                        <div>
+                          <Input
+                            placeholder="00.00"
+                            value={inputValues[key] || ''}
+                            onChange={(e) => handleInputChange(student.id, slotIndex, e.target.value)}
+                            onBlur={(e) => handleInputBlur(student.id, slotIndex, e.target.value)}
+                            className={`h-8 text-sm ${hasError ? 'border-destructive' : ''}`}
+                          />
+                          {hasError && (
+                            <p className="text-xs text-destructive mt-1">{errors[key]}</p>
+                          )}
                         </div>
                       )}
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          </CardContent>
-        </Card>
+                  );
+                })}
+              </div>
+            </Card>
+          ))}
+        </div>
       </div>
 
       {activeStudents.length === 0 && (
