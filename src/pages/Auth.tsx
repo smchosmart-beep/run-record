@@ -52,6 +52,11 @@ const Auth = () => {
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast.error("사용자명 또는 비밀번호가 틀렸습니다");
+        } else if (error.message.includes("Email not confirmed")) {
+          toast.error("이메일 확인이 필요합니다. 관리자에게 문의하거나 Supabase 대시보드에서 이메일 확인을 비활성화해주세요.", {
+            duration: 8000,
+            description: "Authentication > Providers > Email에서 'Confirm email' 설정을 OFF로 변경"
+          });
         } else {
           toast.error(error.message);
         }
