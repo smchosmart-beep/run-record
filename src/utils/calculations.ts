@@ -122,13 +122,13 @@ export function getClassBestRecord(students: Student[]): {
 }
 
 export function generateStudentId(): string {
-  return `student_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 export function generateRecordId(): string {
-  return `record_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return crypto.randomUUID();
 }
 
 export function generateClassId(): string {
-  return `class_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  return crypto.randomUUID();
 }

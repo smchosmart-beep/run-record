@@ -148,6 +148,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const updateClassroomData = async (classroomId: string, updates: Partial<ClassRoom>) => {
     try {
+      console.log('Updating classroom:', classroomId, updates);
       await updateClassroom(classroomId, updates);
       
       // Update local state
@@ -167,9 +168,20 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       }
       
       toast.success('학급 정보가 업데이트되었습니다');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error updating classroom:', error);
-      toast.error('학급 업데이트에 실패했습니다');
+      
+      // Provide more specific error messages
+      let errorMessage = '학급 업데이트에 실패했습니다';
+      if (error?.message?.includes('uuid')) {
+        errorMessage = 'ID 형식 오류로 저장에 실패했습니다';
+      } else if (error?.message?.includes('foreign key')) {
+        errorMessage = '데이터 관계 오류로 저장에 실패했습니다';
+      } else if (error?.message?.includes('RLS')) {
+        errorMessage = '권한 오류로 저장에 실패했습니다';
+      }
+      
+      toast.error(errorMessage);
       throw error;
     }
   };

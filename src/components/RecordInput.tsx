@@ -48,7 +48,7 @@ const RecordInput = () => {
       clearTimeout(saveTimeoutRef.current);
     }
 
-    saveTimeoutRef.current = setTimeout(() => {
+    saveTimeoutRef.current = setTimeout(async () => {
       if (!value.trim()) return;
 
       const validation = validateTimeInput(value);
@@ -65,6 +65,14 @@ const RecordInput = () => {
         slotIndex,
       };
 
+      console.log('Saving record:', {
+        studentId: student.id,
+        recordId: newRecord.id,
+        slotIndex,
+        time,
+        isDNF
+      });
+
       // Remove any existing record for this slot
       const updatedRecords = student.records.filter(r => r.slotIndex !== slotIndex);
       updatedRecords.push(newRecord);
@@ -73,16 +81,32 @@ const RecordInput = () => {
         s.id === student.id ? { ...s, records: updatedRecords } : s
       );
 
-      updateClassroom(currentClassroom.id, {
-        students: updatedStudents,
-      });
+      try {
+        await updateClassroom(currentClassroom.id, {
+          students: updatedStudents,
+        });
 
-      // Clear input and error
-      const key = getInputKey(student.id, slotIndex);
-      setInputValues(prev => ({ ...prev, [key]: '' }));
-      setErrors(prev => ({ ...prev, [key]: '' }));
+        // Clear input and error on successful save
+        const key = getInputKey(student.id, slotIndex);
+        setInputValues(prev => ({ ...prev, [key]: '' }));
+        setErrors(prev => ({ ...prev, [key]: '' }));
+        
+        console.log('Record saved successfully');
+      } catch (error) {
+        console.error('Failed to save record:', error);
+        
+        // Keep the input value and show error
+        const key = getInputKey(student.id, slotIndex);
+        setErrors(prev => ({ ...prev, [key]: '저장 실패' }));
+        
+        toast({
+          title: "저장 실패",
+          description: "기록 저장 중 오류가 발생했습니다. 다시 시도해주세요.",
+          variant: "destructive",
+        });
+      }
     }, 1000);
-  }, [currentClassroom, updateClassroom]);
+  }, [currentClassroom, updateClassroom, toast]);
 
   const handleInputChange = useCallback((studentId: string, slotIndex: number, value: string) => {
     const key = getInputKey(studentId, slotIndex);
