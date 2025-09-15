@@ -8,41 +8,33 @@ import { ArrowLeft, Timer, Users, Trophy, BarChart3, Edit, Eye } from 'lucide-re
 import StudentList from '@/components/StudentList';
 import RecordInput from '@/components/RecordInput';
 import Rankings from '@/components/Rankings';
-
 const ClassroomManager = () => {
-  const { user, currentClassroom, currentMode, setMode, setCurrentClassroom } = useApp();
+  const {
+    user,
+    currentClassroom,
+    currentMode,
+    setMode,
+    setCurrentClassroom
+  } = useApp();
   const [activeTab, setActiveTab] = useState('students');
-
   if (!user) {
     return <Navigate to="/login" replace />;
   }
-
   if (!currentClassroom) {
     return <Navigate to="/dashboard" replace />;
   }
-
   const handleModeToggle = () => {
     setMode(currentMode === 'view' ? 'input' : 'view');
   };
-
   const activeStudents = currentClassroom.students.filter(s => !s.isHidden);
-  const totalRecords = activeStudents.reduce((sum, s) => 
-    sum + s.records.filter(r => r.time !== null && !r.isDNF).length, 0
-  );
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
+  const totalRecords = activeStudents.reduce((sum, s) => sum + s.records.filter(r => r.time !== null && !r.isDNF).length, 0);
+  return <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
       {/* Header */}
       <header className="bg-card border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <Button
-                onClick={() => setCurrentClassroom(null)}
-                variant="ghost"
-                size="sm"
-                className="text-muted-foreground hover:text-foreground"
-              >
+              <Button onClick={() => setCurrentClassroom(null)} variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground">
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 대시보드로
               </Button>
@@ -61,31 +53,11 @@ const ClassroomManager = () => {
             </div>
             
             <div className="flex items-center space-x-3">
-              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-                currentMode === 'input' 
-                  ? 'bg-accent/10 text-accent' 
-                  : 'bg-muted text-muted-foreground'
-              }`}>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${currentMode === 'input' ? 'bg-accent/10 text-accent' : 'bg-muted text-muted-foreground'}`}>
                 {currentMode === 'input' ? '입력 모드' : '보기 모드'}
               </div>
               
-              <Button
-                onClick={handleModeToggle}
-                variant={currentMode === 'input' ? 'accent' : 'success'}
-                size="sm"
-              >
-                {currentMode === 'input' ? (
-                  <>
-                    <Eye className="h-4 w-4 mr-2" />
-                    보기 모드
-                  </>
-                ) : (
-                  <>
-                    <Edit className="h-4 w-4 mr-2" />
-                    입력 모드
-                  </>
-                )}
-              </Button>
+              
             </div>
           </div>
         </div>
@@ -158,8 +130,6 @@ const ClassroomManager = () => {
           </TabsContent>
         </Tabs>
       </main>
-    </div>
-  );
+    </div>;
 };
-
 export default ClassroomManager;
