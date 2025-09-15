@@ -9,12 +9,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
         outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-lg hover:shadow-xl transition-all duration-300",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300",
+        success: "bg-success text-success-foreground hover:bg-success/90 shadow-lg hover:shadow-xl transition-all duration-300",
+        gold: "bg-gold text-gold-foreground hover:bg-gold/90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold",
+        silver: "bg-silver text-silver-foreground hover:bg-silver/90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold",
+        bronze: "bg-bronze text-bronze-foreground hover:bg-bronze/90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold",
+        speed: "bg-gradient-to-r from-primary to-primary-glow text-primary-foreground hover:from-primary/90 hover:to-primary-glow/90 shadow-lg hover:shadow-xl transition-all duration-300 font-medium",
       },
       size: {
         default: "h-10 px-4 py-2",

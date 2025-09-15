@@ -1,0 +1,65 @@
+// SpeedUp App Types
+
+export interface Student {
+  id: string;
+  number: number;
+  name: string;
+  records: Record[];
+  isHidden: boolean;
+}
+
+export interface Record {
+  id: string;
+  time: number | null; // milliseconds, null for empty
+  isDNF: boolean;
+  recordedAt: Date;
+  slotIndex: number;
+}
+
+export interface ClassRoom {
+  id: string;
+  school: string;
+  grade: number;
+  className: string;
+  students: Student[];
+  maxRecordSlots: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  currentClassId?: string;
+}
+
+export interface StudentStats {
+  personalBest: number | null; // milliseconds
+  averageTime: number | null; // milliseconds
+  validRecordsCount: number;
+  rank: {
+    byPB: number;
+    byAvg: number;
+  };
+}
+
+export interface RankingData {
+  student: Student;
+  stats: StudentStats;
+  position: number;
+}
+
+export type AppMode = 'view' | 'input';
+
+export interface TimeInput {
+  minutes?: number;
+  seconds?: number;
+  milliseconds?: number;
+}
+
+// For localStorage structure
+export interface AppData {
+  user: User | null;
+  classrooms: ClassRoom[];
+  currentMode: AppMode;
+}

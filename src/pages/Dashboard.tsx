@@ -1,0 +1,169 @@
+import React, { useState } from 'react';
+import { Navigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useApp } from '@/contexts/AppContext';
+import { Plus, LogOut, Users, Trophy, Timer, BarChart3 } from 'lucide-react';
+import CreateClassModal from '@/components/CreateClassModal';
+import ClassCard from '@/components/ClassCard';
+
+const Dashboard = () => {
+  const { user, logout, classrooms, setCurrentClassroom } = useApp();
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const handleClassSelect = (classroom: any) => {
+    setCurrentClassroom(classroom);
+    window.location.href = '/classroom';
+  };
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
+      {/* Header */}
+      <header className="bg-card border-b shadow-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
+                <Timer className="h-6 w-6 text-primary" />
+                <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  SpeedUp
+                </h1>
+              </div>
+              <span className="text-muted-foreground">|</span>
+              <span className="text-foreground font-medium">{user.username}</span>
+            </div>
+            
+            <Button
+              onClick={logout}
+              variant="ghost"
+              size="sm"
+              className="text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              로그아웃
+            </Button>
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Welcome Section */}
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-foreground mb-2">
+            대시보드
+          </h2>
+          <p className="text-muted-foreground">
+            학급을 선택하거나 새로운 학급을 생성해서 시작하세요
+          </p>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-primary/10 rounded-lg">
+                  <Users className="h-6 w-6 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{classrooms.length}</p>
+                  <p className="text-muted-foreground text-sm">생성된 학급</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-secondary/10 rounded-lg">
+                  <Trophy className="h-6 w-6 text-secondary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {classrooms.reduce((sum, c) => sum + c.students.length, 0)}
+                  </p>
+                  <p className="text-muted-foreground text-sm">등록된 학생</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex items-center space-x-4">
+                <div className="p-3 bg-accent/10 rounded-lg">
+                  <BarChart3 className="h-6 w-6 text-accent" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">
+                    {classrooms.reduce((sum, c) => 
+                      sum + c.students.reduce((studentSum, s) => 
+                        studentSum + s.records.filter(r => r.time !== null).length, 0
+                      ), 0
+                    )}
+                  </p>
+                  <p className="text-muted-foreground text-sm">총 기록 수</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Classes Section */}
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-2xl font-bold text-foreground">학급 목록</h3>
+          <Button
+            onClick={() => setIsCreateModalOpen(true)}
+            variant="speed"
+            className="shadow-lg"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            새 학급 만들기
+          </Button>
+        </div>
+
+        {classrooms.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <CardTitle className="text-xl mb-2">아직 생성된 학급이 없습니다</CardTitle>
+              <CardDescription className="mb-4">
+                첫 번째 학급을 만들어서 학생들의 달리기 기록 관리를 시작해보세요
+              </CardDescription>
+              <Button
+                onClick={() => setIsCreateModalOpen(true)}
+                variant="speed"
+                size="lg"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                첫 학급 만들기
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {classrooms.map(classroom => (
+              <ClassCard
+                key={classroom.id}
+                classroom={classroom}
+                onSelect={() => handleClassSelect(classroom)}
+              />
+            ))}
+          </div>
+        )}
+      </main>
+
+      <CreateClassModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+      />
+    </div>
+  );
+};
+
+export default Dashboard;
