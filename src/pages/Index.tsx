@@ -21,7 +21,7 @@ const Index = () => {
             <Zap className="h-8 w-8 text-accent absolute -top-2 -right-2" />
           </div>
           <h1 className="text-5xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-            SpeedUp
+            Run Record Ranking
           </h1>
         </div>
         
