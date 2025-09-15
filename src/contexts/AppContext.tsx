@@ -49,8 +49,14 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         
+        // Set user immediately to prevent navigation issues
         if (session?.user) {
-          // Defer getUserProfile call to prevent deadlock
+          setUser({
+            id: session.user.id,
+            username: session.user.email?.split('@')[0] || 'Unknown',
+          });
+          
+          // Defer profile loading but don't block user state
           setTimeout(() => {
             getUserProfile()
               .then(profile => {
@@ -62,11 +68,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
               })
               .catch(error => {
                 console.error('Error fetching user profile:', error);
-                // Fallback to basic user info from session
-                setUser({
-                  id: session.user.id,
-                  username: session.user.email?.split('@')[0] || 'Unknown',
-                });
+                // Keep fallback user info from session
               });
           }, 0);
         } else {

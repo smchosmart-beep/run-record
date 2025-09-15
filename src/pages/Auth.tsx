@@ -21,6 +21,18 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
 
+  // 인증 상태 변경 감지하여 네비게이션  
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        console.log('✅ 인증 상태 변경 감지 - 대시보드로 이동');
+        navigate('/dashboard');
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, [navigate]);
+
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
@@ -78,9 +90,9 @@ const Auth = () => {
         return;
       }
 
-      console.log('Login successful, navigating to dashboard');
+      console.log('Login successful - waiting for auth state change');
       toast.success("로그인되었습니다!");
-      navigate('/dashboard');
+      // 네비게이션은 onAuthStateChange에서 처리
     } catch (error: any) {
       console.error('Login error:', error);
       if (error.message === 'Login timeout') {
