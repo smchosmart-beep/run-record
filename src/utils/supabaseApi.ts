@@ -3,6 +3,16 @@
 import { supabase } from "@/integrations/supabase/client";
 import { ClassRoom, Student, Record } from "@/types";
 
+// Timeout utility for Supabase requests
+function withTimeout<T>(promise: Promise<T>, ms: number = 10000): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => 
+      setTimeout(() => reject(new Error(`Request timeout after ${ms}ms`)), ms)
+    )
+  ]);
+}
+
 export type DatabaseClassroom = {
   id: string;
   user_id: string;
@@ -68,56 +78,82 @@ const convertDbRecordToAppRecord = (dbRecord: DatabaseRecord): Record => ({
 
 // API Functions
 export async function getClassrooms(): Promise<ClassRoom[]> {
-  const { data: classrooms, error: classroomsError } = await supabase
-    .from('classrooms')
-    .select('*')
-    .order('created_at', { ascending: false });
+  console.log('📡 학급 목록 요청 시작');
+  
+  const { data: classrooms, error: classroomsError } = await withTimeout(
+    Promise.resolve(
+      supabase
+        .from('classrooms')
+        .select('*')
+        .order('created_at', { ascending: false })
+    )
+  );
 
   if (classroomsError) {
-    console.error('Error fetching classrooms:', classroomsError);
+    console.error('❌ 학급 목록 조회 실패:', classroomsError);
     throw classroomsError;
   }
+
+  console.log('✅ 학급 목록 조회 완료:', classrooms?.length || 0, '개');
 
   if (!classrooms || classrooms.length === 0) {
     return [];
   }
 
   // Fetch students and records for each classroom
+  console.log('📡 학생 및 기록 데이터 요청 시작');
   const classroomsWithStudents = await Promise.all(
-    classrooms.map(async (classroom) => {
-      const { data: students, error: studentsError } = await supabase
-        .from('students')
-        .select('*')
-        .eq('classroom_id', classroom.id)
-        .order('number');
+    classrooms.map(async (classroom, index) => {
+      console.log(`📚 학급 ${index + 1}/${classrooms.length}: ${classroom.class_name} 처리 중`);
+      
+      const { data: students, error: studentsError } = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('students')
+            .select('*')
+            .eq('classroom_id', classroom.id)
+            .order('number')
+        )
+      );
 
       if (studentsError) {
-        console.error('Error fetching students:', studentsError);
+        console.error('❌ 학생 목록 조회 실패:', studentsError);
         throw studentsError;
       }
 
+      console.log(`👥 학급 ${classroom.class_name}: ${students?.length || 0}명 학생 조회`);
+
       const studentsWithRecords = await Promise.all(
-        (students || []).map(async (student) => {
-          const { data: records, error: recordsError } = await supabase
-            .from('records')
-            .select('*')
-            .eq('student_id', student.id)
-            .order('slot_index');
+        (students || []).map(async (student, studentIndex) => {
+          console.log(`📊 학생 ${studentIndex + 1}/${students?.length}: ${student.name} 기록 조회 중`);
+          
+          const { data: records, error: recordsError } = await withTimeout(
+            Promise.resolve(
+              supabase
+                .from('records')
+                .select('*')
+                .eq('student_id', student.id)
+                .order('slot_index')
+            )
+          );
 
           if (recordsError) {
-            console.error('Error fetching records:', recordsError);
+            console.error('❌ 기록 조회 실패:', recordsError);
             throw recordsError;
           }
 
           const appRecords = (records || []).map(convertDbRecordToAppRecord);
+          console.log(`📈 학생 ${student.name}: ${appRecords.length}개 기록 조회`);
           return convertDbStudentToAppStudent(student, appRecords);
         })
       );
 
+      console.log(`✅ 학급 ${classroom.class_name} 처리 완료`);
       return convertDbClassroomToAppClassroom(classroom, studentsWithRecords);
     })
   );
 
+  console.log('🎉 모든 데이터 로딩 완료!');
   return classroomsWithStudents;
 }
 

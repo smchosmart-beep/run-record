@@ -2,23 +2,24 @@ import React, { useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/contexts/AppContext';
-import { Plus, LogOut, Users, Trophy, Timer, BarChart3 } from 'lucide-react';
+import { Plus, LogOut, Users, Trophy, Timer, BarChart3, RefreshCw } from 'lucide-react';
 import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 
 const Dashboard = () => {
-  const { user, logout, classrooms, setCurrentClassroom, isLoading } = useApp();
+  const { user, logout, classrooms, setCurrentClassroom, authLoading, dataLoading, refreshClassrooms } = useApp();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // 로딩 중일 때는 리다이렉트하지 않음
-  if (isLoading) {
+  // 인증 로딩 중일 때만 전체화면 스피너 표시
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">로딩 중...</p>
+          <p className="text-muted-foreground">인증 확인 중...</p>
         </div>
       </div>
     );
@@ -135,17 +136,45 @@ const Dashboard = () => {
         {/* Classes Section */}
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold text-foreground">학급 목록</h3>
-          <Button
-            onClick={() => setIsCreateModalOpen(true)}
-            variant="speed"
-            className="shadow-lg"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            새 학급 만들기
-          </Button>
+          <div className="flex space-x-2">
+            <Button
+              onClick={refreshClassrooms}
+              variant="outline"
+              size="sm"
+              disabled={dataLoading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${dataLoading ? 'animate-spin' : ''}`} />
+              다시 불러오기
+            </Button>
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              variant="speed"
+              className="shadow-lg"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              새 학급 만들기
+            </Button>
+          </div>
         </div>
 
-        {classrooms.length === 0 ? (
+        {/* 데이터 로딩 중일 때 스켈레톤 표시 */}
+        {dataLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="p-6">
+                <CardContent className="space-y-4">
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-full" />
+                    <Skeleton className="h-3 w-5/6" />
+                  </div>
+                  <Skeleton className="h-8 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : classrooms.length === 0 ? (
           <Card className="text-center py-12">
             <CardContent>
               <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />

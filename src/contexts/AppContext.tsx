@@ -11,7 +11,9 @@ interface AppContextType {
   classrooms: ClassRoom[];
   currentClassroom: ClassRoom | null;
   currentMode: AppMode;
-  isLoading: boolean;
+  isLoading: boolean; // For backward compatibility
+  authLoading: boolean;
+  dataLoading: boolean;
   logout: () => Promise<void>;
   setCurrentClassroom: (classroom: ClassRoom | null) => void;
   setMode: (mode: AppMode) => void;
@@ -37,7 +39,11 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [classrooms, setClassrooms] = useState<ClassRoom[]>([]);
   const [currentClassroom, setCurrentClassroomState] = useState<ClassRoom | null>(null);
   const [currentMode, setCurrentMode] = useState<AppMode>('view');
-  const [isLoading, setIsLoading] = useState(true);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(false);
+  
+  // Derived state for backward compatibility
+  const isLoading = authLoading || dataLoading;
 
   // Initialize auth state
   useEffect(() => {
@@ -78,7 +84,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           setCurrentClassroomState(null);
         }
         
-        setIsLoading(false);
+        setAuthLoading(false);
       }
     );
 
@@ -87,7 +93,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       console.log('Initial session check:', session?.user?.id);
       setSession(session);
       if (!session) {
-        setIsLoading(false);
+        setAuthLoading(false);
       }
     });
 
@@ -108,14 +114,42 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     if (!user || !session) return;
 
     try {
-      setIsLoading(true);
+      console.log('🔄 학급 데이터 로딩 시작');
+      setDataLoading(true);
+      
+      // 12초 타임아웃 감시자
+      const watchdogTimer = setTimeout(() => {
+        console.warn('⚠️ 학급 데이터 로딩이 12초를 초과했습니다');
+        toast.error('데이터 로딩이 오래 걸리고 있습니다. 잠시 후 다시 시도해주세요.');
+      }, 12000);
+
       const data = await getClassrooms();
+      clearTimeout(watchdogTimer);
+      
+      console.log('✅ 학급 데이터 로딩 완료:', data.length, '개 학급');
       setClassrooms(data);
-    } catch (error) {
-      console.error('Error loading classrooms:', error);
-      toast.error('학급 데이터를 불러오는데 실패했습니다');
+      
+      if (data.length === 0) {
+        toast.success('첫 번째 학급을 만들어보세요!');
+      }
+    } catch (error: any) {
+      console.error('❌ 학급 데이터 로딩 실패:', error);
+      
+      let errorMessage = '학급 데이터를 불러오는데 실패했습니다';
+      if (error.message?.includes('timeout') || error.message?.includes('TimeoutError')) {
+        errorMessage = '데이터 로딩 시간이 초과되었습니다. 다시 시도해주세요.';
+      } else if (error.message?.includes('network') || error.message?.includes('fetch')) {
+        errorMessage = '네트워크 연결을 확인해주세요.';
+      }
+      
+      toast.error(errorMessage, {
+        action: {
+          label: '다시 시도',
+          onClick: () => refreshClassrooms()
+        }
+      });
     } finally {
-      setIsLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -152,7 +186,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
 
   const addClassroom = async (classroom: ClassRoom) => {
     try {
-      setIsLoading(true);
+      setDataLoading(true);
       const newClassroom = await createClassroom(classroom);
       setClassrooms(prev => [newClassroom, ...prev]);
       toast.success('학급이 성공적으로 생성되었습니다');
@@ -161,7 +195,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       toast.error('학급 생성에 실패했습니다');
       throw error;
     } finally {
-      setIsLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -232,6 +266,8 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     currentClassroom,
     currentMode,
     isLoading,
+    authLoading,
+    dataLoading,
     logout,
     setCurrentClassroom,
     setMode,
