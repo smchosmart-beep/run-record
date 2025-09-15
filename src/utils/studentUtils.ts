@@ -139,3 +139,39 @@ export function validateStudentNumber(number: number): { isValid: boolean; messa
 
   return { isValid: true };
 }
+
+/**
+ * 새 학생을 추가할 때 사용할 번호를 계산
+ * @param students 전체 학생 목록
+ * @returns 새 학생에게 할당할 번호
+ */
+export function getNextStudentNumber(students: Student[]): number {
+  if (students.length === 0) return 1;
+  
+  const maxNumber = Math.max(...students.map(s => s.number));
+  return maxNumber + 1;
+}
+
+/**
+ * 학생 삭제 시 번호 재정렬
+ * @param students 전체 학생 목록
+ * @param deletedStudentId 삭제될 학생 ID
+ * @returns 업데이트된 학생 목록
+ */
+export function reorderAfterDeletion(students: Student[], deletedStudentId: string): Student[] {
+  const deletedStudent = students.find(s => s.id === deletedStudentId);
+  if (!deletedStudent) return students;
+
+  const deletedNumber = deletedStudent.number;
+  
+  return students
+    .filter(s => s.id !== deletedStudentId) // 삭제된 학생 제외
+    .map(student => {
+      // 삭제된 학생보다 번호가 큰 학생들의 번호를 1씩 감소
+      if (student.number > deletedNumber) {
+        return { ...student, number: student.number - 1 };
+      }
+      return student;
+    })
+    .sort((a, b) => a.number - b.number);
+}
