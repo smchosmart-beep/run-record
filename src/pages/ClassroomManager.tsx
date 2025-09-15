@@ -60,26 +60,6 @@ const ClassroomManager = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              <Button
-                onClick={handleModeToggle}
-                variant={currentMode === 'input' ? 'default' : 'outline'}
-                size="sm"
-                className="flex items-center space-x-2"
-              >
-                {currentMode === 'input' ? (
-                  <>
-                    <Eye className="h-4 w-4" />
-                    <span>보기 모드</span>
-                  </>
-                ) : (
-                  <>
-                    <Edit className="h-4 w-4" />
-                    <span>편집 모드</span>
-                  </>
-                )}
-              </Button>
-            </div>
           </div>
         </div>
       </header>

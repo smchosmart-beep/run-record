@@ -9,11 +9,11 @@ import { Student } from '@/types';
 import { calculateStudentStats } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Hash, Type, Trash2 } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 const StudentList = () => {
-  const { currentClassroom, updateClassroom, currentMode, refreshClassrooms } = useApp();
+  const { currentClassroom, updateClassroom, currentMode, refreshClassrooms, setMode } = useApp();
   const {
     toast
   } = useToast();
@@ -264,12 +264,38 @@ const StudentList = () => {
           </p>
         </div>
         
-        {currentMode === 'input' && (
-          <Button onClick={handleAddStudent} className="flex items-center space-x-2">
-            <Plus className="h-4 w-4" />
-            <span>학생 추가</span>
+        <div className="flex items-center gap-3">
+          {/* Mode Toggle */}
+          <Button
+            onClick={() => setMode(currentMode === 'input' ? 'view' : 'input')}
+            variant={currentMode === 'view' ? 'default' : 'outline'}
+            size="sm"
+            className={`transition-all duration-200 ${
+              currentMode === 'view' 
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
+                : 'border-2 border-primary text-primary hover:bg-primary/10'
+            }`}
+          >
+            {currentMode === 'view' ? (
+              <>
+                <Edit className="h-4 w-4 mr-2" />
+                입력 모드로 전환
+              </>
+            ) : (
+              <>
+                <Eye className="h-4 w-4 mr-2" />
+                보기 모드로 전환
+              </>
+            )}
           </Button>
-        )}
+          
+          {currentMode === 'input' && (
+            <Button onClick={handleAddStudent} className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>학생 추가</span>
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Add Student Form */}
