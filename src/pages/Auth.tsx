@@ -42,7 +42,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       // Convert username to email format for Supabase
-      const email = `${loginUsername}@speedup.local`;
+      const email = `${loginUsername}@speedup.app`;
       
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -83,7 +83,7 @@ const Auth = () => {
     setIsLoading(true);
     try {
       // Convert username to email format for Supabase
-      const email = `${signupUsername}@speedup.local`;
+      const email = `${signupUsername}@speedup.app`;
       const redirectUrl = `${window.location.origin}/dashboard`;
       
       const { error } = await supabase.auth.signUp({
