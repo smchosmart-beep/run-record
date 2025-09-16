@@ -45,79 +45,84 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
   return (
     <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
       <CardHeader className="py-5 px-6">
-        <div className="flex justify-between items-center gap-4">
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="min-w-0 flex-1">
-              <CardTitle className="text-lg truncate">
+        <div className="space-y-3">
+          {/* 상단: 학교명 + 편집 버튼 vs 학년도 + 삭제 버튼 */}
+          <div className="flex justify-between items-center gap-4">
+            <div className="flex items-center gap-3">
+              <CardTitle className="text-lg">
                 {classroom.school}
               </CardTitle>
-              <CardDescription className="text-base font-medium truncate">
-                {classroom.grade}학년 {classroom.className}
-              </CardDescription>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
+                aria-label="학급 정보 수정"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditModalOpen(true);
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
-              aria-label="학급 정보 수정"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditModalOpen(true);
-              }}
-            >
-              <Edit className="h-3 w-3" />
-            </Button>
-          </div>
-          <div className="flex items-center space-x-3 flex-shrink-0">
-            <div className="text-right">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <Calendar className="h-3 w-3 mr-1" />
-                {(() => {
-                  const year = classroom.createdAt.getFullYear();
-                  const month = classroom.createdAt.getMonth(); // 0-based (0=January)
-                  // 3월(month=2) 이전이면 이전 학년도
-                  return month < 2 ? year - 1 : year;
-                })()}학년도
+            <div className="flex items-center space-x-3 flex-shrink-0">
+              <div className="text-right">
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <Calendar className="h-3 w-3 mr-1" />
+                  {(() => {
+                    const year = classroom.createdAt.getFullYear();
+                    const month = classroom.createdAt.getMonth(); // 0-based (0=January)
+                    // 3월(month=2) 이전이면 이전 학년도
+                    return month < 2 ? year - 1 : year;
+                  })()}학년도
+                </div>
               </div>
-            </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                  aria-label="학급 삭제"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>학급 삭제 확인</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    <strong>{classroom.school} {classroom.grade}학년 {classroom.className}</strong>을(를) 삭제하시겠습니까?
-                    <br />
-                    <br />
-                    <span className="text-destructive font-medium">
-                      해당 학급의 모든 학생과 기록이 영구히 삭제됩니다.
-                    </span>
-                    <br />
-                    이 작업은 되돌릴 수 없습니다.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>취소</AlertDialogCancel>
-                  <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    onClick={handleDelete}
-                    disabled={deleteLoading}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    aria-label="학급 삭제"
+                    onClick={(e) => e.stopPropagation()}
                   >
-                    {deleteLoading ? '삭제 중...' : '삭제'}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>학급 삭제 확인</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      <strong>{classroom.school} {classroom.grade}학년 {classroom.className}</strong>을(를) 삭제하시겠습니까?
+                      <br />
+                      <br />
+                      <span className="text-destructive font-medium">
+                        해당 학급의 모든 학생과 기록이 영구히 삭제됩니다.
+                      </span>
+                      <br />
+                      이 작업은 되돌릴 수 없습니다.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>취소</AlertDialogCancel>
+                    <AlertDialogAction
+                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                      onClick={handleDelete}
+                      disabled={deleteLoading}
+                    >
+                      {deleteLoading ? '삭제 중...' : '삭제'}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          </div>
+          
+          {/* 하단: 학급명 전체 폭으로 배치 */}
+          <div>
+            <CardDescription className="text-base font-medium text-left">
+              {classroom.grade}학년 {classroom.className}
+            </CardDescription>
           </div>
         </div>
       </CardHeader>
