@@ -558,6 +558,57 @@ export async function updateRecordSessionSlots(classroomId: string, sessionDate:
   return res;
 }
 
+export async function deleteRecordSession(classroomId: string, sessionDate: Date) {
+  console.log('📡 기록 세션 삭제:', {
+    classroomId,
+    sessionDate: toYMD(sessionDate)
+  });
+  
+  // 트랜잭션으로 처리: 먼저 records 삭제, 그 다음 record_sessions 삭제
+  const sessionDateStr = toYMD(sessionDate);
+  
+  // 먼저 해당 교실의 학생 ID들을 조회
+  const { data: students, error: studentsError } = await supabase
+    .from('students')
+    .select('id')
+    .eq('classroom_id', classroomId);
+
+  if (studentsError) {
+    console.error('❌ 학생 조회 실패:', studentsError);
+    throw studentsError;
+  }
+
+  const studentIds = students?.map(s => s.id) || [];
+
+  // 해당 날짜의 모든 기록 삭제
+  if (studentIds.length > 0) {
+    const { error: recordsError } = await supabase
+      .from('records')
+      .delete()
+      .eq('record_date', sessionDateStr)
+      .in('student_id', studentIds);
+
+    if (recordsError) {
+      console.error('❌ 기록 삭제 실패:', recordsError);
+      throw recordsError;
+    }
+  }
+
+  // 기록 세션 삭제
+  const { error: sessionError } = await supabase
+    .from('record_sessions')
+    .delete()
+    .eq('classroom_id', classroomId)
+    .eq('session_date', sessionDateStr);
+
+  if (sessionError) {
+    console.error('❌ 기록 세션 삭제 실패:', sessionError);
+    throw sessionError;
+  }
+
+  console.log('✅ 기록 세션 삭제 완료');
+}
+
 export async function getUserProfile() {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) {

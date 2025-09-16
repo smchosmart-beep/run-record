@@ -8,11 +8,22 @@ import { useApp } from '@/contexts/AppContext';
 import { RecordSession as RecordSessionComponent } from './RecordSession';
 import { format, startOfDay, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Plus, Clock, Users } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Clock, Users, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordSession } from '@/types';
-import { getRecordSessions, upsertRecordSession } from '@/utils/supabaseApi';
+import { getRecordSessions, upsertRecordSession, deleteRecordSession } from '@/utils/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
+import { 
+  AlertDialog, 
+  AlertDialogAction, 
+  AlertDialogCancel, 
+  AlertDialogContent, 
+  AlertDialogDescription, 
+  AlertDialogFooter, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogTrigger 
+} from '@/components/ui/alert-dialog';
 
 const RecordDateManager = () => {
   const { currentClassroom } = useApp();
@@ -21,6 +32,7 @@ const RecordDateManager = () => {
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [recordSessions, setRecordSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [deletingDate, setDeletingDate] = useState<string | null>(null);
 
   if (!currentClassroom) return null;
 
@@ -144,6 +156,45 @@ const RecordDateManager = () => {
     }
   };
 
+  // Delete record session
+  const handleDeleteSession = async (dateKey: string) => {
+    const sessionDate = new Date(dateKey + 'T00:00:00');
+    const session = recordsByDate[dateKey];
+    
+    setDeletingDate(dateKey);
+    try {
+      await deleteRecordSession(currentClassroom.id, sessionDate);
+      
+      // Refresh sessions from database
+      const updatedSessions = await getRecordSessions(currentClassroom.id);
+      setRecordSessions(updatedSessions);
+      
+      // If deleted date was selected, move to another date or today
+      if (format(selectedDate, 'yyyy-MM-dd') === dateKey) {
+        const remainingDates = Object.keys(recordsByDate).filter(d => d !== dateKey);
+        if (remainingDates.length > 0) {
+          setSelectedDate(new Date(remainingDates[0] + 'T00:00:00'));
+        } else {
+          setSelectedDate(new Date());
+        }
+      }
+      
+      toast({
+        title: "기록 세션 삭제 완료",
+        description: `${format(sessionDate, "M월 d일", { locale: ko })} 기록 세션이 삭제되었습니다.`,
+      });
+    } catch (error) {
+      console.error('기록 세션 삭제 실패:', error);
+      toast({
+        title: "삭제 실패",
+        description: "기록 세션 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingDate(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Date Selector */}
@@ -215,20 +266,61 @@ const RecordDateManager = () => {
               {availableDates.map(dateKey => {
                 const session = recordsByDate[dateKey];
                 const isSelected = format(selectedDate, 'yyyy-MM-dd') === dateKey;
+                const isDeleting = deletingDate === dateKey;
                 
                 return (
                   <Card 
                     key={dateKey}
                     className={cn(
-                      "cursor-pointer transition-all hover:shadow-md",
+                      "cursor-pointer transition-all hover:shadow-md relative group",
                       isSelected && "ring-2 ring-primary bg-primary/5"
                     )}
                     onClick={() => setSelectedDate(new Date(dateKey + 'T00:00:00'))}
                   >
                     <CardContent className="p-4">
                       <div className="space-y-2">
-                        <div className="font-medium">
-                          {format(session.date, "M월 d일 (E)", { locale: ko })}
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">
+                            {format(session.date, "M월 d일 (E)", { locale: ko })}
+                          </div>
+                          {/* Delete Button - Visible on Hover */}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 h-auto text-destructive hover:text-destructive hover:bg-destructive/10"
+                                onClick={(e) => e.stopPropagation()}
+                                disabled={isDeleting}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>기록 세션 삭제</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {format(session.date, "yyyy년 M월 d일", { locale: ko })} 기록 세션을 삭제하시겠습니까?
+                                  <br />
+                                  <span className="text-destructive font-medium">
+                                    이 날짜의 모든 기록 ({session.records.length}개)이 함께 삭제됩니다.
+                                  </span>
+                                  <br />
+                                  이 작업은 되돌릴 수 없습니다.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>취소</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleDeleteSession(dateKey)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  disabled={isDeleting}
+                                >
+                                  {isDeleting ? "삭제 중..." : "삭제"}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </div>
                         <div className="flex items-center gap-4 text-sm text-muted-foreground">
                           <div className="flex items-center gap-1">
