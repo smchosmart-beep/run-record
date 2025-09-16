@@ -489,51 +489,56 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
 
         {/* Table */}
         <div className="overflow-auto max-h-[60vh]">
-          <Table>
-            <TableHeader className="sticky top-0 bg-background z-10">
-              <TableRow>
-                <TableHead className="w-12 bg-muted/50 sticky left-0 z-20 border-r">번호</TableHead>
-                <TableHead className="w-28 bg-muted/50 sticky left-12 z-20 border-r">이름</TableHead>
-                <TableHead 
-                  className="w-24 bg-muted/50 sticky left-40 z-20 border-r cursor-pointer hover:bg-muted transition-colors"
-                  onClick={handleSortToggle}
-                >
-                  <div className="flex items-center justify-center gap-1">
-                    <span>오늘 {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'} 기록</span>
-                    {sortOrder === 'asc' && <ChevronUp className="h-3 w-3" />}
-                    {sortOrder === 'desc' && <ChevronDown className="h-3 w-3" />}
-                  </div>
-                </TableHead>
-                {Array.from({ length: maxSlots }, (_, i) => (
-                  <TableHead key={i} className="w-20 text-center">
-                    {i + 1}회차
+          <div style={{ minWidth: '600px' }}>
+            <Table>
+              <TableHeader className="sticky top-0 bg-background z-10">
+                <TableRow>
+                  <TableHead className="w-12 min-w-12 bg-muted/50 sticky left-0 z-30 border-r">번호</TableHead>
+                  <TableHead className="w-28 min-w-28 bg-muted/50 sticky left-12 z-25 border-r">이름</TableHead>
+                  <TableHead 
+                    className="w-24 min-w-24 bg-muted/50 sticky left-40 sm:left-40 z-20 border-r cursor-pointer hover:bg-muted transition-colors"
+                    onClick={handleSortToggle}
+                    style={{ left: 'calc(3rem + 7rem)' }}
+                  >
+                    <div className="flex items-center justify-center gap-1">
+                      <span className="text-xs sm:text-sm">오늘 {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'} 기록</span>
+                      {sortOrder === 'asc' && <ChevronUp className="h-3 w-3" />}
+                      {sortOrder === 'desc' && <ChevronDown className="h-3 w-3" />}
+                    </div>
                   </TableHead>
-                ))}
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {activeStudents.map((student) => (
-                <TableRow key={student.id} className="hover:bg-muted/50">
-                  <TableCell className="font-medium bg-muted/20 sticky left-0 z-10 border-r">
-                    <Badge variant="outline">{student.number}</Badge>
-                  </TableCell>
-                  <TableCell className="font-medium bg-muted/20 sticky left-12 z-10 border-r">
-                    {student.name}
-                  </TableCell>
-                  <TableCell className="font-bold bg-muted/20 sticky left-40 z-10 border-r text-center">
-                     {(() => {
-                       const dailyRecords = dateRecords[student.id] || [];
-                       const dailyBest = calculateDailyBestForRanking(dailyRecords, currentClassroom.rankingType || 'fastest');
-                      
-                      if (dailyBest === null) {
-                        // Check if there are any DNF records
-                        const hasDNF = dailyRecords.some(r => r.isDNF);
-                        return hasDNF ? 'DNF' : '-';
-                      }
-                      
-                      return formatTime(dailyBest);
-                    })()}
-                  </TableCell>
+                  {Array.from({ length: maxSlots }, (_, i) => (
+                    <TableHead key={i} className="w-20 text-center">
+                      {i + 1}회차
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {activeStudents.map((student) => (
+                  <TableRow key={student.id} className="hover:bg-muted/50">
+                    <TableCell className="font-medium bg-muted/20 sticky left-0 z-30 border-r">
+                      <Badge variant="outline">{student.number}</Badge>
+                    </TableCell>
+                    <TableCell className="font-medium bg-muted/20 sticky left-12 z-25 border-r">
+                      {student.name}
+                    </TableCell>
+                    <TableCell 
+                      className="font-bold bg-muted/20 sticky z-20 border-r text-center"
+                      style={{ left: 'calc(3rem + 7rem)' }}
+                    >
+                       {(() => {
+                         const dailyRecords = dateRecords[student.id] || [];
+                         const dailyBest = calculateDailyBestForRanking(dailyRecords, currentClassroom.rankingType || 'fastest');
+                        
+                        if (dailyBest === null) {
+                          // Check if there are any DNF records
+                          const hasDNF = dailyRecords.some(r => r.isDNF);
+                          return hasDNF ? 'DNF' : '-';
+                        }
+                        
+                        return formatTime(dailyBest);
+                      })()}
+                    </TableCell>
                   {Array.from({ length: maxSlots }, (_, slotIndex) => {
                     const existingRecord = getExistingRecord(student, slotIndex);
                     const key = getInputKey(student.id, slotIndex);
@@ -589,9 +594,10 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
                     );
                   })}
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
 
         {activeStudents.length === 0 && (
