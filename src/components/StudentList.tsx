@@ -431,21 +431,8 @@ const StudentList = () => {
     .map(id => students.find(s => s.id === id))
     .filter(Boolean) as Student[];
   return <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h3 className="text-2xl font-bold text-foreground whitespace-nowrap [writing-mode:horizontal-tb]">학생 명단</h3>
-          <p className="text-muted-foreground">
-            총 {students.filter(s => !s.isHidden).length}명의 활성 학생
-            {selectedStudents.size > 0 && (
-              <span className="ml-2 text-primary font-medium">
-                ({selectedStudents.size}명 선택됨)
-              </span>
-            )}
-          </p>
-        </div>
-        
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mb-4">
           {/* Stopwatch Button */}
           {selectedStudents.size > 0 && (
             <Button
@@ -512,7 +499,6 @@ const StudentList = () => {
             </Button>
           )}
         </div>
-      </div>
 
       {/* Add Student Form */}
       {showAddForm && (
