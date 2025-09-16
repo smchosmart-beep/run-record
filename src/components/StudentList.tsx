@@ -13,6 +13,28 @@ import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, RotateCcw } from 'lucide-r
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 import StudentChart from './StudentChart';
+
+const calculateClassTimeRange = (students: Student[]): [number, number] | null => {
+  let minTime = Infinity;
+  let maxTime = -Infinity;
+  
+  students.forEach(student => {
+    student.records.forEach(record => {
+      if (record.time !== null && !record.isDNF) {
+        minTime = Math.min(minTime, record.time);
+        maxTime = Math.max(maxTime, record.time);
+      }
+    });
+  });
+  
+  if (minTime === Infinity) return null;
+  
+  // 5% 여백 추가
+  const range = maxTime - minTime;
+  const padding = Math.max(range * 0.05, 500); // 최소 0.5초 여백
+  
+  return [minTime - padding, maxTime + padding];
+};
 const StudentList = () => {
   const { currentClassroom, updateClassroom, currentMode, refreshClassrooms, setMode } = useApp();
   const {
@@ -30,6 +52,7 @@ const StudentList = () => {
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   if (!currentClassroom) return null;
   const students = [...currentClassroom.students].sort((a, b) => a.number - b.number);
+  const classTimeRange = calculateClassTimeRange(students);
   const handleEditStart = (student: Student) => {
     if (currentMode !== 'input') return;
     setEditingStudent(student.id);
@@ -516,7 +539,7 @@ const StudentList = () => {
                 <CardContent className="pt-0">
                   <div className="space-y-2">
                     <p className="text-sm font-medium text-muted-foreground">날짜별 최고기록</p>
-                    <StudentChart student={student} />
+                    <StudentChart student={student} yAxisDomain={classTimeRange} />
                   </div>
                 </CardContent>
               </div>

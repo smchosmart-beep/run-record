@@ -7,6 +7,7 @@ import { format } from 'date-fns';
 
 interface StudentChartProps {
   student: Student;
+  yAxisDomain?: [number, number] | null;
 }
 
 interface ChartData {
@@ -16,7 +17,7 @@ interface ChartData {
   formattedTime: string;
 }
 
-const StudentChart: React.FC<StudentChartProps> = ({ student }) => {
+const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => {
   const chartData = useMemo(() => {
     // 날짜별로 기록 그룹화
     const recordsByDate = new Map<string, typeof student.records>();
@@ -83,7 +84,7 @@ const StudentChart: React.FC<StudentChartProps> = ({ student }) => {
             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
           />
           <YAxis 
-            domain={['dataMin', 'dataMax']}
+            domain={yAxisDomain || ['dataMin', 'dataMax']}
             axisLine={false}
             tickLine={false}
             tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))' }}
