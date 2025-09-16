@@ -351,11 +351,11 @@ const RecordDateManager = () => {
             <div className="space-y-4">
               <div className="text-6xl opacity-20">📅</div>
               <div>
-                <h4 className="text-lg font-medium text-muted-foreground">
+                <h4 className="text-sm font-medium text-muted-foreground">
                   {format(selectedDate, "yyyy년 M월 d일", { locale: ko })} 기록이 없습니다
                 </h4>
                 <p className="text-sm text-muted-foreground mt-2">
-                  새 기록 세션을 만들어 기록을 입력해보세요.
+                  날짜를 추가하여 기록을 입력하세요
                 </p>
               </div>
               <Button onClick={createNewSession} disabled={loading}>
