@@ -445,7 +445,7 @@ const StudentList = () => {
           </p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
           {/* Stopwatch Button */}
           {selectedStudents.size > 0 && (
             <Button
@@ -455,7 +455,8 @@ const StudentList = () => {
               className="bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Timer className="h-4 w-4 mr-2" />
-              스톱워치 ({selectedStudents.size}명)
+              <span className="hidden sm:inline">스톱워치 ({selectedStudents.size}명)</span>
+              <span className="sm:hidden">스톱워치 ({selectedStudents.size})</span>
             </Button>
           )}
 
@@ -468,7 +469,12 @@ const StudentList = () => {
               className="border-2 border-primary text-primary hover:bg-primary/10"
             >
               <CheckSquare className="h-4 w-4 mr-2" />
-              {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '전체 해제' : '전체 선택'}
+              <span className="hidden sm:inline">
+                {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '전체 해제' : '전체 선택'}
+              </span>
+              <span className="sm:hidden">
+                {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '해제' : '전체선택'}
+              </span>
             </Button>
           )}
           
@@ -486,12 +492,14 @@ const StudentList = () => {
             {currentMode === 'view' ? (
               <>
                 <Edit className="h-4 w-4 mr-2" />
-                입력 모드로 전환
+                <span className="hidden sm:inline">입력 모드로 전환</span>
+                <span className="sm:hidden">입력모드</span>
               </>
             ) : (
               <>
                 <Eye className="h-4 w-4 mr-2" />
-                보기 모드로 전환
+                <span className="hidden sm:inline">보기 모드로 전환</span>
+                <span className="sm:hidden">보기모드</span>
               </>
             )}
           </Button>
@@ -499,7 +507,8 @@ const StudentList = () => {
           {currentMode === 'input' && (
             <Button onClick={handleAddStudent} className="flex items-center space-x-2">
               <Plus className="h-4 w-4" />
-              <span>학생 추가</span>
+              <span className="hidden sm:inline">학생 추가</span>
+              <span className="sm:hidden">추가</span>
             </Button>
           )}
         </div>
