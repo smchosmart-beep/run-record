@@ -548,24 +548,14 @@ export async function upsertRecordSession(classroomId: string, sessionDate: Date
 }
 
 export async function updateRecordSessionSlots(classroomId: string, sessionDate: Date, slotsCount: number) {
-  console.log('📡 기록 세션 회차 업데이트:', {
+  console.log('📡 기록 세션 회차 업서트(보장) 실행:', {
     classroomId,
     sessionDate: toYMD(sessionDate),
     slotsCount
   });
-  
-  const { error } = await supabase
-    .from('record_sessions')
-    .update({ slots_count: slotsCount })
-    .eq('classroom_id', classroomId)
-    .eq('session_date', toYMD(sessionDate));
-
-  if (error) {
-    console.error('❌ 기록 세션 회차 업데이트 실패:', error);
-    throw error;
-  }
-
-  console.log('✅ 기록 세션 회차 업데이트 완료');
+  const res = await upsertRecordSession(classroomId, sessionDate, slotsCount);
+  console.log('✅ 기록 세션 회차 업서트 완료');
+  return res;
 }
 
 export async function getUserProfile() {

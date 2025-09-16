@@ -23,7 +23,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { updateRecordSessionSlots } from '@/utils/supabaseApi';
+import { updateRecordSessionSlots, upsertRecordSession } from '@/utils/supabaseApi';
 
 interface RecordSessionProps {
   session: RecordSessionType;
@@ -41,6 +41,12 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
   if (!currentClassroom) return null;
+
+  useEffect(() => {
+    if (!currentClassroom) return;
+    upsertRecordSession(currentClassroom.id, selectedDate, session.maxSlots)
+      .catch((err) => console.error('세션 보장(upsert) 실패:', err));
+  }, [currentClassroom?.id, selectedDate, session.maxSlots]);
 
   const allActiveStudents = currentClassroom.students
     .filter(s => !s.isHidden);
