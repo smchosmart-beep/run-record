@@ -24,8 +24,8 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
     s.records.some(r => r.time !== null && !r.isDNF)
   );
   
-  const { byPersonalBest } = calculateClassRankings(activeStudents);
-  const { time: bestTime, holders } = getClassBestRecord(activeStudents);
+  const { byPersonalBest } = calculateClassRankings(activeStudents, classroom.rankingType || 'fastest');
+  const { time: bestTime, holders } = getClassBestRecord(activeStudents, classroom.rankingType || 'fastest');
   
   const totalRecords = activeStudents.reduce((sum, s) => 
     sum + s.records.filter(r => r.time !== null && !r.isDNF).length, 0
@@ -141,7 +141,9 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
 
         {bestTime && holders.length > 0 && (
           <div className="bg-muted/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">최고 기록</p>
+            <p className="text-xs text-muted-foreground mb-1">
+              {classroom.rankingType === 'slowest' ? '최장 기록' : '최고 기록'}
+            </p>
             <p className="font-bold text-lg text-gold">
               {formatTime(bestTime)}
             </p>
