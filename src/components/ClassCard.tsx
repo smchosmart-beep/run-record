@@ -44,21 +44,21 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center gap-2">
-            <div>
-              <CardTitle className="text-lg">
+      <CardHeader className="py-5 px-6">
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-lg truncate">
                 {classroom.school}
               </CardTitle>
-              <CardDescription className="text-base font-medium">
+              <CardDescription className="text-base font-medium truncate">
                 {classroom.grade}학년 {classroom.className}
               </CardDescription>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
               aria-label="학급 정보 수정"
               onClick={(e) => {
                 e.stopPropagation();
@@ -68,7 +68,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
               <Edit className="h-3 w-3" />
             </Button>
           </div>
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3 flex-shrink-0">
             <div className="text-right">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="h-3 w-3 mr-1" />
