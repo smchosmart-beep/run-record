@@ -564,65 +564,71 @@ const StudentList = () => {
                           </div>
                         )}
                        
-                       <div className="flex-1">
-                         <div className="flex items-center space-x-2 mb-2">
-                          {isEditingNumber ? (
-                            <div className="flex items-center space-x-1">
-                              <Input 
-                                type="number" 
-                                value={editNumber} 
-                                onChange={e => setEditNumber(e.target.value)}
-                                onKeyDown={e => {
-                                  if (e.key === 'Enter') handleNumberEditSave(student.id);
-                                  if (e.key === 'Escape') handleNumberEditCancel();
-                                }}
-                                className="w-16 h-6 text-xs px-1"
-                                autoFocus
-                              />
-                              <Button 
-                                size="sm" 
-                                variant="success" 
-                                onClick={() => handleNumberEditSave(student.id)}
-                                className="h-6 px-2 text-xs"
-                              >
-                                저장
-                              </Button>
-                              <Button 
-                                size="sm" 
-                                variant="outline" 
-                                onClick={handleNumberEditCancel}
-                                className="h-6 px-2 text-xs"
-                              >
-                                취소
-                              </Button>
-                            </div>
-                          ) : (
-                            <Badge 
-                              variant="outline" 
-                              className="text-xs"
-                            >
-                              {student.number}번
-                            </Badge>
-                          )}
-                          {student.isHidden && <Badge variant="secondary" className="text-xs">
-                              숨김
-                            </Badge>}
-                        </div>
-                        
-                        {isEditing ? <div className="space-y-2">
-                            <Input value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => {
-                        if (e.key === 'Enter') handleEditSave(student.id);
-                        if (e.key === 'Escape') handleEditCancel();
-                      }} className="text-lg font-semibold" autoFocus />
-                            <div className="flex space-x-2">
-                              <Button size="sm" variant="success" onClick={() => handleEditSave(student.id)}>
-                                저장
-                              </Button>
-                              <Button size="sm" variant="outline" onClick={handleEditCancel}>
-                                취소
-                              </Button>
-                            </div>
-                          </div> : <CardTitle className="text-lg">{student.name}</CardTitle>}
+                        <div className="flex-1">
+                          {/* Number and Name on same line */}
+                          <div className="flex items-center space-x-2 mb-2">
+                           {isEditingNumber ? (
+                             <div className="flex items-center space-x-1">
+                               <Input 
+                                 type="number" 
+                                 value={editNumber} 
+                                 onChange={e => setEditNumber(e.target.value)}
+                                 onKeyDown={e => {
+                                   if (e.key === 'Enter') handleNumberEditSave(student.id);
+                                   if (e.key === 'Escape') handleNumberEditCancel();
+                                 }}
+                                 className="w-16 h-6 text-xs px-1"
+                                 autoFocus
+                               />
+                               <Button 
+                                 size="sm" 
+                                 variant="success" 
+                                 onClick={() => handleNumberEditSave(student.id)}
+                                 className="h-6 px-2 text-xs"
+                               >
+                                 저장
+                               </Button>
+                               <Button 
+                                 size="sm" 
+                                 variant="outline" 
+                                 onClick={handleNumberEditCancel}
+                                 className="h-6 px-2 text-xs"
+                               >
+                                 취소
+                               </Button>
+                             </div>
+                           ) : (
+                             <div className="flex items-center space-x-2">
+                               <Badge 
+                                 variant="outline" 
+                                 className="text-xs flex-shrink-0"
+                               >
+                                 {student.number}번
+                               </Badge>
+                               {isEditing ? (
+                                 <div className="space-y-2 flex-1">
+                                   <Input value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => {
+                                     if (e.key === 'Enter') handleEditSave(student.id);
+                                     if (e.key === 'Escape') handleEditCancel();
+                                   }} className="text-sm font-semibold" autoFocus />
+                                   <div className="flex space-x-2">
+                                     <Button size="sm" variant="success" onClick={() => handleEditSave(student.id)}>
+                                       저장
+                                     </Button>
+                                     <Button size="sm" variant="outline" onClick={handleEditCancel}>
+                                       취소
+                                     </Button>
+                                   </div>
+                                 </div>
+                               ) : (
+                                 <h3 className="text-sm font-semibold">{student.name}</h3>
+                               )}
+                             </div>
+                           )}
+                           {student.isHidden && <Badge variant="secondary" className="text-xs">
+                               숨김
+                             </Badge>}
+                         </div>
                       </div>
                       
                       {currentMode === 'input' && !isEditing && !isEditingNumber && <div className="flex space-x-1">
@@ -643,28 +649,16 @@ const StudentList = () => {
                   </CardHeader>
                   
                   <CardContent className="pt-0">
-                    <div className="space-y-3">
-                      {/* Statistics */}
-                      <div className="grid grid-cols-2 gap-3 text-sm">
-                        <div className="text-center p-2 bg-muted/50 rounded">
-                          <p className="text-xs text-muted-foreground">최고 기록</p>
-                          <p className="font-bold text-primary">
-                            {stats.personalBest ? formatTime(stats.personalBest) : '--'}
-                          </p>
-                        </div>
-                        <div className="text-center p-2 bg-muted/50 rounded">
-                          <p className="text-xs text-muted-foreground">평균 기록</p>
-                          <p className="font-bold text-secondary">
-                            {stats.averageTime ? formatTime(stats.averageTime) : '--'}
-                          </p>
-                        </div>
-                      </div>
-                      
-                      {/* Record count */}
-                      <div className="text-center">
-                        <p className="text-sm text-muted-foreground">
-                          유효 기록: <span className="font-semibold">{stats.validRecordsCount}</span>개
-                        </p>
+                    <div className="space-y-2">
+                      {/* Statistics - Single Line */}
+                      <div className="text-center text-sm bg-muted/50 rounded p-2">
+                        <span className="font-bold text-primary">
+                          최고: {stats.personalBest ? formatTime(stats.personalBest) : '--'}
+                        </span>
+                        <span className="mx-2 text-muted-foreground">|</span>
+                        <span className="font-bold text-secondary">
+                          평균: {stats.averageTime ? formatTime(stats.averageTime) : '--'}
+                        </span>
                       </div>
 
                       {/* Recent records */}
