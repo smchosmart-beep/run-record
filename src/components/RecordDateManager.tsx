@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -11,19 +11,38 @@ import { ko } from 'date-fns/locale';
 import { Calendar as CalendarIcon, Plus, Clock, Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordSession } from '@/types';
+import { getRecordSessions, upsertRecordSession } from '@/utils/supabaseApi';
+import { useToast } from '@/hooks/use-toast';
 
 const RecordDateManager = () => {
   const { currentClassroom } = useApp();
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
-  const [createdSessions, setCreatedSessions] = useState<{ [date: string]: RecordSession }>({});
+  const [recordSessions, setRecordSessions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   if (!currentClassroom) return null;
 
-  // Group records by date and merge with created sessions
+  // Fetch record sessions from database
+  useEffect(() => {
+    const fetchSessions = async () => {
+      try {
+        const sessions = await getRecordSessions(currentClassroom.id);
+        setRecordSessions(sessions);
+      } catch (error) {
+        console.error('기록 세션 조회 실패:', error);
+      }
+    };
+
+    fetchSessions();
+  }, [currentClassroom.id]);
+
+  // Group records by date and merge with database sessions
   const recordsByDate = useMemo(() => {
     const grouped: { [date: string]: RecordSession } = {};
     
+    // First, add records from students
     currentClassroom.students.forEach(student => {
       student.records.forEach(record => {
         const dateKey = format(record.recordDate, 'yyyy-MM-dd');
@@ -46,7 +65,7 @@ const RecordDateManager = () => {
       });
     });
 
-    // Calculate student count for each date
+    // Calculate student count for each date with records
     Object.keys(grouped).forEach(dateKey => {
       const studentIds = new Set(grouped[dateKey].records.map(r => 
         currentClassroom.students.find(s => s.records.some(sr => sr.id === r.id))?.id
@@ -54,9 +73,31 @@ const RecordDateManager = () => {
       grouped[dateKey].studentCount = studentIds.size;
     });
 
-    // Merge with created sessions
-    return { ...grouped, ...createdSessions };
-  }, [currentClassroom, createdSessions]);
+    // Merge with database record sessions (including empty ones)
+    recordSessions.forEach(session => {
+      const dateKey = session.session_date;
+      const sessionDate = new Date(session.session_date + 'T00:00:00');
+      
+      if (grouped[dateKey]) {
+        // Update maxSlots from database if it's higher
+        grouped[dateKey].maxSlots = Math.max(
+          grouped[dateKey].maxSlots,
+          session.slots_count
+        );
+      } else {
+        // Create session entry for dates with no records but have sessions
+        grouped[dateKey] = {
+          id: `session-${dateKey}`,
+          date: sessionDate,
+          maxSlots: session.slots_count,
+          records: [],
+          studentCount: 0
+        };
+      }
+    });
+
+    return grouped;
+  }, [currentClassroom, recordSessions]);
 
   // Get available dates (dates with records)
   const availableDates = useMemo(() => {
@@ -70,7 +111,7 @@ const RecordDateManager = () => {
   }, [selectedDate, recordsByDate]);
 
   // Create new session for selected date
-  const createNewSession = () => {
+  const createNewSession = async () => {
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
     
     if (recordsByDate[dateKey]) {
@@ -78,20 +119,29 @@ const RecordDateManager = () => {
       return;
     }
 
-    // Create a new empty session
-    const newSession: RecordSession = {
-      id: `session-${dateKey}`,
-      date: startOfDay(selectedDate),
-      maxSlots: currentClassroom.maxRecordSlots,
-      records: [],
-      studentCount: 0
-    };
-
-    // Add to created sessions
-    setCreatedSessions(prev => ({
-      ...prev,
-      [dateKey]: newSession
-    }));
+    setLoading(true);
+    try {
+      // Create session in database
+      await upsertRecordSession(currentClassroom.id, selectedDate, currentClassroom.maxRecordSlots);
+      
+      // Refresh sessions from database
+      const updatedSessions = await getRecordSessions(currentClassroom.id);
+      setRecordSessions(updatedSessions);
+      
+      toast({
+        title: "기록 세션 생성 완료",
+        description: `${format(selectedDate, "M월 d일", { locale: ko })} 기록 세션이 생성되었습니다.`,
+      });
+    } catch (error) {
+      console.error('기록 세션 생성 실패:', error);
+      toast({
+        title: "생성 실패",
+        description: "기록 세션 생성 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -143,9 +193,9 @@ const RecordDateManager = () => {
 
           {/* Create New Session Button */}
           {!currentSession && (
-            <Button onClick={createNewSession}>
+            <Button onClick={createNewSession} disabled={loading}>
               <Plus className="h-4 w-4 mr-2" />
-              새 기록 세션
+              {loading ? "생성 중..." : "새 기록 세션"}
             </Button>
           )}
         </div>
@@ -221,9 +271,9 @@ const RecordDateManager = () => {
                   새 기록 세션을 만들어 기록을 입력해보세요.
                 </p>
               </div>
-              <Button onClick={createNewSession}>
+              <Button onClick={createNewSession} disabled={loading}>
                 <Plus className="h-4 w-4 mr-2" />
-                새 기록 세션 만들기
+                {loading ? "생성 중..." : "새 기록 세션 만들기"}
               </Button>
             </div>
           </CardContent>

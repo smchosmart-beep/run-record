@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +7,7 @@ import { useApp } from '@/contexts/AppContext';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { Calendar, Clock, Users, AlertTriangle } from 'lucide-react';
+import { getRecordSessions } from '@/utils/supabaseApi';
 
 interface DateSlotSelectorProps {
   open: boolean;
@@ -24,13 +25,31 @@ const DateSlotSelector: React.FC<DateSlotSelectorProps> = ({
   const { currentClassroom } = useApp();
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null);
+  const [recordSessions, setRecordSessions] = useState<any[]>([]);
 
   if (!currentClassroom) return null;
 
-  // Group records by date and calculate available slots
+  // Fetch record sessions from database
+  useEffect(() => {
+    const fetchSessions = async () => {
+      if (!open || !currentClassroom) return;
+      
+      try {
+        const sessions = await getRecordSessions(currentClassroom.id);
+        setRecordSessions(sessions);
+      } catch (error) {
+        console.error('기록 세션 조회 실패:', error);
+      }
+    };
+
+    fetchSessions();
+  }, [open, currentClassroom]);
+
+  // Group records by date and merge with database sessions
   const recordsByDate = useMemo(() => {
     const grouped: { [dateKey: string]: { date: Date; maxSlots: number; records: any[] } } = {};
     
+    // First, add records from students
     currentClassroom.students.forEach(student => {
       student.records.forEach(record => {
         const dateKey = format(record.recordDate, 'yyyy-MM-dd');
@@ -51,8 +70,29 @@ const DateSlotSelector: React.FC<DateSlotSelectorProps> = ({
       });
     });
 
+    // Merge with database record sessions (including empty ones)
+    recordSessions.forEach(session => {
+      const dateKey = session.session_date;
+      const sessionDate = new Date(session.session_date + 'T00:00:00');
+      
+      if (grouped[dateKey]) {
+        // Update maxSlots from database if it's higher
+        grouped[dateKey].maxSlots = Math.max(
+          grouped[dateKey].maxSlots,
+          session.slots_count
+        );
+      } else {
+        // Create session entry for dates with no records but have sessions
+        grouped[dateKey] = {
+          date: sessionDate,
+          maxSlots: session.slots_count,
+          records: []
+        };
+      }
+    });
+
     return grouped;
-  }, [currentClassroom]);
+  }, [currentClassroom, recordSessions]);
 
   const availableDates = Object.keys(recordsByDate).sort((a, b) => b.localeCompare(a));
 

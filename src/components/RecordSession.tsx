@@ -23,6 +23,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
+import { updateRecordSessionSlots } from '@/utils/supabaseApi';
 
 interface RecordSessionProps {
   session: RecordSessionType;
@@ -270,7 +271,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
     setInputValues(prev => ({ ...prev, [key]: '' }));
   };
 
-  const addRecordSlot = () => {
+  const addRecordSlot = async () => {
     if (maxSlots >= 15) {
       toast({
         title: "최대 회차 제한",
@@ -280,15 +281,29 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
       return;
     }
 
-    setMaxSlots(prev => prev + 1);
+    const newSlotCount = maxSlots + 1;
     
-    toast({
-      title: "회차 추가 완료",
-      description: `${maxSlots + 1}회차가 추가되었습니다.`,
-    });
+    try {
+      // Update session in database
+      await updateRecordSessionSlots(currentClassroom.id, selectedDate, newSlotCount);
+      
+      setMaxSlots(newSlotCount);
+      
+      toast({
+        title: "회차 추가 완료",
+        description: `${newSlotCount}회차가 추가되었습니다.`,
+      });
+    } catch (error) {
+      console.error('회차 추가 실패:', error);
+      toast({
+        title: "추가 실패",
+        description: "회차 추가 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const deleteLastRecordSlot = () => {
+  const deleteLastRecordSlot = async () => {
     if (maxSlots <= 1) {
       toast({
         title: "삭제 불가",
@@ -299,32 +314,46 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
     }
 
     const lastSlotIndex = maxSlots - 1;
+    const newSlotCount = maxSlots - 1;
     
-    // Count records that will be deleted for this date
-    const recordsToDelete = activeStudents.reduce((count, student) => {
-      return count + dateRecords[student.id]?.filter(r => r.slotIndex === lastSlotIndex).length || 0;
-    }, 0);
+    try {
+      // Count records that will be deleted for this date
+      const recordsToDelete = activeStudents.reduce((count, student) => {
+        return count + dateRecords[student.id]?.filter(r => r.slotIndex === lastSlotIndex).length || 0;
+      }, 0);
 
-    // Remove all records from the last slot for this date only
-    const updatedStudents = currentClassroom.students.map(student => ({
-      ...student,
-      records: student.records.filter(r => 
-        !(r.slotIndex === lastSlotIndex && isSameDay(r.recordDate, selectedDate))
-      )
-    }));
+      // Remove all records from the last slot for this date only
+      const updatedStudents = currentClassroom.students.map(student => ({
+        ...student,
+        records: student.records.filter(r => 
+          !(r.slotIndex === lastSlotIndex && isSameDay(r.recordDate, selectedDate))
+        )
+      }));
 
-    updateClassroom(currentClassroom.id, {
-      students: updatedStudents,
-    });
+      // Update classroom records
+      await updateClassroom(currentClassroom.id, {
+        students: updatedStudents,
+      });
 
-    setMaxSlots(prev => prev - 1);
+      // Update session in database
+      await updateRecordSessionSlots(currentClassroom.id, selectedDate, newSlotCount);
 
-    toast({
-      title: "회차 삭제 완료",
-      description: `${maxSlots}회차와 관련 기록 ${recordsToDelete}개가 삭제되었습니다.`,
-    });
+      setMaxSlots(newSlotCount);
 
-    setShowDeleteDialog(false);
+      toast({
+        title: "회차 삭제 완료",
+        description: `${maxSlots}회차와 관련 기록 ${recordsToDelete}개가 삭제되었습니다.`,
+      });
+
+      setShowDeleteDialog(false);
+    } catch (error) {
+      console.error('회차 삭제 실패:', error);
+      toast({
+        title: "삭제 실패",
+        description: "회차 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleSortToggle = () => {

@@ -495,6 +495,78 @@ export async function updateStudentRecords(studentId: string, records: Record[])
   }
 }
 
+// Record Sessions API Functions
+export async function getRecordSessions(classroomId: string) {
+  console.log('📡 기록 세션 목록 요청:', classroomId);
+  
+  const { data: sessions, error } = await withTimeout(
+    Promise.resolve(
+      supabase
+        .from('record_sessions')
+        .select('*')
+        .eq('classroom_id', classroomId)
+        .order('session_date', { ascending: false })
+    )
+  );
+
+  if (error) {
+    console.error('❌ 기록 세션 조회 실패:', error);
+    throw error;
+  }
+
+  console.log('✅ 기록 세션 조회 완료:', sessions?.length || 0, '개');
+  return sessions || [];
+}
+
+export async function upsertRecordSession(classroomId: string, sessionDate: Date, slotsCount: number) {
+  console.log('📡 기록 세션 생성/업데이트:', {
+    classroomId,
+    sessionDate: sessionDate.toISOString().split('T')[0],
+    slotsCount
+  });
+  
+  const { data: session, error } = await supabase
+    .from('record_sessions')
+    .upsert({
+      classroom_id: classroomId,
+      session_date: sessionDate.toISOString().split('T')[0],
+      slots_count: slotsCount
+    }, {
+      onConflict: 'classroom_id,session_date'
+    })
+    .select()
+    .single();
+
+  if (error) {
+    console.error('❌ 기록 세션 저장 실패:', error);
+    throw error;
+  }
+
+  console.log('✅ 기록 세션 저장 완료:', session);
+  return session;
+}
+
+export async function updateRecordSessionSlots(classroomId: string, sessionDate: Date, slotsCount: number) {
+  console.log('📡 기록 세션 회차 업데이트:', {
+    classroomId,
+    sessionDate: sessionDate.toISOString().split('T')[0],
+    slotsCount
+  });
+  
+  const { error } = await supabase
+    .from('record_sessions')
+    .update({ slots_count: slotsCount })
+    .eq('classroom_id', classroomId)
+    .eq('session_date', sessionDate.toISOString().split('T')[0]);
+
+  if (error) {
+    console.error('❌ 기록 세션 회차 업데이트 실패:', error);
+    throw error;
+  }
+
+  console.log('✅ 기록 세션 회차 업데이트 완료');
+}
+
 export async function getUserProfile() {
   const { data: user } = await supabase.auth.getUser();
   if (!user.user) {
