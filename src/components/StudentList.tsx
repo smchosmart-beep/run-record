@@ -3,16 +3,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useApp } from '@/contexts/AppContext';
-import { Student } from '@/types';
+import { Student, Record } from '@/types';
 import { calculateStudentStats } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, RotateCcw } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, RotateCcw, Timer, CheckSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 import StudentChart from './StudentChart';
+import DateSlotSelector from './DateSlotSelector';
+import Stopwatch from './Stopwatch';
+import RecordAssignment from './RecordAssignment';
 
 const calculateClassTimeRange = (students: Student[]): [number, number] | null => {
   let minTime = Infinity;
@@ -50,6 +54,14 @@ const StudentList = () => {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
   const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
+  
+  // Stopwatch related states
+  const [selectedStudents, setSelectedStudents] = useState<Set<string>>(new Set());
+  const [showDateSelector, setShowDateSelector] = useState(false);
+  const [showStopwatch, setShowStopwatch] = useState(false);
+  const [showRecordAssignment, setShowRecordAssignment] = useState(false);
+  const [selectedDateSlot, setSelectedDateSlot] = useState<{ date: Date; slotIndex: number } | null>(null);
+  const [recordedTimes, setRecordedTimes] = useState<number[]>([]);
   if (!currentClassroom) return null;
   const students = [...currentClassroom.students].sort((a, b) => a.number - b.number);
   const classTimeRange = calculateClassTimeRange(students);
@@ -292,6 +304,132 @@ const StudentList = () => {
       return newSet;
     });
   };
+
+  // Stopwatch handlers
+  const handleStudentSelect = (studentId: string, checked: boolean) => {
+    setSelectedStudents(prev => {
+      const newSet = new Set(prev);
+      if (checked) {
+        newSet.add(studentId);
+      } else {
+        newSet.delete(studentId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleSelectAll = () => {
+    const visibleStudents = students.filter(s => !s.isHidden);
+    const allSelected = visibleStudents.every(s => selectedStudents.has(s.id));
+    
+    if (allSelected) {
+      setSelectedStudents(new Set());
+    } else {
+      setSelectedStudents(new Set(visibleStudents.map(s => s.id)));
+    }
+  };
+
+  const handleStartStopwatch = () => {
+    if (selectedStudents.size === 0) {
+      toast({
+        title: "학생 선택 필요",
+        description: "기록을 측정할 학생을 먼저 선택해주세요.",
+        variant: "destructive"
+      });
+      return;
+    }
+    setShowDateSelector(true);
+  };
+
+  const handleDateSlotSelect = (date: Date, slotIndex: number) => {
+    setSelectedDateSlot({ date, slotIndex });
+    setShowDateSelector(false);
+    setShowStopwatch(true);
+  };
+
+  const handleStopwatchComplete = (times: number[]) => {
+    setRecordedTimes(times);
+    setShowStopwatch(false);
+    setShowRecordAssignment(true);
+  };
+
+  const handleRecordAssignment = async (assignments: { studentId: string; time: number; rank: number }[]) => {
+    if (!selectedDateSlot) return;
+
+    try {
+      // Update records for each assigned student
+      const updatedStudents = currentClassroom.students.map(student => {
+        const assignment = assignments.find(a => a.studentId === student.id);
+        if (!assignment) return student;
+
+        // Update the specific record slot
+        const updatedRecords = student.records.map(record => {
+          if (record.slotIndex === selectedDateSlot.slotIndex && 
+              record.recordDate.toDateString() === selectedDateSlot.date.toDateString()) {
+            return {
+              ...record,
+              time: assignment.time,
+              isDNF: false,
+              recordedAt: new Date()
+            };
+          }
+          return record;
+        });
+
+        // If no existing record found, create a new one
+        const hasExistingRecord = student.records.some(r => 
+          r.slotIndex === selectedDateSlot.slotIndex && 
+          r.recordDate.toDateString() === selectedDateSlot.date.toDateString()
+        );
+
+        if (!hasExistingRecord) {
+          const newRecord: Record = {
+            id: crypto.randomUUID(),
+            time: assignment.time,
+            isDNF: false,
+            recordedAt: new Date(),
+            recordDate: selectedDateSlot.date,
+            slotIndex: selectedDateSlot.slotIndex
+          };
+          updatedRecords.push(newRecord);
+        }
+
+        return {
+          ...student,
+          records: updatedRecords
+        };
+      });
+
+      // Update the classroom
+      await updateClassroom(currentClassroom.id, {
+        students: updatedStudents
+      });
+
+      // Reset all stopwatch states
+      setSelectedStudents(new Set());
+      setShowRecordAssignment(false);
+      setSelectedDateSlot(null);
+      setRecordedTimes([]);
+
+      toast({
+        title: "기록 저장 완료",
+        description: `${assignments.length}명의 학생 기록이 저장되었습니다.`
+      });
+
+    } catch (error) {
+      console.error('Error saving records:', error);
+      toast({
+        title: "저장 실패",
+        description: "기록 저장 중 오류가 발생했습니다.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  // Get selected students data
+  const selectedStudentsData = Array.from(selectedStudents)
+    .map(id => students.find(s => s.id === id))
+    .filter(Boolean) as Student[];
   return <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -299,10 +437,41 @@ const StudentList = () => {
           <h3 className="text-2xl font-bold text-foreground">학생 명단</h3>
           <p className="text-muted-foreground">
             총 {students.filter(s => !s.isHidden).length}명의 활성 학생
+            {selectedStudents.size > 0 && (
+              <span className="ml-2 text-primary font-medium">
+                ({selectedStudents.size}명 선택됨)
+              </span>
+            )}
           </p>
         </div>
         
         <div className="flex items-center gap-3">
+          {/* Stopwatch Button */}
+          {selectedStudents.size > 0 && (
+            <Button
+              onClick={handleStartStopwatch}
+              variant="default"
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Timer className="h-4 w-4 mr-2" />
+              스톱워치 ({selectedStudents.size}명)
+            </Button>
+          )}
+
+          {/* Select All Button */}
+          {currentMode === 'input' && students.filter(s => !s.isHidden).length > 0 && (
+            <Button
+              onClick={handleSelectAll}
+              variant="outline"
+              size="sm"
+              className="border-2 border-primary text-primary hover:bg-primary/10"
+            >
+              <CheckSquare className="h-4 w-4 mr-2" />
+              {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '전체 해제' : '전체 선택'}
+            </Button>
+          )}
+          
           {/* Mode Toggle */}
           <Button
             onClick={() => setMode(currentMode === 'input' ? 'view' : 'input')}
@@ -395,10 +564,21 @@ const StudentList = () => {
                   className="cursor-pointer"
                   onClick={() => !isEditing && !isEditingNumber && toggleCardFlip(student.id)}
                 >
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-2 mb-2">
+                   <CardHeader className="pb-2">
+                     <div className="flex justify-between items-start">
+                       {/* Checkbox for student selection (only in input mode) */}
+                       {currentMode === 'input' && !student.isHidden && (
+                         <div className="mr-3 pt-1">
+                           <Checkbox
+                             checked={selectedStudents.has(student.id)}
+                             onCheckedChange={(checked) => handleStudentSelect(student.id, checked as boolean)}
+                             onClick={(e) => e.stopPropagation()}
+                           />
+                         </div>
+                       )}
+                       
+                       <div className="flex-1">
+                         <div className="flex items-center space-x-2 mb-2">
                           {isEditingNumber ? (
                             <div className="flex items-center space-x-1">
                               <Input 
@@ -583,6 +763,29 @@ const StudentList = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Stopwatch Modals */}
+      <DateSlotSelector
+        open={showDateSelector}
+        onOpenChange={setShowDateSelector}
+        selectedStudentCount={selectedStudents.size}
+        onSelect={handleDateSlotSelect}
+      />
+
+      <Stopwatch
+        open={showStopwatch}
+        onOpenChange={setShowStopwatch}
+        selectedStudentCount={selectedStudents.size}
+        onComplete={handleStopwatchComplete}
+      />
+
+      <RecordAssignment
+        open={showRecordAssignment}
+        onOpenChange={setShowRecordAssignment}
+        recordedTimes={recordedTimes}
+        selectedStudents={selectedStudentsData}
+        onSave={handleRecordAssignment}
+      />
     </div>;
 };
 export default StudentList;
