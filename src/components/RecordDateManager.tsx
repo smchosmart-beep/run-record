@@ -16,10 +16,11 @@ const RecordDateManager = () => {
   const { currentClassroom } = useApp();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [createdSessions, setCreatedSessions] = useState<{ [date: string]: RecordSession }>({});
 
   if (!currentClassroom) return null;
 
-  // Group records by date
+  // Group records by date and merge with created sessions
   const recordsByDate = useMemo(() => {
     const grouped: { [date: string]: RecordSession } = {};
     
@@ -53,8 +54,9 @@ const RecordDateManager = () => {
       grouped[dateKey].studentCount = studentIds.size;
     });
 
-    return grouped;
-  }, [currentClassroom]);
+    // Merge with created sessions
+    return { ...grouped, ...createdSessions };
+  }, [currentClassroom, createdSessions]);
 
   // Get available dates (dates with records)
   const availableDates = useMemo(() => {
@@ -70,13 +72,26 @@ const RecordDateManager = () => {
   // Create new session for selected date
   const createNewSession = () => {
     const dateKey = format(selectedDate, 'yyyy-MM-dd');
+    
     if (recordsByDate[dateKey]) {
       // Session already exists, just show it
       return;
     }
 
-    // For a new session, we start with RecordSession component
-    // which will handle creating the first records
+    // Create a new empty session
+    const newSession: RecordSession = {
+      id: `session-${dateKey}`,
+      date: startOfDay(selectedDate),
+      maxSlots: currentClassroom.maxRecordSlots,
+      records: [],
+      studentCount: 0
+    };
+
+    // Add to created sessions
+    setCreatedSessions(prev => ({
+      ...prev,
+      [dateKey]: newSession
+    }));
   };
 
   return (
