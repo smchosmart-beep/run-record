@@ -665,7 +665,7 @@ const StudentList = () => {
                       {student.records.length > 0 && <div className="space-y-1">
                           <p className="text-xs text-muted-foreground">최근 기록</p>
                           <div className="flex flex-wrap gap-1">
-                            {student.records.filter(r => r.time !== null || r.isDNF).slice(-3).map(record => <Badge key={record.id} variant={record.isDNF ? "destructive" : "secondary"} className="text-xs">
+                            {student.records.filter(r => r.time !== null || r.isDNF).slice(-5).map(record => <Badge key={record.id} variant={record.isDNF ? "destructive" : "secondary"} className="text-xs">
                                   {record.isDNF ? 'DNF' : formatTime(record.time!)}
                                 </Badge>)}
                           </div>
