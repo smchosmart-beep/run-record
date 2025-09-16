@@ -129,6 +129,16 @@ export function generateRecordId(): string {
   return crypto.randomUUID();
 }
 
+export function calculateDailyBest(records: Record[]): number | null {
+  const validTimes = records
+    .filter(record => record.time !== null && !record.isDNF)
+    .map(record => record.time as number);
+  
+  if (validTimes.length === 0) return null;
+  
+  return Math.min(...validTimes);
+}
+
 export function generateClassId(): string {
   return crypto.randomUUID();
 }

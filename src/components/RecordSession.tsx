@@ -6,9 +6,9 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord, RecordSession as RecordSessionType } from '@/types';
-import { generateRecordId } from '@/utils/calculations';
+import { generateRecordId, calculateDailyBest } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
-import { AlertCircle, Edit, Plus, Eye, Trash2 } from 'lucide-react';
+import { AlertCircle, Edit, Plus, Eye, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -36,13 +36,42 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [maxSlots, setMaxSlots] = useState(session.maxSlots);
+  const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('none');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
   if (!currentClassroom) return null;
 
-  const activeStudents = currentClassroom.students
-    .filter(s => !s.isHidden)
-    .sort((a, b) => a.number - b.number);
+  const allActiveStudents = currentClassroom.students
+    .filter(s => !s.isHidden);
+
+  // Apply sorting based on sortOrder state
+  const activeStudents = useMemo(() => {
+    const students = [...allActiveStudents];
+    
+    if (sortOrder === 'none') {
+      return students.sort((a, b) => a.number - b.number);
+    }
+    
+    return students.sort((a, b) => {
+      const aRecords = a.records.filter(r => isSameDay(r.recordDate, selectedDate));
+      const bRecords = b.records.filter(r => isSameDay(r.recordDate, selectedDate));
+      
+      const aBest = calculateDailyBest(aRecords);
+      const bBest = calculateDailyBest(bRecords);
+      
+      // Handle null values (no records) - put them at the end
+      if (aBest === null && bBest === null) return a.number - b.number;
+      if (aBest === null) return 1;
+      if (bBest === null) return -1;
+      
+      // Sort by best time
+      const timeDiff = sortOrder === 'asc' ? aBest - bBest : bBest - aBest;
+      if (timeDiff !== 0) return timeDiff;
+      
+      // Tiebreaker: student number
+      return a.number - b.number;
+    });
+  }, [allActiveStudents, sortOrder, selectedDate]);
 
   // Filter records for the current date
   const dateRecords = useMemo(() => {
@@ -298,6 +327,14 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
     setShowDeleteDialog(false);
   };
 
+  const handleSortToggle = () => {
+    setSortOrder(current => {
+      if (current === 'none') return 'asc';
+      if (current === 'asc') return 'desc';
+      return 'none';
+    });
+  };
+
   // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
@@ -421,6 +458,16 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
               <TableRow>
                 <TableHead className="w-12 bg-muted/50 sticky left-0 z-20 border-r">번호</TableHead>
                 <TableHead className="w-28 bg-muted/50 sticky left-12 z-20 border-r">이름</TableHead>
+                <TableHead 
+                  className="w-24 bg-muted/50 sticky left-40 z-20 border-r cursor-pointer hover:bg-muted transition-colors"
+                  onClick={handleSortToggle}
+                >
+                  <div className="flex items-center justify-center gap-1">
+                    <span>오늘 최고 기록</span>
+                    {sortOrder === 'asc' && <ChevronUp className="h-3 w-3" />}
+                    {sortOrder === 'desc' && <ChevronDown className="h-3 w-3" />}
+                  </div>
+                </TableHead>
                 {Array.from({ length: maxSlots }, (_, i) => (
                   <TableHead key={i} className="w-20 text-center">
                     {i + 1}회차
@@ -436,6 +483,20 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
                   </TableCell>
                   <TableCell className="font-medium bg-muted/20 sticky left-12 z-10 border-r">
                     {student.name}
+                  </TableCell>
+                  <TableCell className="font-bold bg-muted/20 sticky left-40 z-10 border-r text-center">
+                    {(() => {
+                      const dailyRecords = dateRecords[student.id] || [];
+                      const dailyBest = calculateDailyBest(dailyRecords);
+                      
+                      if (dailyBest === null) {
+                        // Check if there are any DNF records
+                        const hasDNF = dailyRecords.some(r => r.isDNF);
+                        return hasDNF ? 'DNF' : '-';
+                      }
+                      
+                      return formatTime(dailyBest);
+                    })()}
                   </TableCell>
                   {Array.from({ length: maxSlots }, (_, slotIndex) => {
                     const existingRecord = getExistingRecord(student, slotIndex);
