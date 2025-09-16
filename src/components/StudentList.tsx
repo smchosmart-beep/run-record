@@ -433,39 +433,15 @@ const StudentList = () => {
   return <div className="space-y-6">
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 mb-4">
-          {/* Stopwatch Button */}
-          {selectedStudents.size > 0 && (
-            <Button
-              onClick={handleStartStopwatch}
-              variant="default"
-              size="sm"
-              className="bg-primary text-primary-foreground hover:bg-primary/90"
-            >
-              <Timer className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">스톱워치 ({selectedStudents.size}명)</span>
-              <span className="sm:hidden">스톱워치 ({selectedStudents.size})</span>
+          {/* 1. Add Student Button */}
+          {currentMode === 'input' && (
+            <Button onClick={handleAddStudent} className="flex items-center space-x-2">
+              <Plus className="h-4 w-4" />
+              <span>학생 추가</span>
             </Button>
           )}
 
-          {/* Select All Button */}
-          {currentMode === 'input' && students.filter(s => !s.isHidden).length > 0 && (
-            <Button
-              onClick={handleSelectAll}
-              variant="outline"
-              size="sm"
-              className="border-2 border-primary text-primary hover:bg-primary/10"
-            >
-              <CheckSquare className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">
-                {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '전체 해제' : '전체 선택'}
-              </span>
-              <span className="sm:hidden">
-                {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '해제' : '전체선택'}
-              </span>
-            </Button>
-          )}
-          
-          {/* Mode Toggle */}
+          {/* 2. Mode Toggle */}
           <Button
             onClick={() => setMode(currentMode === 'input' ? 'view' : 'input')}
             variant={currentMode === 'view' ? 'default' : 'outline'}
@@ -479,23 +455,39 @@ const StudentList = () => {
             {currentMode === 'view' ? (
               <>
                 <Edit className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">입력 모드로 전환</span>
-                <span className="sm:hidden">입력모드</span>
+                보기 모드로 전환
               </>
             ) : (
               <>
                 <Eye className="h-4 w-4 mr-2" />
-                <span className="hidden sm:inline">보기 모드로 전환</span>
-                <span className="sm:hidden">보기모드</span>
+                보기 모드로 전환
               </>
             )}
           </Button>
-          
-          {currentMode === 'input' && (
-            <Button onClick={handleAddStudent} className="flex items-center space-x-2">
-              <Plus className="h-4 w-4" />
-              <span className="hidden sm:inline">학생 추가</span>
-              <span className="sm:hidden">추가</span>
+
+          {/* 3. Select All Button */}
+          {currentMode === 'input' && students.filter(s => !s.isHidden).length > 0 && (
+            <Button
+              onClick={handleSelectAll}
+              variant="outline"
+              size="sm"
+              className="border-2 border-primary text-primary hover:bg-primary/10"
+            >
+              <CheckSquare className="h-4 w-4 mr-2" />
+              {students.filter(s => !s.isHidden).every(s => selectedStudents.has(s.id)) ? '전체 해제' : '전체 선택'}
+            </Button>
+          )}
+
+          {/* Stopwatch Button */}
+          {selectedStudents.size > 0 && (
+            <Button
+              onClick={handleStartStopwatch}
+              variant="default"
+              size="sm"
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <Timer className="h-4 w-4 mr-2" />
+              스톱워치 ({selectedStudents.size}명)
             </Button>
           )}
         </div>
