@@ -197,23 +197,23 @@ const Rankings = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4 text-center">🏆 신기록 🏆</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {/* 2nd Place */}
-                {byPersonalBest[1] && (
-                  <div className="md:order-1">
-                    <PodiumCard ranking={byPersonalBest[1]} type="pb" />
+                {/* 1st Place */}
+                {byPersonalBest[0] && (
+                  <div className="order-1 md:order-1">
+                    <PodiumCard ranking={byPersonalBest[0]} type="pb" />
                   </div>
                 )}
                 
-                {/* 1st Place */}
-                {byPersonalBest[0] && (
-                  <div className="md:order-2">
-                    <PodiumCard ranking={byPersonalBest[0]} type="pb" />
+                {/* 2nd Place */}
+                {byPersonalBest[1] && (
+                  <div className="order-2 md:order-2">
+                    <PodiumCard ranking={byPersonalBest[1]} type="pb" />
                   </div>
                 )}
                 
                 {/* 3rd Place */}
                 {byPersonalBest[2] && (
-                  <div className="md:order-3">
+                  <div className="order-3 md:order-3">
                     <PodiumCard ranking={byPersonalBest[2]} type="pb" />
                   </div>
                 )}
@@ -245,23 +245,23 @@ const Rankings = () => {
             <div>
               <h4 className="text-lg font-semibold mb-4 text-center">🏆 신기록 🏆</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {/* 2nd Place */}
-                {byAverage[1] && (
-                  <div className="md:order-1">
-                    <PodiumCard ranking={byAverage[1]} type="avg" />
+                {/* 1st Place */}
+                {byAverage[0] && (
+                  <div className="order-1 md:order-1">
+                    <PodiumCard ranking={byAverage[0]} type="avg" />
                   </div>
                 )}
                 
-                {/* 1st Place */}
-                {byAverage[0] && (
-                  <div className="md:order-2">
-                    <PodiumCard ranking={byAverage[0]} type="avg" />
+                {/* 2nd Place */}
+                {byAverage[1] && (
+                  <div className="order-2 md:order-2">
+                    <PodiumCard ranking={byAverage[1]} type="avg" />
                   </div>
                 )}
                 
                 {/* 3rd Place */}
                 {byAverage[2] && (
-                  <div className="md:order-3">
+                  <div className="order-3 md:order-3">
                     <PodiumCard ranking={byAverage[2]} type="avg" />
                   </div>
                 )}
