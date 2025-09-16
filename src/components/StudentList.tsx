@@ -465,6 +465,15 @@ const StudentList = () => {
             )}
           </Button>
 
+          {/* Input mode description - only shown in view mode */}
+          {currentMode === 'view' && (
+            <div className="text-xs text-muted-foreground text-center mt-2">
+              <div className="font-medium">[입력 모드]</div>
+              <div>• 학생 추가 및 정보 수정</div>
+              <div>• 스톱워치 사용 가능</div>
+            </div>
+          )}
+
           {/* 3. Select All Button */}
           {currentMode === 'input' && students.filter(s => !s.isHidden).length > 0 && (
             <Button
