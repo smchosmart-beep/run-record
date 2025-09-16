@@ -3,6 +3,7 @@ import { Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
 import { ArrowLeft, Timer, Users, Trophy, BarChart3, Edit, Eye } from 'lucide-react';
 import StudentList from '@/components/StudentList';
@@ -10,7 +11,7 @@ import RecordDateManager from '@/components/RecordDateManager';
 import Rankings from '@/components/Rankings';
 
 const ClassroomManager = () => {
-  const { user, currentClassroom, currentMode, setMode, setCurrentClassroom } = useApp();
+  const { user, currentClassroom, currentMode, setMode, setCurrentClassroom, updateClassroom } = useApp();
   const [activeTab, setActiveTab] = useState('students');
 
   if (!user) {
@@ -25,6 +26,15 @@ const ClassroomManager = () => {
     setMode(currentMode === 'view' ? 'input' : 'view');
   };
 
+  const handleRankingTypeChange = async (value: 'fastest' | 'slowest') => {
+    if (!currentClassroom) return;
+    try {
+      await updateClassroom(currentClassroom.id, { rankingType: value });
+      setCurrentClassroom({ ...currentClassroom, rankingType: value });
+    } catch (e) {
+      console.error('랭킹 유형 변경 실패', e);
+    }
+  };
   const activeStudents = currentClassroom.students.filter(s => !s.isHidden);
   const totalRecords = activeStudents.reduce((sum, s) => 
     sum + s.records.filter(r => r.time !== null && !r.isDNF).length, 0
@@ -59,7 +69,20 @@ const ClassroomManager = () => {
                 </div>
               </div>
             </div>
-            
+            <div className="flex items-center space-x-3">
+              <Select
+                value={currentClassroom.rankingType ?? 'fastest'}
+                onValueChange={(value) => handleRankingTypeChange(value as 'fastest' | 'slowest')}
+              >
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="랭킹 유형" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="fastest">시간 빠른 순</SelectItem>
+                  <SelectItem value="slowest">시간 느린 순</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
       </header>

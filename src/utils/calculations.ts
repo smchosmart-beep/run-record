@@ -12,6 +12,19 @@ export function calculatePersonalBest(records: Record[]): number | null {
   return Math.min(...validTimes);
 }
 
+// Helper: get best time depending on ranking type
+export function getBestTimeForRanking(records: Record[], rankingType: 'fastest' | 'slowest'): number | null {
+  const validTimes = records
+    .filter(record => record.time !== null && !record.isDNF)
+    .map(record => record.time as number);
+
+  if (validTimes.length === 0) return null;
+
+  return rankingType === 'fastest'
+    ? Math.min(...validTimes)
+    : Math.max(...validTimes);
+}
+
 export function calculateAverage(records: Record[]): number | null {
   const validTimes = records
     .filter(record => record.time !== null && !record.isDNF)
@@ -41,29 +54,29 @@ export function calculateClassRankings(students: Student[], rankingType: 'fastes
   byPersonalBest: RankingData[];
   byAverage: RankingData[];
 } {
-  // Only include non-hidden students with valid records
+  // Only include non-hidden students with valid records (based on ranking type)
   const eligibleStudents = students
     .filter(student => !student.isHidden)
     .map(student => ({
       student,
       stats: calculateStudentStats(student),
     }))
-    .filter(item => item.stats.personalBest !== null);
+    .filter(item => getBestTimeForRanking(item.student.records, rankingType) !== null);
 
-  // Rank by Personal Best
+  // Rank by Personal Best (best depends on rankingType)
   const byPersonalBest = eligibleStudents
     .slice()
     .sort((a, b) => {
-      const timeA = a.stats.personalBest!;
-      const timeB = b.stats.personalBest!;
+      const timeA = getBestTimeForRanking(a.student.records, rankingType)!;
+      const timeB = getBestTimeForRanking(b.student.records, rankingType)!;
       
       // Sort based on ranking type
       const timeDiff = rankingType === 'fastest' ? timeA - timeB : timeB - timeA;
       if (timeDiff !== 0) return timeDiff;
       
       // Tiebreaker 1: Average time
-      const avgA = a.stats.averageTime || (rankingType === 'fastest' ? Infinity : -Infinity);
-      const avgB = a.stats.averageTime || (rankingType === 'fastest' ? Infinity : -Infinity);
+      const avgA = a.stats.averageTime ?? (rankingType === 'fastest' ? Infinity : -Infinity);
+      const avgB = b.stats.averageTime ?? (rankingType === 'fastest' ? Infinity : -Infinity);
       const avgDiff = rankingType === 'fastest' ? avgA - avgB : avgB - avgA;
       if (avgDiff !== 0) return avgDiff;
       
@@ -87,9 +100,9 @@ export function calculateClassRankings(students: Student[], rankingType: 'fastes
       const avgDiff = rankingType === 'fastest' ? avgA - avgB : avgB - avgA;
       if (avgDiff !== 0) return avgDiff;
       
-      // Tiebreaker 1: Personal best
-      const pbA = a.stats.personalBest!;
-      const pbB = b.stats.personalBest!;
+      // Tiebreaker 1: Personal best (based on ranking type)
+      const pbA = getBestTimeForRanking(a.student.records, rankingType)!;
+      const pbB = getBestTimeForRanking(b.student.records, rankingType)!;
       const pbDiff = rankingType === 'fastest' ? pbA - pbB : pbB - pbA;
       if (pbDiff !== 0) return pbDiff;
       
@@ -113,17 +126,17 @@ export function getClassBestRecord(students: Student[], rankingType: 'fastest' |
   let holders: Student[] = [];
 
   eligibleStudents.forEach(student => {
-    const pb = calculatePersonalBest(student.records);
-    if (pb !== null) {
+    const best = getBestTimeForRanking(student.records, rankingType);
+    if (best !== null) {
       if (bestTime === null) {
-        bestTime = pb;
+        bestTime = best;
         holders = [student];
       } else {
-        const isBetter = rankingType === 'fastest' ? pb < bestTime : pb > bestTime;
+        const isBetter = rankingType === 'fastest' ? best < bestTime : best > bestTime;
         if (isBetter) {
-          bestTime = pb;
+          bestTime = best;
           holders = [student];
-        } else if (pb === bestTime) {
+        } else if (best === bestTime) {
           holders.push(student);
         }
       }
