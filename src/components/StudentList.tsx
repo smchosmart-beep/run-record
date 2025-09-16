@@ -467,8 +467,9 @@ const StudentList = () => {
 
           {/* Input mode description - only shown in view mode */}
           {currentMode === 'view' && (
-            <div className="text-xs text-muted-foreground text-center mt-2">
+            <div className="text-sm font-semibold text-foreground text-center mt-2 flex items-center justify-center gap-1">
               [입력모드] 학생 추가 / 정보 수정 / 스톱워치
+              <Timer className="h-4 w-4 text-primary" />
             </div>
           )}
 
