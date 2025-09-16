@@ -3,7 +3,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ClassRoom } from '@/types';
-import { Users, Calendar, Trophy, ArrowRight, Trash2 } from 'lucide-react';
+import { Users, Calendar, Trophy, ArrowRight, Trash2, Edit } from 'lucide-react';
+import EditClassModal from '@/components/EditClassModal';
 import { calculateClassRankings, getClassBestRecord } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { useApp } from '@/contexts/AppContext';
@@ -15,6 +16,7 @@ interface ClassCardProps {
 
 const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
   const [deleteLoading, setDeleteLoading] = useState(false);
+  const [editModalOpen, setEditModalOpen] = useState(false);
   const { deleteClassroom } = useApp();
   
   const activeStudents = classroom.students.filter(s => !s.isHidden);
@@ -52,7 +54,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
               {classroom.grade}학년 {classroom.className}
             </CardDescription>
           </div>
-          <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2">
             <div className="text-right">
               <div className="flex items-center text-sm text-muted-foreground">
                 <Calendar className="h-3 w-3 mr-1" />
@@ -64,6 +66,18 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
                 })()}학년도
               </div>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+              aria-label="학급 정보 수정"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditModalOpen(true);
+              }}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -147,6 +161,12 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
           <ArrowRight className="h-4 w-4 ml-2 group-hover:translate-x-1 transition-transform" />
         </Button>
       </CardContent>
+      
+      <EditClassModal
+        classroom={classroom}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+      />
     </Card>
   );
 };
