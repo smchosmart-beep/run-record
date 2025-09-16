@@ -46,29 +46,27 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
     <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <div>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                aria-label="학급 정보 수정"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditModalOpen(true);
-                }}
-              >
-                <Edit className="h-3 w-3" />
-              </Button>
-              <div>
-                <CardTitle className="text-lg">
-                  {classroom.school}
-                </CardTitle>
-                <CardDescription className="text-base font-medium">
-                  {classroom.grade}학년 {classroom.className}
-                </CardDescription>
-              </div>
+          <div className="flex items-center gap-2">
+            <div>
+              <CardTitle className="text-lg">
+                {classroom.school}
+              </CardTitle>
+              <CardDescription className="text-base font-medium">
+                {classroom.grade}학년 {classroom.className}
+              </CardDescription>
             </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+              aria-label="학급 정보 수정"
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditModalOpen(true);
+              }}
+            >
+              <Edit className="h-3 w-3" />
+            </Button>
           </div>
             <div className="flex items-center space-x-2">
             <div className="text-right">
