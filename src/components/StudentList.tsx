@@ -566,16 +566,16 @@ const StudentList = () => {
                 >
                    <CardHeader className="pb-2">
                      <div className="flex justify-between items-start">
-                       {/* Checkbox for student selection (only in input mode) */}
-                       {currentMode === 'input' && !student.isHidden && (
-                         <div className="mr-3 pt-1">
-                           <Checkbox
-                             checked={selectedStudents.has(student.id)}
-                             onCheckedChange={(checked) => handleStudentSelect(student.id, checked as boolean)}
-                             onClick={(e) => e.stopPropagation()}
-                           />
-                         </div>
-                       )}
+                        {/* Checkbox for student selection (only in input mode) */}
+                        {currentMode === 'input' && !student.isHidden && (
+                          <div className="mr-3 pt-1 hover:bg-accent/50 rounded-md p-2 -m-2 transition-colors">
+                            <Checkbox
+                              checked={selectedStudents.has(student.id)}
+                              onCheckedChange={(checked) => handleStudentSelect(student.id, checked as boolean)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                          </div>
+                        )}
                        
                        <div className="flex-1">
                          <div className="flex items-center space-x-2 mb-2">
