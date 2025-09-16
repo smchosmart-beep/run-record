@@ -14,8 +14,9 @@ const Rankings = () => {
   if (!currentClassroom) return null;
 
   const activeStudents = currentClassroom.students.filter(s => !s.isHidden);
-  const { byPersonalBest, byAverage } = calculateClassRankings(activeStudents);
-  const { time: bestTime, holders } = getClassBestRecord(activeStudents);
+  const rankingType = currentClassroom.rankingType || 'fastest'; // Default to 'fastest' for existing classrooms
+  const { byPersonalBest, byAverage } = calculateClassRankings(activeStudents, rankingType);
+  const { time: bestTime, holders } = getClassBestRecord(activeStudents, rankingType);
 
   const getRankIcon = (position: number) => {
     switch (position) {
@@ -155,6 +156,8 @@ const Rankings = () => {
         <h3 className="text-2xl font-bold text-foreground mb-2">순위 및 랭킹</h3>
         <p className="text-muted-foreground">
           학급 내 순위와 기록을 확인해보세요
+          {rankingType === 'fastest' && ' (시간 빠른 순)'}
+          {rankingType === 'slowest' && ' (시간 느린 순)'}
         </p>
       </div>
 

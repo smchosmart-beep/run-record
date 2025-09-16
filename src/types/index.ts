@@ -24,6 +24,7 @@ export interface ClassRoom {
   className: string;
   students: Student[];
   maxRecordSlots: number;
+  rankingType?: 'fastest' | 'slowest'; // 'fastest' for 50m 달리기, 'slowest' for 플랭크
   createdAt: Date;
   updatedAt: Date;
 }

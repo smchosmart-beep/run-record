@@ -12,6 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
 import { ClassRoom, Student } from '@/types';
 import { generateClassId, generateStudentId, generateRecordId } from '@/utils/calculations';
@@ -32,6 +39,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) 
   const [className, setClassName] = useState('');
   const [studentCount, setStudentCount] = useState('');
   const [studentNames, setStudentNames] = useState('');
+  const [rankingType, setRankingType] = useState<'fastest' | 'slowest'>('fastest');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -116,6 +124,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) 
         className: className.trim(),
         students,
         maxRecordSlots: 5,
+        rankingType,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
@@ -129,6 +138,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) 
       setClassName('');
       setStudentCount('');
       setStudentNames('');
+      setRankingType('fastest');
       
       onClose();
       
@@ -153,6 +163,7 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) 
     setClassName('');
     setStudentCount('');
     setStudentNames('');
+    setRankingType('fastest');
     onClose();
   };
 
@@ -230,6 +241,25 @@ const CreateClassModal: React.FC<CreateClassModalProps> = ({ isOpen, onClose }) 
                 required
               />
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="rankingType">랭킹 유형 *</Label>
+            <Select value={rankingType} onValueChange={(value: 'fastest' | 'slowest') => setRankingType(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="랭킹 방식을 선택하세요" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="fastest">시간 빠른 순</SelectItem>
+                <SelectItem value="slowest">시간 느린 순</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {rankingType === 'fastest' 
+                ? '• 시간 빠른 순: 50m 달리기, 100m 달리기 등 빠른 시간이 좋은 종목에 사용' 
+                : '• 시간 느린 순: 플랭크 버티기, 벽 앉기 등 오래 버티는 것이 좋은 종목에 사용'
+              }
+            </p>
           </div>
 
           <div className="space-y-2">

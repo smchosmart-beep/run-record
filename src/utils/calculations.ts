@@ -37,7 +37,7 @@ export function calculateStudentStats(student: Student): StudentStats {
   };
 }
 
-export function calculateClassRankings(students: Student[]): {
+export function calculateClassRankings(students: Student[], rankingType: 'fastest' | 'slowest' = 'fastest'): {
   byPersonalBest: RankingData[];
   byAverage: RankingData[];
 } {
@@ -57,12 +57,15 @@ export function calculateClassRankings(students: Student[]): {
       const timeA = a.stats.personalBest!;
       const timeB = b.stats.personalBest!;
       
-      if (timeA !== timeB) return timeA - timeB;
+      // Sort based on ranking type
+      const timeDiff = rankingType === 'fastest' ? timeA - timeB : timeB - timeA;
+      if (timeDiff !== 0) return timeDiff;
       
       // Tiebreaker 1: Average time
-      const avgA = a.stats.averageTime || Infinity;
-      const avgB = b.stats.averageTime || Infinity;
-      if (avgA !== avgB) return avgA - avgB;
+      const avgA = a.stats.averageTime || (rankingType === 'fastest' ? Infinity : -Infinity);
+      const avgB = a.stats.averageTime || (rankingType === 'fastest' ? Infinity : -Infinity);
+      const avgDiff = rankingType === 'fastest' ? avgA - avgB : avgB - avgA;
+      if (avgDiff !== 0) return avgDiff;
       
       // Tiebreaker 2: Student number
       return a.student.number - b.student.number;
@@ -80,12 +83,15 @@ export function calculateClassRankings(students: Student[]): {
       const avgA = a.stats.averageTime!;
       const avgB = b.stats.averageTime!;
       
-      if (avgA !== avgB) return avgA - avgB;
+      // Sort based on ranking type
+      const avgDiff = rankingType === 'fastest' ? avgA - avgB : avgB - avgA;
+      if (avgDiff !== 0) return avgDiff;
       
       // Tiebreaker 1: Personal best
       const pbA = a.stats.personalBest!;
       const pbB = b.stats.personalBest!;
-      if (pbA !== pbB) return pbA - pbB;
+      const pbDiff = rankingType === 'fastest' ? pbA - pbB : pbB - pbA;
+      if (pbDiff !== 0) return pbDiff;
       
       // Tiebreaker 2: Student number
       return a.student.number - b.student.number;
@@ -98,7 +104,7 @@ export function calculateClassRankings(students: Student[]): {
   return { byPersonalBest, byAverage };
 }
 
-export function getClassBestRecord(students: Student[]): {
+export function getClassBestRecord(students: Student[], rankingType: 'fastest' | 'slowest' = 'fastest'): {
   time: number | null;
   holders: Student[];
 } {
@@ -109,11 +115,17 @@ export function getClassBestRecord(students: Student[]): {
   eligibleStudents.forEach(student => {
     const pb = calculatePersonalBest(student.records);
     if (pb !== null) {
-      if (bestTime === null || pb < bestTime) {
+      if (bestTime === null) {
         bestTime = pb;
         holders = [student];
-      } else if (pb === bestTime) {
-        holders.push(student);
+      } else {
+        const isBetter = rankingType === 'fastest' ? pb < bestTime : pb > bestTime;
+        if (isBetter) {
+          bestTime = pb;
+          holders = [student];
+        } else if (pb === bestTime) {
+          holders.push(student);
+        }
       }
     }
   });
