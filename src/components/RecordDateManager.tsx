@@ -208,7 +208,7 @@ const RecordDateManager = () => {
               <Button
                 variant="outline"
                 className={cn(
-                  "w-[240px] justify-start text-left font-normal",
+                  "w-[180px] justify-start text-left font-normal",
                   !selectedDate && "text-muted-foreground"
                 )}
               >
@@ -241,7 +241,7 @@ const RecordDateManager = () => {
           {!currentSession && (
             <Button onClick={createNewSession} disabled={loading}>
               <Plus className="h-4 w-4 mr-2" />
-              {loading ? "생성 중..." : "새 기록 세션"}
+              {loading ? "생성 중..." : "추가"}
             </Button>
           )}
         </div>
