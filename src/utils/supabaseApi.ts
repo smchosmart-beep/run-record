@@ -21,6 +21,7 @@ export type DatabaseClassroom = {
   grade: number;
   class_name: string;
   max_record_slots: number;
+  ranking_type: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -55,6 +56,7 @@ const convertDbClassroomToAppClassroom = (
   className: dbClassroom.class_name,
   students,
   maxRecordSlots: dbClassroom.max_record_slots,
+  rankingType: dbClassroom.ranking_type === 'slowest' ? 'slowest' : 'fastest',
   createdAt: new Date(dbClassroom.created_at),
   updatedAt: new Date(dbClassroom.updated_at),
 });
@@ -166,7 +168,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
     throw new Error('User not authenticated');
   }
 
-  // Create classroom
+// Create classroom
   const { data: newClassroom, error: classroomError } = await supabase
     .from('classrooms')
     .insert({
@@ -175,6 +177,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
       grade: classroom.grade,
       class_name: classroom.className,
       max_record_slots: classroom.maxRecordSlots,
+      ranking_type: classroom.rankingType || 'fastest',
     })
     .select()
     .single();
@@ -249,6 +252,7 @@ export async function updateClassroom(classroomId: string, updates: Partial<Clas
   if (updates.grade !== undefined) updateData.grade = updates.grade;
   if (updates.className !== undefined) updateData.class_name = updates.className;
   if (updates.maxRecordSlots !== undefined) updateData.max_record_slots = updates.maxRecordSlots;
+  if (updates.rankingType !== undefined) updateData.ranking_type = updates.rankingType;
 
   if (Object.keys(updateData).length > 0) {
     const { error } = await supabase

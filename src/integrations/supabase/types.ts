@@ -21,6 +21,7 @@ export type Database = {
           grade: number
           id: string
           max_record_slots: number
+          ranking_type: string | null
           school: string
           updated_at: string
           user_id: string
@@ -31,6 +32,7 @@ export type Database = {
           grade: number
           id?: string
           max_record_slots?: number
+          ranking_type?: string | null
           school: string
           updated_at?: string
           user_id: string
@@ -41,6 +43,7 @@ export type Database = {
           grade?: number
           id?: string
           max_record_slots?: number
+          ranking_type?: string | null
           school?: string
           updated_at?: string
           user_id?: string
