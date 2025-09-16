@@ -47,12 +47,28 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
           <div>
-            <CardTitle className="text-lg">
-              {classroom.school}
-            </CardTitle>
-            <CardDescription className="text-base font-medium">
-              {classroom.grade}학년 {classroom.className}
-            </CardDescription>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                aria-label="학급 정보 수정"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditModalOpen(true);
+                }}
+              >
+                <Edit className="h-3 w-3" />
+              </Button>
+              <div>
+                <CardTitle className="text-lg">
+                  {classroom.school}
+                </CardTitle>
+                <CardDescription className="text-base font-medium">
+                  {classroom.grade}학년 {classroom.className}
+                </CardDescription>
+              </div>
+            </div>
           </div>
             <div className="flex items-center space-x-2">
             <div className="text-right">
@@ -66,18 +82,6 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
                 })()}학년도
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-              aria-label="학급 정보 수정"
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditModalOpen(true);
-              }}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
