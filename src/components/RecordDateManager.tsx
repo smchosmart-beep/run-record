@@ -201,10 +201,6 @@ const RecordDateManager = () => {
     <div className="space-y-6">
       {/* Header with Date Selector */}
       <div className="flex items-center justify-between">
-        <div>
-          <h3 className="text-2xl font-bold text-foreground mb-2">기록 관리</h3>
-        </div>
-
         <div className="flex items-center gap-3">
           {/* Date Picker */}
           <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
