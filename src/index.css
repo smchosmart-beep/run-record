@@ -127,4 +127,31 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+
+  /* Card flip animations */
+  .card-flip {
+    transform-style: preserve-3d;
+    transition: transform 0.6s ease-in-out;
+  }
+
+  .card-flip.flipped {
+    transform: rotateY(180deg);
+  }
+
+  .card-face {
+    backface-visibility: hidden;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+  }
+
+  .card-back {
+    transform: rotateY(180deg);
+  }
+
+  .card-flip .card-front,
+  .card-flip .card-back {
+    position: relative;
+  }
 }

@@ -9,9 +9,10 @@ import { Student } from '@/types';
 import { calculateStudentStats } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
+import StudentChart from './StudentChart';
 const StudentList = () => {
   const { currentClassroom, updateClassroom, currentMode, refreshClassrooms, setMode } = useApp();
   const {
@@ -26,6 +27,7 @@ const StudentList = () => {
   const [newStudentNumber, setNewStudentNumber] = useState('');
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [studentToDelete, setStudentToDelete] = useState<Student | null>(null);
+  const [flippedCards, setFlippedCards] = useState<Set<string>>(new Set());
   if (!currentClassroom) return null;
   const students = [...currentClassroom.students].sort((a, b) => a.number - b.number);
   const handleEditStart = (student: Student) => {
@@ -255,6 +257,18 @@ const StudentList = () => {
     setShowDeleteDialog(false);
     setStudentToDelete(null);
   };
+
+  const toggleCardFlip = (studentId: string) => {
+    setFlippedCards(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(studentId)) {
+        newSet.delete(studentId);
+      } else {
+        newSet.add(studentId);
+      }
+      return newSet;
+    });
+  };
   return <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
@@ -350,123 +364,162 @@ const StudentList = () => {
         const stats = calculateStudentStats(student);
         const isEditing = editingStudent === student.id;
         const isEditingNumber = editingStudentNumber === student.id;
-        return <Card key={student.id} className={`transition-all duration-300 ${student.isHidden ? 'opacity-50 grayscale' : 'hover:shadow-lg'}`}>
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      {isEditingNumber ? (
-                        <div className="flex items-center space-x-1">
-                          <Input 
-                            type="number" 
-                            value={editNumber} 
-                            onChange={e => setEditNumber(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter') handleNumberEditSave(student.id);
-                              if (e.key === 'Escape') handleNumberEditCancel();
-                            }}
-                            className="w-16 h-6 text-xs px-1"
-                            autoFocus
-                          />
-                          <Button 
-                            size="sm" 
-                            variant="success" 
-                            onClick={() => handleNumberEditSave(student.id)}
-                            className="h-6 px-2 text-xs"
-                          >
-                            저장
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
-                            onClick={handleNumberEditCancel}
-                            className="h-6 px-2 text-xs"
-                          >
-                            취소
-                          </Button>
+        const isFlipped = flippedCards.has(student.id);
+        return <Card key={student.id} className={`card-flip transition-all duration-500 ${student.isHidden ? 'opacity-50 grayscale' : 'hover:shadow-lg'} ${isFlipped ? 'flipped' : ''}`}>
+              {/* Card Front */}
+              <div className={`card-face card-front ${isFlipped ? 'hidden' : ''}`}>
+                <div 
+                  className="cursor-pointer"
+                  onClick={() => !isEditing && !isEditingNumber && toggleCardFlip(student.id)}
+                >
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-2 mb-2">
+                          {isEditingNumber ? (
+                            <div className="flex items-center space-x-1">
+                              <Input 
+                                type="number" 
+                                value={editNumber} 
+                                onChange={e => setEditNumber(e.target.value)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleNumberEditSave(student.id);
+                                  if (e.key === 'Escape') handleNumberEditCancel();
+                                }}
+                                className="w-16 h-6 text-xs px-1"
+                                autoFocus
+                              />
+                              <Button 
+                                size="sm" 
+                                variant="success" 
+                                onClick={() => handleNumberEditSave(student.id)}
+                                className="h-6 px-2 text-xs"
+                              >
+                                저장
+                              </Button>
+                              <Button 
+                                size="sm" 
+                                variant="outline" 
+                                onClick={handleNumberEditCancel}
+                                className="h-6 px-2 text-xs"
+                              >
+                                취소
+                              </Button>
+                            </div>
+                          ) : (
+                            <Badge 
+                              variant="outline" 
+                              className="text-xs"
+                            >
+                              {student.number}번
+                            </Badge>
+                          )}
+                          {student.isHidden && <Badge variant="secondary" className="text-xs">
+                              숨김
+                            </Badge>}
                         </div>
-                      ) : (
-                        <Badge 
-                          variant="outline" 
-                          className="text-xs"
-                        >
-                          {student.number}번
-                        </Badge>
-                      )}
-                      {student.isHidden && <Badge variant="secondary" className="text-xs">
-                          숨김
-                        </Badge>}
-                    </div>
-                    
-                    {isEditing ? <div className="space-y-2">
-                        <Input value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => {
-                    if (e.key === 'Enter') handleEditSave(student.id);
-                    if (e.key === 'Escape') handleEditCancel();
-                  }} className="text-lg font-semibold" autoFocus />
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="success" onClick={() => handleEditSave(student.id)}>
-                            저장
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={handleEditCancel}>
-                            취소
-                          </Button>
-                        </div>
-                      </div> : <CardTitle className="text-lg">{student.name}</CardTitle>}
-                  </div>
-                  
-                  {currentMode === 'input' && !isEditing && !isEditingNumber && <div className="flex space-x-1">
-                      <Button size="sm" variant="ghost" onClick={() => handleNumberEditStart(student)} className="h-8 w-8 p-0" title="번호 수정">
-                        <Hash className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleEditStart(student)} className="h-8 w-8 p-0" title="이름 수정">
-                        <Type className="h-3 w-3" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleToggleVisibility(student)} className="h-8 w-8 p-0">
-                        {student.isHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => handleDeleteStudent(student)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                        <Trash2 className="h-3 w-3" />
-                      </Button>
-                    </div>}
-                </div>
-              </CardHeader>
-              
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  {/* Statistics */}
-                  <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div className="text-center p-2 bg-muted/50 rounded">
-                      <p className="text-xs text-muted-foreground">최고 기록</p>
-                      <p className="font-bold text-primary">
-                        {stats.personalBest ? formatTime(stats.personalBest) : '--'}
-                      </p>
-                    </div>
-                    <div className="text-center p-2 bg-muted/50 rounded">
-                      <p className="text-xs text-muted-foreground">평균 기록</p>
-                      <p className="font-bold text-secondary">
-                        {stats.averageTime ? formatTime(stats.averageTime) : '--'}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Record count */}
-                  <div className="text-center">
-                    <p className="text-sm text-muted-foreground">
-                      유효 기록: <span className="font-semibold">{stats.validRecordsCount}</span>개
-                    </p>
-                  </div>
-
-                  {/* Recent records */}
-                  {student.records.length > 0 && <div className="space-y-1">
-                      <p className="text-xs text-muted-foreground">최근 기록</p>
-                      <div className="flex flex-wrap gap-1">
-                        {student.records.filter(r => r.time !== null || r.isDNF).slice(-3).map(record => <Badge key={record.id} variant={record.isDNF ? "destructive" : "secondary"} className="text-xs">
-                              {record.isDNF ? 'DNF' : formatTime(record.time!)}
-                            </Badge>)}
+                        
+                        {isEditing ? <div className="space-y-2">
+                            <Input value={editName} onChange={e => setEditName(e.target.value)} onKeyDown={e => {
+                        if (e.key === 'Enter') handleEditSave(student.id);
+                        if (e.key === 'Escape') handleEditCancel();
+                      }} className="text-lg font-semibold" autoFocus />
+                            <div className="flex space-x-2">
+                              <Button size="sm" variant="success" onClick={() => handleEditSave(student.id)}>
+                                저장
+                              </Button>
+                              <Button size="sm" variant="outline" onClick={handleEditCancel}>
+                                취소
+                              </Button>
+                            </div>
+                          </div> : <CardTitle className="text-lg">{student.name}</CardTitle>}
                       </div>
-                    </div>}
+                      
+                      {currentMode === 'input' && !isEditing && !isEditingNumber && <div className="flex space-x-1">
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleNumberEditStart(student); }} className="h-8 w-8 p-0" title="번호 수정">
+                            <Hash className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleEditStart(student); }} className="h-8 w-8 p-0" title="이름 수정">
+                            <Type className="h-3 w-3" />
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleToggleVisibility(student); }} className="h-8 w-8 p-0">
+                            {student.isHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
+                          </Button>
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student); }} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>}
+                    </div>
+                  </CardHeader>
+                  
+                  <CardContent className="pt-0">
+                    <div className="space-y-3">
+                      {/* Statistics */}
+                      <div className="grid grid-cols-2 gap-3 text-sm">
+                        <div className="text-center p-2 bg-muted/50 rounded">
+                          <p className="text-xs text-muted-foreground">최고 기록</p>
+                          <p className="font-bold text-primary">
+                            {stats.personalBest ? formatTime(stats.personalBest) : '--'}
+                          </p>
+                        </div>
+                        <div className="text-center p-2 bg-muted/50 rounded">
+                          <p className="text-xs text-muted-foreground">평균 기록</p>
+                          <p className="font-bold text-secondary">
+                            {stats.averageTime ? formatTime(stats.averageTime) : '--'}
+                          </p>
+                        </div>
+                      </div>
+                      
+                      {/* Record count */}
+                      <div className="text-center">
+                        <p className="text-sm text-muted-foreground">
+                          유효 기록: <span className="font-semibold">{stats.validRecordsCount}</span>개
+                        </p>
+                      </div>
+
+                      {/* Recent records */}
+                      {student.records.length > 0 && <div className="space-y-1">
+                          <p className="text-xs text-muted-foreground">최근 기록</p>
+                          <div className="flex flex-wrap gap-1">
+                            {student.records.filter(r => r.time !== null || r.isDNF).slice(-3).map(record => <Badge key={record.id} variant={record.isDNF ? "destructive" : "secondary"} className="text-xs">
+                                  {record.isDNF ? 'DNF' : formatTime(record.time!)}
+                                </Badge>)}
+                          </div>
+                        </div>}
+                    </div>
+                  </CardContent>
                 </div>
-              </CardContent>
+              </div>
+
+              {/* Card Back */}
+              <div className={`card-face card-back ${!isFlipped ? 'hidden' : ''}`}>
+                <CardHeader className="pb-2">
+                  <div className="flex justify-between items-center">
+                    <div className="flex items-center space-x-2">
+                      <Badge variant="outline" className="text-xs">
+                        {student.number}번
+                      </Badge>
+                      <CardTitle className="text-lg">{student.name}</CardTitle>
+                    </div>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => toggleCardFlip(student.id)}
+                      className="h-8 w-8 p-0"
+                      title="뒤집기"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </CardHeader>
+                
+                <CardContent className="pt-0">
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium text-muted-foreground">날짜별 최고기록</p>
+                    <StudentChart student={student} />
+                  </div>
+                </CardContent>
+              </div>
             </Card>;
       })}
       </div>
