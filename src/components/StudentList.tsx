@@ -434,7 +434,7 @@ const StudentList = () => {
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h3 className="text-2xl font-bold text-foreground">학생 명단</h3>
+          <h3 className="text-2xl font-bold text-foreground whitespace-nowrap [writing-mode:horizontal-tb]">학생 명단</h3>
           <p className="text-muted-foreground">
             총 {students.filter(s => !s.isHidden).length}명의 활성 학생
             {selectedStudents.size > 0 && (
