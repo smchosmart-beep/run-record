@@ -2,6 +2,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import { ClassRoom, Student, Record } from "@/types";
+import { toYMD } from "./time";
 
 // Timeout utility for Supabase requests
 function withTimeout<T>(promise: Promise<T>, ms: number = 10000): Promise<T> {
@@ -212,7 +213,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
           is_dnf: record.isDNF,
           slot_index: record.slotIndex,
           recorded_at: record.recordedAt.toISOString(),
-          record_date: record.recordDate.toISOString().split('T')[0],
+          record_date: toYMD(record.recordDate),
         });
       });
     });
@@ -481,7 +482,7 @@ export async function updateStudentRecords(studentId: string, records: Record[])
       is_dnf: record.isDNF,
       slot_index: record.slotIndex,
       recorded_at: record.recordedAt.toISOString(),
-      record_date: record.recordDate.toISOString().split('T')[0],
+      record_date: toYMD(record.recordDate),
     }));
 
     const { error: insertError } = await supabase
@@ -521,7 +522,7 @@ export async function getRecordSessions(classroomId: string) {
 export async function upsertRecordSession(classroomId: string, sessionDate: Date, slotsCount: number) {
   console.log('📡 기록 세션 생성/업데이트:', {
     classroomId,
-    sessionDate: sessionDate.toISOString().split('T')[0],
+    sessionDate: toYMD(sessionDate),
     slotsCount
   });
   
@@ -529,7 +530,7 @@ export async function upsertRecordSession(classroomId: string, sessionDate: Date
     .from('record_sessions')
     .upsert({
       classroom_id: classroomId,
-      session_date: sessionDate.toISOString().split('T')[0],
+      session_date: toYMD(sessionDate),
       slots_count: slotsCount
     }, {
       onConflict: 'classroom_id,session_date'
@@ -549,7 +550,7 @@ export async function upsertRecordSession(classroomId: string, sessionDate: Date
 export async function updateRecordSessionSlots(classroomId: string, sessionDate: Date, slotsCount: number) {
   console.log('📡 기록 세션 회차 업데이트:', {
     classroomId,
-    sessionDate: sessionDate.toISOString().split('T')[0],
+    sessionDate: toYMD(sessionDate),
     slotsCount
   });
   
@@ -557,7 +558,7 @@ export async function updateRecordSessionSlots(classroomId: string, sessionDate:
     .from('record_sessions')
     .update({ slots_count: slotsCount })
     .eq('classroom_id', classroomId)
-    .eq('session_date', sessionDate.toISOString().split('T')[0]);
+    .eq('session_date', toYMD(sessionDate));
 
   if (error) {
     console.error('❌ 기록 세션 회차 업데이트 실패:', error);

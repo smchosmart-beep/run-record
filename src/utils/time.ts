@@ -1,4 +1,11 @@
+import { format } from 'date-fns';
+
 // Time utility functions for SpeedUp app
+
+// Convert Date to YYYY-MM-DD format without timezone issues
+export function toYMD(date: Date): string {
+  return format(date, 'yyyy-MM-dd');
+}
 
 export function parseTimeInput(input: string): number | null {
   if (!input || input.trim() === '') return null;
