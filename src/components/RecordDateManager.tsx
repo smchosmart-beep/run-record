@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 const RecordDateManager = () => {
-  const { currentClassroom } = useApp();
+  const { currentClassroom, refreshClassrooms } = useApp();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
@@ -165,9 +165,11 @@ const RecordDateManager = () => {
     try {
       await deleteRecordSession(currentClassroom.id, sessionDate);
       
-      // Refresh sessions from database
-      const updatedSessions = await getRecordSessions(currentClassroom.id);
-      setRecordSessions(updatedSessions);
+      // Optimistic UI update - remove from recordSessions
+      setRecordSessions(prev => prev.filter(s => s.session_date !== dateKey));
+      
+      // Refresh classroom data to update student records
+      await refreshClassrooms();
       
       // If deleted date was selected, move to another date or today
       if (format(selectedDate, 'yyyy-MM-dd') === dateKey) {
