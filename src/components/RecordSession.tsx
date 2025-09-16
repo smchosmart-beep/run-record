@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useApp } from '@/contexts/AppContext';
 import { Student, Record as StudentRecord, RecordSession as RecordSessionType } from '@/types';
-import { generateRecordId, calculateDailyBest } from '@/utils/calculations';
+import { generateRecordId, calculateDailyBest, calculateDailyBestForRanking } from '@/utils/calculations';
 import { parseTimeInput, validateTimeInput, formatTime } from '@/utils/time';
 import { AlertCircle, Edit, Plus, Eye, Trash2, ChevronUp, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -63,16 +63,17 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
       const aRecords = a.records.filter(r => isSameDay(r.recordDate, selectedDate));
       const bRecords = b.records.filter(r => isSameDay(r.recordDate, selectedDate));
       
-      const aBest = calculateDailyBest(aRecords);
-      const bBest = calculateDailyBest(bRecords);
+      const aBest = calculateDailyBestForRanking(aRecords, currentClassroom.rankingType || 'fastest');
+      const bBest = calculateDailyBestForRanking(bRecords, currentClassroom.rankingType || 'fastest');
       
       // Handle null values (no records) - put them at the end
       if (aBest === null && bBest === null) return a.number - b.number;
       if (aBest === null) return 1;
       if (bBest === null) return -1;
       
-      // Sort by best time
-      const timeDiff = sortOrder === 'asc' ? aBest - bBest : bBest - aBest;
+      // Sort by best time based on ranking type
+      const sortMultiplier = currentClassroom.rankingType === 'slowest' ? -1 : 1;
+      const timeDiff = sortOrder === 'asc' ? (aBest - bBest) * sortMultiplier : (bBest - aBest) * sortMultiplier;
       if (timeDiff !== 0) return timeDiff;
       
       // Tiebreaker: student number
@@ -498,7 +499,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
                   onClick={handleSortToggle}
                 >
                   <div className="flex items-center justify-center gap-1">
-                    <span>오늘 최고 기록</span>
+                    <span>오늘 {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'} 기록</span>
                     {sortOrder === 'asc' && <ChevronUp className="h-3 w-3" />}
                     {sortOrder === 'desc' && <ChevronDown className="h-3 w-3" />}
                   </div>
@@ -520,9 +521,9 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
                     {student.name}
                   </TableCell>
                   <TableCell className="font-bold bg-muted/20 sticky left-40 z-10 border-r text-center">
-                    {(() => {
-                      const dailyRecords = dateRecords[student.id] || [];
-                      const dailyBest = calculateDailyBest(dailyRecords);
+                     {(() => {
+                       const dailyRecords = dateRecords[student.id] || [];
+                       const dailyBest = calculateDailyBestForRanking(dailyRecords, currentClassroom.rankingType || 'fastest');
                       
                       if (dailyBest === null) {
                         // Check if there are any DNF records

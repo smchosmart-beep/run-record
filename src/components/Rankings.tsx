@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/contexts/AppContext';
-import { calculateClassRankings, getClassBestRecord } from '@/utils/calculations';
+import { calculateClassRankings, getClassBestRecord, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { Trophy, Medal, Award, Crown, Timer } from 'lucide-react';
 
@@ -46,8 +46,8 @@ const Rankings = () => {
 
   const PodiumCard = ({ ranking, type }: { ranking: any; type: 'pb' | 'avg' }) => {
     const { student, stats, position } = ranking;
-    const time = type === 'pb' ? stats.personalBest : stats.averageTime;
-    const title = type === 'pb' ? '최고 기록' : '평균 기록';
+    const time = type === 'pb' ? getBestTimeForRanking(student.records, rankingType) : stats.averageTime;
+    const title = type === 'pb' ? (rankingType === 'slowest' ? '최장 기록' : '최고 기록') : '평균 기록';
     
     if (position > 3) return null;
 
@@ -90,7 +90,7 @@ const Rankings = () => {
       <div className="space-y-3">
         {rankings.map((ranking) => {
           const { student, stats, position } = ranking;
-          const time = type === 'pb' ? stats.personalBest : stats.averageTime;
+          const time = type === 'pb' ? getBestTimeForRanking(student.records, rankingType) : stats.averageTime;
           
           return (
             <Card key={student.id} className="hover:shadow-md transition-all duration-200">
@@ -129,9 +129,9 @@ const Rankings = () => {
                 {/* Additional stats */}
                 <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <p className="text-muted-foreground">개인 최고</p>
+                    <p className="text-muted-foreground">개인 {rankingType === 'slowest' ? '최장' : '최고'}</p>
                     <p className="font-medium">
-                      {stats.personalBest ? formatTime(stats.personalBest) : '--'}
+                      {getBestTimeForRanking(student.records, rankingType) ? formatTime(getBestTimeForRanking(student.records, rankingType)!) : '--'}
                     </p>
                   </div>
                   <div>
@@ -190,7 +190,7 @@ const Rankings = () => {
       {/* Rankings */}
       <Tabs defaultValue="pb" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="pb">최고 기록 순위</TabsTrigger>
+          <TabsTrigger value="pb">{rankingType === 'slowest' ? '최장' : '최고'} 기록 순위</TabsTrigger>
           <TabsTrigger value="avg">평균 기록 순위</TabsTrigger>
         </TabsList>
         

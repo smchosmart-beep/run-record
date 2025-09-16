@@ -1,9 +1,10 @@
 import React, { useMemo } from 'react';
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Student } from '@/types';
-import { calculateDailyBest } from '@/utils/calculations';
+import { calculateDailyBestForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { format } from 'date-fns';
+import { useApp } from '@/contexts/AppContext';
 
 interface StudentChartProps {
   student: Student;
@@ -18,6 +19,9 @@ interface ChartData {
 }
 
 const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => {
+  const { currentClassroom } = useApp();
+  const rankingType = currentClassroom?.rankingType || 'fastest';
+  
   const chartData = useMemo(() => {
     // 날짜별로 기록 그룹화
     const recordsByDate = new Map<string, typeof student.records>();
@@ -32,11 +36,11 @@ const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => 
       }
     });
 
-    // 각 날짜별 최고기록 계산
+    // 각 날짜별 최고/최장기록 계산
     const dailyBestData: ChartData[] = [];
     
     recordsByDate.forEach((records, dateKey) => {
-      const dailyBest = calculateDailyBest(records);
+      const dailyBest = calculateDailyBestForRanking(records, rankingType);
       if (dailyBest !== null) {
         dailyBestData.push({
           date: dateKey,
@@ -49,7 +53,7 @@ const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => 
 
     // 날짜순 정렬
     return dailyBestData.sort((a, b) => a.date.localeCompare(b.date));
-  }, [student.records]);
+  }, [student.records, rankingType]);
 
   if (chartData.length === 0) {
     return (
@@ -65,7 +69,7 @@ const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => 
         <div className="bg-card border border-border rounded-md p-2 shadow-md">
           <p className="text-sm font-medium">{`날짜: ${label}`}</p>
           <p className="text-sm text-primary font-semibold">
-            {`최고기록: ${payload[0].payload.formattedTime}`}
+            {`${rankingType === 'slowest' ? '최장' : '최고'}기록: ${payload[0].payload.formattedTime}`}
           </p>
         </div>
       );

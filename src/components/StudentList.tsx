@@ -7,7 +7,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useApp } from '@/contexts/AppContext';
 import { Student, Record } from '@/types';
-import { calculateStudentStats } from '@/utils/calculations';
+import { calculateStudentStats, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
 import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, RotateCcw, Timer, CheckSquare } from 'lucide-react';
@@ -659,9 +659,12 @@ const StudentList = () => {
                     <div className="space-y-2">
                       {/* Statistics - Single Line */}
                       <div className="text-center text-sm bg-muted/50 rounded p-2">
-                        <span className="font-bold text-primary">
-                          최고: {stats.personalBest ? formatTime(stats.personalBest) : '--'}
-                        </span>
+                         <span className="font-bold text-primary">
+                           {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'}: {(() => {
+                             const bestTime = getBestTimeForRanking(student.records, currentClassroom.rankingType || 'fastest');
+                             return bestTime ? formatTime(bestTime) : '--';
+                           })()}
+                         </span>
                         <span className="mx-2 text-muted-foreground">|</span>
                         <span className="font-bold text-secondary">
                           평균: {stats.averageTime ? formatTime(stats.averageTime) : '--'}
@@ -706,7 +709,7 @@ const StudentList = () => {
                 
                 <CardContent className="pt-0">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">날짜별 최고기록</p>
+                    <p className="text-sm font-medium text-muted-foreground">날짜별 {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'}기록</p>
                     <StudentChart student={student} yAxisDomain={classTimeRange} />
                   </div>
                 </CardContent>
