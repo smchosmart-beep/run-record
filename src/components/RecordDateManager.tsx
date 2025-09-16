@@ -203,9 +203,6 @@ const RecordDateManager = () => {
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-2xl font-bold text-foreground mb-2">기록 관리</h3>
-          <p className="text-muted-foreground">
-            날짜별로 기록을 관리하고 입력할 수 있습니다.
-          </p>
         </div>
 
         <div className="flex items-center gap-3">
