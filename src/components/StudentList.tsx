@@ -455,7 +455,7 @@ const StudentList = () => {
             {currentMode === 'view' ? (
               <>
                 <Edit className="h-4 w-4 mr-2" />
-                보기 모드로 전환
+                입력 모드로 전환
               </>
             ) : (
               <>
