@@ -253,7 +253,7 @@ const RecordDateManager = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
-              기록 세션 목록
+              날짜별 기록 확인
             </CardTitle>
           </CardHeader>
           <CardContent>
