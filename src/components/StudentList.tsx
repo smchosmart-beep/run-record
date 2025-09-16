@@ -171,6 +171,7 @@ const StudentList = () => {
         time: null,
         isDNF: false,
         recordedAt: new Date(),
+        recordDate: new Date(), // Add current date
         slotIndex: index
       })),
       isHidden: false

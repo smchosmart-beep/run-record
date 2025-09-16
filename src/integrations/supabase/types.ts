@@ -80,6 +80,7 @@ export type Database = {
         Row: {
           id: string
           is_dnf: boolean
+          record_date: string
           recorded_at: string
           slot_index: number
           student_id: string
@@ -88,6 +89,7 @@ export type Database = {
         Insert: {
           id?: string
           is_dnf?: boolean
+          record_date?: string
           recorded_at?: string
           slot_index: number
           student_id: string
@@ -96,6 +98,7 @@ export type Database = {
         Update: {
           id?: string
           is_dnf?: boolean
+          record_date?: string
           recorded_at?: string
           slot_index?: number
           student_id?: string

@@ -40,6 +40,7 @@ export type DatabaseRecord = {
   is_dnf: boolean;
   slot_index: number;
   recorded_at: string;
+  record_date: string;
 };
 
 // Convert database types to app types
@@ -74,6 +75,7 @@ const convertDbRecordToAppRecord = (dbRecord: DatabaseRecord): Record => ({
   isDNF: dbRecord.is_dnf,
   recordedAt: new Date(dbRecord.recorded_at),
   slotIndex: dbRecord.slot_index,
+  recordDate: new Date(dbRecord.record_date + 'T00:00:00'),
 });
 
 // API Functions
@@ -210,6 +212,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
           is_dnf: record.isDNF,
           slot_index: record.slotIndex,
           recorded_at: record.recordedAt.toISOString(),
+          record_date: record.recordDate.toISOString().split('T')[0],
         });
       });
     });
@@ -478,6 +481,7 @@ export async function updateStudentRecords(studentId: string, records: Record[])
       is_dnf: record.isDNF,
       slot_index: record.slotIndex,
       recorded_at: record.recordedAt.toISOString(),
+      record_date: record.recordDate.toISOString().split('T')[0],
     }));
 
     const { error: insertError } = await supabase

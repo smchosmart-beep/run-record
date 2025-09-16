@@ -14,6 +14,7 @@ export interface Record {
   isDNF: boolean;
   recordedAt: Date;
   slotIndex: number;
+  recordDate: Date; // Date when this record was created
 }
 
 export interface ClassRoom {
@@ -55,6 +56,19 @@ export interface TimeInput {
   minutes?: number;
   seconds?: number;
   milliseconds?: number;
+}
+
+// New interfaces for date-based record management
+export interface RecordSession {
+  id: string;
+  date: Date;
+  maxSlots: number;
+  records: Record[]; // Records for this specific date
+  studentCount: number;
+}
+
+export interface DateRecordsData {
+  [date: string]: Record[]; // Records grouped by date (YYYY-MM-DD format)
 }
 
 // For localStorage structure

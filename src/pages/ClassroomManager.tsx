@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/contexts/AppContext';
 import { ArrowLeft, Timer, Users, Trophy, BarChart3, Edit, Eye } from 'lucide-react';
 import StudentList from '@/components/StudentList';
-import RecordInput from '@/components/RecordInput';
+import RecordDateManager from '@/components/RecordDateManager';
 import Rankings from '@/components/Rankings';
 
 const ClassroomManager = () => {
@@ -123,7 +123,7 @@ const ClassroomManager = () => {
           </TabsContent>
           
           <TabsContent value="records">
-            <RecordInput />
+            <RecordDateManager />
           </TabsContent>
           
           <TabsContent value="rankings">

@@ -62,6 +62,7 @@ const RecordInput = () => {
         time,
         isDNF,
         recordedAt: new Date(),
+        recordDate: new Date(), // Add current date
         slotIndex,
       };
 
