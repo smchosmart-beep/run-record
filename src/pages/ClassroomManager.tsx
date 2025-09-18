@@ -45,41 +45,47 @@ const ClassroomManager = () => {
       {/* Header */}
       <header className="bg-card border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex justify-between items-center h-12 sm:h-14 lg:h-16">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               <Button
                 onClick={() => setCurrentClassroom(null)}
                 variant="ghost"
                 size="sm"
                 className="text-muted-foreground hover:text-foreground"
+                aria-label="대시보드로 돌아가기"
               >
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                대시보드로
+                <ArrowLeft className="h-4 w-4" />
               </Button>
               
               <div className="flex items-center space-x-2">
-                <Timer className="h-5 w-5 text-primary" />
+                <Timer className="h-4 w-4 sm:h-5 sm:w-5 text-primary" />
                 <div>
-                  <h1 className="font-semibold text-foreground">
+                  <h1 className="text-sm sm:text-base font-semibold text-foreground">
                     {currentClassroom.school}
                   </h1>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
                     {currentClassroom.grade}학년 {currentClassroom.className}
                   </p>
                 </div>
               </div>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-2 sm:space-x-3">
               <Select
                 value={currentClassroom.rankingType ?? 'fastest'}
                 onValueChange={(value) => handleRankingTypeChange(value as 'fastest' | 'slowest')}
               >
-                <SelectTrigger className="w-[180px]">
+                <SelectTrigger className="w-[100px] sm:w-[140px] lg:w-[180px]">
                   <SelectValue placeholder="랭킹 유형" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fastest">시간 빠른 순</SelectItem>
-                  <SelectItem value="slowest">시간 느린 순</SelectItem>
+                  <SelectItem value="fastest">
+                    <span className="sm:hidden">빠른순</span>
+                    <span className="hidden sm:inline">시간 빠른 순</span>
+                  </SelectItem>
+                  <SelectItem value="slowest">
+                    <span className="sm:hidden">느린순</span>
+                    <span className="hidden sm:inline">시간 느린 순</span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
