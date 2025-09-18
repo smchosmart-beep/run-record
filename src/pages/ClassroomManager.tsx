@@ -74,15 +74,15 @@ const ClassroomManager = () => {
                 value={currentClassroom.rankingType ?? 'fastest'}
                 onValueChange={(value) => handleRankingTypeChange(value as 'fastest' | 'slowest')}
               >
-                <SelectTrigger className="w-[100px] sm:w-[140px] lg:w-[180px]">
+                <SelectTrigger className="w-[75px] sm:w-[140px] lg:w-[180px] text-xs sm:text-sm px-2 sm:px-3">
                   <SelectValue placeholder="랭킹 유형" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="fastest">
+                  <SelectItem value="fastest" className="text-xs sm:text-sm">
                     <span className="sm:hidden">빠른순</span>
                     <span className="hidden sm:inline">시간 빠른 순</span>
                   </SelectItem>
-                  <SelectItem value="slowest">
+                  <SelectItem value="slowest" className="text-xs sm:text-sm">
                     <span className="sm:hidden">느린순</span>
                     <span className="hidden sm:inline">시간 느린 순</span>
                   </SelectItem>
