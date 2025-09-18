@@ -110,9 +110,9 @@ const Stopwatch: React.FC<StopwatchProps> = ({
           </div>
 
           {/* Main Timer Display */}
-          <div className="flex-1 flex flex-col items-center justify-center p-6 space-y-8">
+          <div className="flex-1 flex flex-col items-center justify-center p-6 relative">
             {/* Current Time Display */}
-            <div className="text-center">
+            <div className="text-center mb-6">
               <div className="text-6xl md:text-8xl font-mono font-bold text-primary tabular-nums">
                 {formatTime(currentTime)}
               </div>
@@ -122,7 +122,7 @@ const Stopwatch: React.FC<StopwatchProps> = ({
             </div>
 
             {/* Progress Indicator */}
-            <div className="w-full max-w-sm">
+            <div className="w-full max-w-sm mb-8">
               <div className="flex justify-between text-sm text-muted-foreground mb-2">
                 <span>기록된 횟수</span>
                 <span>{recordedTimes.length} / {selectedStudentCount}</span>
@@ -135,8 +135,8 @@ const Stopwatch: React.FC<StopwatchProps> = ({
               </div>
             </div>
 
-            {/* Start/Stop Buttons */}
-            <div className="flex flex-col items-center space-y-4 w-full max-w-sm">
+            {/* Fixed Position Start/Stop Buttons */}
+            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2">
               {!hasStarted ? (
                 <Button
                   onClick={handleStart}
@@ -149,7 +149,7 @@ const Stopwatch: React.FC<StopwatchProps> = ({
                   </div>
                 </Button>
               ) : (
-                <div className="flex flex-col items-center space-y-4 w-full">
+                <div className="flex flex-col items-center space-y-4">
                   <Button
                     onClick={handleStop}
                     disabled={!canStop}
@@ -167,7 +167,7 @@ const Stopwatch: React.FC<StopwatchProps> = ({
                   </Button>
                   
                   {remainingStops > 0 && (
-                    <p className="text-sm text-muted-foreground text-center">
+                    <p className="text-sm text-muted-foreground text-center whitespace-nowrap">
                       {remainingStops}번 더 정지할 수 있습니다
                     </p>
                   )}
