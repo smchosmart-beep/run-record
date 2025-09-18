@@ -177,11 +177,17 @@ const Stopwatch: React.FC<StopwatchProps> = ({
           </div>
 
           {/* Recorded Times */}
-          {recordedTimes.length > 0 && (
-            <div className="p-4 border-t bg-card">
-              <h3 className="text-sm font-medium mb-3">기록된 시간</h3>
-              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
-                {recordedTimes.map((time, index) => (
+          <div className="p-4 border-t bg-card">
+            <h3 className="text-sm font-medium mb-3">기록된 시간</h3>
+            <div className="grid grid-cols-2 gap-2 h-32 overflow-y-auto">
+              {recordedTimes.length === 0 ? (
+                <div className="col-span-2 flex items-center justify-center h-full">
+                  <p className="text-sm text-muted-foreground">
+                    아직 기록이 없습니다
+                  </p>
+                </div>
+              ) : (
+                recordedTimes.map((time, index) => (
                   <Card key={index} className="p-2">
                     <div className="text-center">
                       <Badge variant="outline" className="text-xs mb-1">
@@ -192,10 +198,10 @@ const Stopwatch: React.FC<StopwatchProps> = ({
                       </div>
                     </div>
                   </Card>
-                ))}
-              </div>
+                ))
+              )}
             </div>
-          )}
+          </div>
 
           {/* Bottom Actions */}
           <div className="p-4 border-t bg-card">
