@@ -1,4 +1,5 @@
 {
+  "id": "rrr-app",
   "name": "RRR",
   "short_name": "RRR",
   "description": "학생들의 달리기 기록을 쉽게 입력하고 순위를 확인하는 웹앱",

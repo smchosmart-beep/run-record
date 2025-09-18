@@ -1,9 +1,8 @@
-const CACHE_NAME = 'run-record-v1';
+const CACHE_NAME = 'run-record-v2';
 const urlsToCache = [
   '/',
   '/static/js/bundle.js',
   '/static/css/main.css',
-  '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png'
 ];
@@ -40,6 +39,12 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Always fetch manifest.json from network to avoid caching issues
+  if (event.request.url.includes('manifest.json')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
