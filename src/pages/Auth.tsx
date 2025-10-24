@@ -21,12 +21,69 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
 
+  // QR 코드 자동 로그인 처리
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (token) {
+      try {
+        const loginData = JSON.parse(atob(token));
+        if (loginData.email && loginData.password) {
+          setLoginUsername('QR 코드 로그인 중...');
+          handleQRLogin(loginData.email, loginData.password);
+        }
+      } catch (error) {
+        console.error('Invalid QR token:', error);
+        toast.error('유효하지 않은 QR 코드입니다');
+      }
+    }
+  }, []);
+
+  const handleQRLogin = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error('QR 코드 로그인 실패: ' + error.message);
+        setLoginUsername('');
+      } else {
+        toast.success('QR 코드로 로그인되었습니다!');
+      }
+    } catch (error) {
+      toast.error('로그인 중 오류가 발생했습니다');
+      setLoginUsername('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 인증 상태 변경 감지하여 네비게이션  
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ 인증 상태 변경 감지 - 대시보드로 이동');
-        navigate('/dashboard');
+        console.log('✅ 인증 상태 변경 감지');
+        
+        // Check user role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        const role = roleData?.role;
+        
+        if (role === 'recorder') {
+          console.log('기록용 계정으로 로그인 - 기록 대시보드로 이동');
+          navigate('/recorder-classroom');
+        } else {
+          console.log('교사 계정으로 로그인 - 대시보드로 이동');
+          navigate('/dashboard');
+        }
       }
     });
 
@@ -38,7 +95,20 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        // Check user role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        const role = roleData?.role;
+        
+        if (role === 'recorder') {
+          navigate('/recorder-classroom');
+        } else {
+          navigate('/dashboard');
+        }
       }
     };
     checkUser();
@@ -60,18 +130,48 @@ const Auth = () => {
     });
 
     try {
-      // Convert username to email format for Supabase
-      const email = `${loginUsername}@speedup.app`;
-      console.log('Attempting login with email:', email);
+      // First attempt: try with @speedup.app (teacher account format)
+      let email = `${loginUsername}@speedup.app`;
+      console.log('First attempt: login with email:', email);
       
       // Race between login and timeout
-      const { error } = await Promise.race([
+      let result = await Promise.race([
         supabase.auth.signInWithPassword({
           email,
           password: loginPassword,
         }),
         timeoutPromise
       ]) as any;
+
+      let error = result.error;
+
+      // If first attempt fails with invalid credentials, try to find actual email
+      if (error && error.message.includes("Invalid login credentials")) {
+        console.log("First login attempt failed, looking up actual email...");
+        
+        try {
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-email', {
+            body: { username: loginUsername }
+          });
+
+          if (!emailError && emailData?.email) {
+            console.log("Found actual email, retrying login with:", emailData.email);
+            email = emailData.email;
+            
+            result = await Promise.race([
+              supabase.auth.signInWithPassword({
+                email,
+                password: loginPassword,
+              }),
+              timeoutPromise
+            ]) as any;
+            
+            error = result.error;
+          }
+        } catch (lookupError) {
+          console.error("Error looking up email:", lookupError);
+        }
+      }
 
       if (error) {
         console.error('Login error:', error);
