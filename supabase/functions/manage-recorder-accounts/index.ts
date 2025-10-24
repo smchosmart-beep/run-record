@@ -68,11 +68,14 @@ Deno.serve(async (req) => {
         const email = `recorder-${timestamp}-${random}@classroom-${classroomId}.speedup.app`;
         const password = generatePassword();
 
-        // Create auth user
+        // Create auth user with username in metadata
         const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
           email,
           password,
           email_confirm: true,
+          user_metadata: {
+            username: `기록용계정-${i + 1}`,
+          },
         });
 
         if (signUpError || !authData.user) {
@@ -80,20 +83,8 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Create profile
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .insert({
-            id: authData.user.id,
-            username: `기록용계정-${i + 1}`,
-          });
-
-        if (profileError) {
-          console.error('Error creating profile:', profileError);
-          // Delete the auth user if profile creation fails
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          continue;
-        }
+        // Wait a bit for the trigger to create the profile
+        await new Promise(resolve => setTimeout(resolve, 100));
 
         // Assign recorder role
         const { error: roleError } = await supabase

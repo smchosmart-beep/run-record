@@ -43,15 +43,23 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
 
-      const { data, error } = await supabase.functions.invoke('manage-recorder-accounts', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: null,
-      });
+      // Use direct fetch for GET request with query parameters
+      const response = await fetch(
+        `https://xkgphplswdwfkxoghrgi.supabase.co/functions/v1/manage-recorder-accounts?classroomId=${classroomId}`,
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
-      if (error) throw error;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '계정 목록 조회 실패');
+      }
 
       if (data?.success) {
         setAccounts(data.accounts);
@@ -76,14 +84,26 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('인증이 필요합니다');
 
-      const { data, error } = await supabase.functions.invoke('manage-recorder-accounts/create', {
-        body: {
-          classroomId,
-          count,
-        },
-      });
+      const response = await fetch(
+        'https://xkgphplswdwfkxoghrgi.supabase.co/functions/v1/manage-recorder-accounts/create',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            classroomId,
+            count,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '계정 생성 실패');
+      }
 
       if (data?.success) {
         setCreatedAccounts(data.accounts);
@@ -108,13 +128,25 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('인증이 필요합니다');
 
-      const { data, error } = await supabase.functions.invoke('manage-recorder-accounts/delete', {
-        body: {
-          userId: accountToDelete,
-        },
-      });
+      const response = await fetch(
+        'https://xkgphplswdwfkxoghrgi.supabase.co/functions/v1/manage-recorder-accounts/delete',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${session.access_token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            userId: accountToDelete,
+          }),
+        }
+      );
 
-      if (error) throw error;
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || '계정 삭제 실패');
+      }
 
       if (data?.success) {
         toast.success(data.message);
