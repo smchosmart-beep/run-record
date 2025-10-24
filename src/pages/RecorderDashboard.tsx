@@ -12,6 +12,7 @@ export default function RecorderDashboard() {
   const { user, session, logout, authLoading } = useApp();
   const [classroomInfo, setClassroomInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !session) {
@@ -27,26 +28,39 @@ export default function RecorderDashboard() {
   const loadClassroomInfo = async () => {
     try {
       setLoading(true);
+      setError(null);
 
-      // Get the classroom assigned to this recorder
+      // Step 1: Get the classroom_id from user_roles
       const { data: roleData, error: roleError } = await supabase
         .from('user_roles')
-        .select('classroom_id, classrooms(id, school, grade, class_name, max_record_slots)')
+        .select('classroom_id')
         .eq('user_id', user!.id)
         .eq('role', 'recorder')
         .single();
 
       if (roleError) throw roleError;
 
-      if (!roleData || !roleData.classrooms) {
+      if (!roleData || !roleData.classroom_id) {
         throw new Error('할당된 학급을 찾을 수 없습니다');
       }
 
-      setClassroomInfo(roleData.classrooms);
+      // Step 2: Get the classroom information directly
+      const { data: classroomData, error: classroomError } = await supabase
+        .from('classrooms')
+        .select('id, school, grade, class_name, max_record_slots')
+        .eq('id', roleData.classroom_id)
+        .single();
+
+      if (classroomError) throw classroomError;
+
+      if (!classroomData) {
+        throw new Error('학급 정보를 불러올 수 없습니다');
+      }
+
+      setClassroomInfo(classroomData);
     } catch (error: any) {
       console.error('Error loading classroom info:', error);
-      // If user is not a recorder, redirect to dashboard
-      navigate('/dashboard');
+      setError(error.message || '학급 정보를 불러오는 중 오류가 발생했습니다');
     } finally {
       setLoading(false);
     }
@@ -61,6 +75,27 @@ export default function RecorderDashboard() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="max-w-md">
+          <CardHeader>
+            <CardTitle>⚠️ 학급 정보 로딩 실패</CardTitle>
+            <CardDescription>{error}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              할당된 학급을 찾을 수 없습니다. 교사에게 문의하세요.
+            </p>
+            <Button onClick={handleLogout} className="w-full">
+              로그아웃
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
