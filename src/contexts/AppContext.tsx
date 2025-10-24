@@ -56,14 +56,43 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
+        setAuthLoading(false);
         
-        if (!session?.user) {
+        if (session?.user) {
+          // Set basic user immediately
+          setUser({
+            id: session.user.id,
+            username: session.user.email?.split('@')[0] || 'Unknown',
+          });
+          
+          // Load full profile and role asynchronously without blocking
+          Promise.all([
+            getUserProfile(),
+            supabase
+              .from('user_roles')
+              .select('role')
+              .eq('user_id', session.user.id)
+              .maybeSingle()
+          ]).then(([profile, roleResult]) => {
+            const role = roleResult.data?.role || 'teacher';
+            console.log('User profile loaded:', profile.username, 'Role:', role);
+            
+            setUserRole(role);
+            setUser({
+              id: profile.id,
+              username: profile.username,
+              role,
+            });
+          }).catch(error => {
+            console.error('Error loading user data:', error);
+            setUserRole('teacher');
+          });
+        } else {
           console.log('No session, clearing user data');
           setUser(null);
           setUserRole(null);
           setClassrooms([]);
           setCurrentClassroomState(null);
-          setAuthLoading(false);
         }
       }
     );
@@ -82,53 +111,6 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       subscription.unsubscribe();
     };
   }, []);
-
-  // Load user profile and role when session changes
-  useEffect(() => {
-    if (!session?.user) {
-      return;
-    }
-
-    const loadUserData = async () => {
-      try {
-        setAuthLoading(true);
-        
-        // Load role and profile in parallel
-        const [roleResult, profile] = await Promise.all([
-          supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', session.user.id)
-            .maybeSingle(),
-          getUserProfile()
-        ]);
-        
-        const role = roleResult.data?.role || 'teacher';
-        
-        console.log('User profile fetched:', profile.username, 'Role:', role);
-        
-        setUserRole(role);
-        setUser({
-          id: profile.id,
-          username: profile.username,
-          role,
-        });
-      } catch (error) {
-        console.error('Error fetching user data:', error);
-        // Fallback to session data
-        setUserRole('teacher');
-        setUser({
-          id: session.user.id,
-          username: session.user.email?.split('@')[0] || 'Unknown',
-          role: 'teacher',
-        });
-      } finally {
-        setAuthLoading(false);
-      }
-    };
-
-    loadUserData();
-  }, [session]);
 
   // Load classrooms when user is authenticated
   useEffect(() => {
