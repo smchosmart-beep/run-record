@@ -478,20 +478,9 @@ export async function updateStudentNumberSafely(studentId: string, newNumber: nu
 }
 
 export async function updateStudentRecords(studentId: string, records: Record[]): Promise<void> {
-  // Delete existing records for this student
-  const { error: deleteError } = await supabase
-    .from('records')
-    .delete()
-    .eq('student_id', studentId);
-
-  if (deleteError) {
-    console.error('Error deleting existing records:', deleteError);
-    throw deleteError;
-  }
-
-  // Insert new records
+  // Use UPSERT instead of DELETE + INSERT to avoid duplicate key errors
   if (records.length > 0) {
-    const recordsToInsert = records.map((record) => ({
+    const recordsToUpsert = records.map((record) => ({
       student_id: studentId,
       time_ms: record.time,
       is_dnf: record.isDNF,
@@ -500,14 +489,44 @@ export async function updateStudentRecords(studentId: string, records: Record[])
       record_date: toYMD(record.recordDate),
     }));
 
-    const { error: insertError } = await supabase
+    const { error: upsertError } = await supabase
       .from('records')
-      .insert(recordsToInsert);
+      .upsert(recordsToUpsert, {
+        onConflict: 'student_id,slot_index,record_date',
+        ignoreDuplicates: false
+      });
 
-    if (insertError) {
-      console.error('Error inserting records:', insertError);
-      throw insertError;
+    if (upsertError) {
+      console.error('Error upserting records:', upsertError);
+      throw upsertError;
     }
+  }
+}
+
+// Upsert a single record (efficient for individual updates)
+export async function upsertSingleRecord(
+  studentId: string, 
+  record: Record
+): Promise<void> {
+  const recordToUpsert = {
+    student_id: studentId,
+    time_ms: record.time,
+    is_dnf: record.isDNF,
+    slot_index: record.slotIndex,
+    recorded_at: record.recordedAt.toISOString(),
+    record_date: toYMD(record.recordDate),
+  };
+
+  const { error } = await supabase
+    .from('records')
+    .upsert(recordToUpsert, {
+      onConflict: 'student_id,slot_index,record_date',
+      ignoreDuplicates: false
+    });
+
+  if (error) {
+    console.error('Error upserting single record:', error);
+    throw error;
   }
 }
 
