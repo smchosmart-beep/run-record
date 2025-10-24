@@ -2,3 +2,6 @@ project_id = "xkgphplswdwfkxoghrgi"
 
 [functions.manage-recorder-accounts]
 verify_jwt = true
+
+[functions.get-user-email]
+verify_jwt = false
