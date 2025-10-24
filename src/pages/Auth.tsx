@@ -130,18 +130,48 @@ const Auth = () => {
     });
 
     try {
-      // Convert username to email format for Supabase
-      const email = `${loginUsername}@speedup.app`;
-      console.log('Attempting login with email:', email);
+      // First attempt: try with @speedup.app (teacher account format)
+      let email = `${loginUsername}@speedup.app`;
+      console.log('First attempt: login with email:', email);
       
       // Race between login and timeout
-      const { error } = await Promise.race([
+      let result = await Promise.race([
         supabase.auth.signInWithPassword({
           email,
           password: loginPassword,
         }),
         timeoutPromise
       ]) as any;
+
+      let error = result.error;
+
+      // If first attempt fails with invalid credentials, try to find actual email
+      if (error && error.message.includes("Invalid login credentials")) {
+        console.log("First login attempt failed, looking up actual email...");
+        
+        try {
+          const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-email', {
+            body: { username: loginUsername }
+          });
+
+          if (!emailError && emailData?.email) {
+            console.log("Found actual email, retrying login with:", emailData.email);
+            email = emailData.email;
+            
+            result = await Promise.race([
+              supabase.auth.signInWithPassword({
+                email,
+                password: loginPassword,
+              }),
+              timeoutPromise
+            ]) as any;
+            
+            error = result.error;
+          }
+        } catch (lookupError) {
+          console.error("Error looking up email:", lookupError);
+        }
+      }
 
       if (error) {
         console.error('Login error:', error);
