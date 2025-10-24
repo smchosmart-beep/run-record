@@ -7,7 +7,11 @@ const corsHeaders = {
 
 interface CreateRecorderRequest {
   classroomId: string;
-  count: number;
+  accounts: Array<{
+    username: string;
+    email?: string;
+    password: string;
+  }>;
 }
 
 interface DeleteRecorderRequest {
@@ -43,9 +47,9 @@ Deno.serve(async (req) => {
 
     // CREATE recorder accounts
     if (method === 'POST' && url.pathname.endsWith('/create')) {
-      const { classroomId, count }: CreateRecorderRequest = await req.json();
+      const { classroomId, accounts }: CreateRecorderRequest = await req.json();
 
-      console.log(`Creating ${count} recorder accounts for classroom ${classroomId}`);
+      console.log(`Creating ${accounts.length} recorder accounts for classroom ${classroomId}`);
 
       // Verify user owns the classroom
       const { data: classroom, error: classroomError } = await supabase
@@ -59,64 +63,112 @@ Deno.serve(async (req) => {
         throw new Error('학급을 찾을 수 없거나 권한이 없습니다');
       }
 
+      // Validate accounts
+      if (!accounts || accounts.length === 0) {
+        throw new Error('생성할 계정 정보가 없습니다');
+      }
+
+      if (accounts.length > 10) {
+        throw new Error('한 번에 최대 10개의 계정만 생성할 수 있습니다');
+      }
+
       const createdAccounts = [];
+      const failedAccounts = [];
 
-      for (let i = 0; i < count; i++) {
-        // Generate unique email for recorder
-        const timestamp = Date.now();
-        const random = Math.floor(Math.random() * 1000);
-        const email = `recorder-${timestamp}-${random}@classroom-${classroomId}.speedup.app`;
-        const password = generatePassword();
-
-        // Create auth user with username in metadata
-        const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
-          email,
-          password,
-          email_confirm: true,
-          user_metadata: {
-            username: `기록용계정-${i + 1}`,
-          },
-        });
-
-        if (signUpError || !authData.user) {
-          console.error('Error creating auth user:', signUpError);
+      for (let i = 0; i < accounts.length; i++) {
+        const account = accounts[i];
+        
+        // Validate account data
+        if (!account.username || account.username.trim().length < 2) {
+          failedAccounts.push({
+            username: account.username || `계정 ${i + 1}`,
+            reason: '아이디는 2자 이상이어야 합니다',
+          });
           continue;
         }
 
-        // Wait a bit for the trigger to create the profile
-        await new Promise(resolve => setTimeout(resolve, 100));
+        if (!account.password || account.password.length < 8) {
+          failedAccounts.push({
+            username: account.username,
+            reason: '비밀번호는 8자 이상이어야 합니다',
+          });
+          continue;
+        }
 
-        // Assign recorder role
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .insert({
-            user_id: authData.user.id,
-            role: 'recorder',
-            classroom_id: classroomId,
+        // Generate email if not provided
+        const email = account.email || 
+          `${account.username.toLowerCase().replace(/\s+/g, '-')}@classroom-${classroomId}.speedup.app`;
+
+        try {
+          // Create auth user with username in metadata
+          const { data: authData, error: signUpError } = await supabase.auth.admin.createUser({
+            email,
+            password: account.password,
+            email_confirm: true,
+            user_metadata: {
+              username: account.username,
+            },
           });
 
-        if (roleError) {
-          console.error('Error assigning role:', roleError);
-          // Clean up
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          continue;
+          if (signUpError || !authData.user) {
+            console.error('Error creating auth user:', signUpError);
+            failedAccounts.push({
+              username: account.username,
+              reason: signUpError?.message || '계정 생성 실패',
+            });
+            continue;
+          }
+
+          // Wait a bit for the trigger to create the profile
+          await new Promise(resolve => setTimeout(resolve, 100));
+
+          // Assign recorder role
+          const { error: roleError } = await supabase
+            .from('user_roles')
+            .insert({
+              user_id: authData.user.id,
+              role: 'recorder',
+              classroom_id: classroomId,
+            });
+
+          if (roleError) {
+            console.error('Error assigning role:', roleError);
+            // Clean up
+            await supabase.auth.admin.deleteUser(authData.user.id);
+            failedAccounts.push({
+              username: account.username,
+              reason: '역할 할당 실패',
+            });
+            continue;
+          }
+
+          createdAccounts.push({
+            id: authData.user.id,
+            email,
+            password: account.password,
+            username: account.username,
+          });
+
+          console.log(`Created recorder account: ${account.username} (${email})`);
+        } catch (error: any) {
+          console.error(`Error creating account for ${account.username}:`, error);
+          failedAccounts.push({
+            username: account.username,
+            reason: error.message || '알 수 없는 오류',
+          });
         }
-
-        createdAccounts.push({
-          id: authData.user.id,
-          email,
-          password,
-          username: `기록용계정-${i + 1}`,
-        });
-
-        console.log(`Created recorder account: ${email}`);
       }
+
+      const message = createdAccounts.length > 0
+        ? `${createdAccounts.length}개의 기록용 계정이 생성되었습니다${failedAccounts.length > 0 ? ` (${failedAccounts.length}개 실패)` : ''}`
+        : '계정 생성에 실패했습니다';
 
       return new Response(
         JSON.stringify({
-          success: true,
+          success: createdAccounts.length > 0,
           accounts: createdAccounts,
-          message: `${createdAccounts.length}개의 기록용 계정이 생성되었습니다`,
+          failed: failedAccounts,
+          message,
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
@@ -224,12 +276,3 @@ Deno.serve(async (req) => {
   }
 });
 
-function generatePassword(): string {
-  const length = 12;
-  const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*';
-  let password = '';
-  for (let i = 0; i < length; i++) {
-    password += charset.charAt(Math.floor(Math.random() * charset.length));
-  }
-  return password;
-}

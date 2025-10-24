@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Copy, Plus, Trash2, UserPlus } from 'lucide-react';
+import { Copy, Plus, Trash2, UserPlus, X, AlertCircle } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
@@ -19,6 +19,12 @@ interface RecorderAccount {
   createdAt: string;
 }
 
+interface NewAccountForm {
+  username: string;
+  password: string;
+  error?: string;
+}
+
 interface RecorderAccountManagerProps {
   classroomId: string;
 }
@@ -27,7 +33,7 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
   const [accounts, setAccounts] = useState<RecorderAccount[]>([]);
   const [loading, setLoading] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [accountCount, setAccountCount] = useState('4');
+  const [newAccounts, setNewAccounts] = useState<NewAccountForm[]>([{ username: '', password: '' }]);
   const [createdAccounts, setCreatedAccounts] = useState<RecorderAccount[]>([]);
   const [showCreatedAccounts, setShowCreatedAccounts] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -72,10 +78,67 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
     }
   };
 
+  const addAccountForm = () => {
+    if (newAccounts.length < 10) {
+      setNewAccounts([...newAccounts, { username: '', password: '' }]);
+    }
+  };
+
+  const removeAccountForm = (index: number) => {
+    if (newAccounts.length > 1) {
+      setNewAccounts(newAccounts.filter((_, i) => i !== index));
+    }
+  };
+
+  const updateAccountForm = (index: number, field: 'username' | 'password', value: string) => {
+    const updated = [...newAccounts];
+    updated[index][field] = value;
+    updated[index].error = undefined;
+    setNewAccounts(updated);
+  };
+
+  const validateAccounts = (): boolean => {
+    let isValid = true;
+    const updated = newAccounts.map(account => {
+      const errors: string[] = [];
+      
+      if (!account.username.trim()) {
+        errors.push('아이디를 입력하세요');
+        isValid = false;
+      } else if (account.username.length < 2) {
+        errors.push('아이디는 2자 이상이어야 합니다');
+        isValid = false;
+      }
+      
+      if (!account.password) {
+        errors.push('비밀번호를 입력하세요');
+        isValid = false;
+      } else if (account.password.length < 8) {
+        errors.push('비밀번호는 8자 이상이어야 합니다');
+        isValid = false;
+      }
+      
+      return { ...account, error: errors.join(', ') };
+    });
+
+    setNewAccounts(updated);
+
+    // Check for duplicate usernames
+    const usernames = newAccounts.map(a => a.username.trim().toLowerCase());
+    const hasDuplicates = usernames.some((username, index) => 
+      username && usernames.indexOf(username) !== index
+    );
+    
+    if (hasDuplicates) {
+      toast.error('중복된 아이디가 있습니다');
+      isValid = false;
+    }
+
+    return isValid;
+  };
+
   const handleCreateAccounts = async () => {
-    const count = parseInt(accountCount);
-    if (isNaN(count) || count < 1 || count > 10) {
-      toast.error('1~10 사이의 숫자를 입력해주세요');
+    if (!validateAccounts()) {
       return;
     }
 
@@ -94,7 +157,10 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
           },
           body: JSON.stringify({
             classroomId,
-            count,
+            accounts: newAccounts.map(acc => ({
+              username: acc.username.trim(),
+              password: acc.password,
+            })),
           }),
         }
       );
@@ -109,7 +175,13 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
         setCreatedAccounts(data.accounts);
         setShowCreatedAccounts(true);
         setCreateDialogOpen(false);
+        setNewAccounts([{ username: '', password: '' }]);
         toast.success(data.message);
+        
+        if (data.failed && data.failed.length > 0) {
+          toast.error(`일부 계정 생성 실패: ${data.failed.map((f: any) => f.username).join(', ')}`);
+        }
+        
         await loadAccounts();
       }
     } catch (error: any) {
@@ -222,34 +294,91 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
       )}
 
       {/* Create Accounts Dialog */}
-      <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-        <DialogContent>
+      <Dialog open={createDialogOpen} onOpenChange={(open) => {
+        setCreateDialogOpen(open);
+        if (!open) {
+          setNewAccounts([{ username: '', password: '' }]);
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>기록용 계정 생성</DialogTitle>
             <DialogDescription>
-              생성할 계정 개수를 입력하세요 (1~10개)
+              아이디와 비밀번호를 입력하세요 (비밀번호는 8자 이상)
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="count">계정 개수</Label>
-              <Input
-                id="count"
-                type="number"
-                min="1"
-                max="10"
-                value={accountCount}
-                onChange={(e) => setAccountCount(e.target.value)}
-                placeholder="4"
-              />
-            </div>
+            {newAccounts.map((account, index) => (
+              <Card key={index} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <h4 className="font-medium">계정 {index + 1}</h4>
+                  {newAccounts.length > 1 && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => removeAccountForm(index)}
+                      className="h-8 w-8 p-0"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+                <div className="space-y-3">
+                  <div className="space-y-2">
+                    <Label htmlFor={`username-${index}`}>아이디</Label>
+                    <Input
+                      id={`username-${index}`}
+                      placeholder="예: 1모둠"
+                      value={account.username}
+                      onChange={(e) => updateAccountForm(index, 'username', e.target.value)}
+                      className={account.error && !account.username ? 'border-destructive' : ''}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor={`password-${index}`}>비밀번호</Label>
+                    <Input
+                      id={`password-${index}`}
+                      type="password"
+                      placeholder="8자 이상"
+                      value={account.password}
+                      onChange={(e) => updateAccountForm(index, 'password', e.target.value)}
+                      className={account.error && !account.password ? 'border-destructive' : ''}
+                    />
+                  </div>
+                  {account.error && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      <span>{account.error}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+            ))}
+            
+            {newAccounts.length < 10 && (
+              <Button
+                variant="outline"
+                onClick={addAccountForm}
+                className="w-full"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                계정 추가
+              </Button>
+            )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreateDialogOpen(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setCreateDialogOpen(false)}
+              disabled={loading}
+            >
               취소
             </Button>
-            <Button onClick={handleCreateAccounts} disabled={loading}>
-              생성
+            <Button 
+              onClick={handleCreateAccounts}
+              disabled={loading}
+            >
+              {loading ? '생성 중...' : '생성'}
             </Button>
           </DialogFooter>
         </DialogContent>
