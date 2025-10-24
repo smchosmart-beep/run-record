@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
-import { ArrowLeft, Timer, Users, Trophy, BarChart3, Edit, Eye } from 'lucide-react';
+import { ArrowLeft, Timer, Users, Trophy, BarChart3, Edit, Eye, UserCog } from 'lucide-react';
 import StudentList from '@/components/StudentList';
 import RecordDateManager from '@/components/RecordDateManager';
 import Rankings from '@/components/Rankings';
+import { RecorderAccountManager } from '@/components/RecorderAccountManager';
 
 const ClassroomManager = () => {
   const { user, currentClassroom, currentMode, setMode, setCurrentClassroom, updateClassroom } = useApp();
@@ -141,10 +142,11 @@ const ClassroomManager = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="students">학생 명단</TabsTrigger>
             <TabsTrigger value="records">기록 관리</TabsTrigger>
             <TabsTrigger value="rankings">순위 보기</TabsTrigger>
+            <TabsTrigger value="accounts">기록 계정</TabsTrigger>
           </TabsList>
           
           <TabsContent value="students">
@@ -157,6 +159,20 @@ const ClassroomManager = () => {
           
           <TabsContent value="rankings">
             <Rankings />
+          </TabsContent>
+          
+          <TabsContent value="accounts">
+            <Card>
+              <CardHeader>
+                <CardTitle>기록용 계정 관리</CardTitle>
+                <CardDescription>
+                  학생들이 직접 기록을 입력할 수 있는 계정을 생성하고 관리합니다
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <RecorderAccountManager classroomId={currentClassroom.id} />
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </main>

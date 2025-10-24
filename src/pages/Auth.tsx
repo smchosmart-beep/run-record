@@ -23,10 +23,26 @@ const Auth = () => {
 
   // 인증 상태 변경 감지하여 네비게이션  
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
-        console.log('✅ 인증 상태 변경 감지 - 대시보드로 이동');
-        navigate('/dashboard');
+        console.log('✅ 인증 상태 변경 감지');
+        
+        // Check user role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        const role = roleData?.role;
+        
+        if (role === 'recorder') {
+          console.log('기록용 계정으로 로그인 - 기록 대시보드로 이동');
+          navigate('/recorder-classroom');
+        } else {
+          console.log('교사 계정으로 로그인 - 대시보드로 이동');
+          navigate('/dashboard');
+        }
       }
     });
 
@@ -38,7 +54,20 @@ const Auth = () => {
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        navigate('/dashboard');
+        // Check user role
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', session.user.id)
+          .maybeSingle();
+        
+        const role = roleData?.role;
+        
+        if (role === 'recorder') {
+          navigate('/recorder-classroom');
+        } else {
+          navigate('/dashboard');
+        }
       }
     };
     checkUser();

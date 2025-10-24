@@ -14,6 +14,7 @@ interface AppContextType {
   isLoading: boolean; // For backward compatibility
   authLoading: boolean;
   dataLoading: boolean;
+  userRole: 'teacher' | 'recorder' | null;
   logout: () => Promise<void>;
   setCurrentClassroom: (classroom: ClassRoom | null) => void;
   setMode: (mode: AppMode) => void;
@@ -41,6 +42,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [currentMode, setCurrentMode] = useState<AppMode>('view');
   const [authLoading, setAuthLoading] = useState(true);
   const [dataLoading, setDataLoading] = useState(false);
+  const [userRole, setUserRole] = useState<'teacher' | 'recorder' | null>(null);
   
   // Derived state for backward compatibility
   const isLoading = authLoading || dataLoading;
@@ -63,19 +65,31 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
           });
           
           // Defer profile loading but don't block user state
-          setTimeout(() => {
-            getUserProfile()
-              .then(profile => {
-                console.log('User profile fetched:', profile.username);
-                setUser({
-                  id: profile.id,
-                  username: profile.username,
-                });
-              })
-              .catch(error => {
-                console.error('Error fetching user profile:', error);
-                // Keep fallback user info from session
+          setTimeout(async () => {
+            try {
+              const profile = await getUserProfile();
+              console.log('User profile fetched:', profile.username);
+              
+              // Check user role
+              const { data: roleData } = await supabase
+                .from('user_roles')
+                .select('role')
+                .eq('user_id', profile.id)
+                .maybeSingle();
+              
+              const role = roleData?.role || 'teacher';
+              setUserRole(role);
+              
+              setUser({
+                id: profile.id,
+                username: profile.username,
+                role,
               });
+            } catch (error) {
+              console.error('Error fetching user profile:', error);
+              // Keep fallback user info from session
+              setUserRole('teacher'); // Default to teacher
+            }
           }, 0);
         } else {
           console.log('No session, clearing user data');
@@ -276,6 +290,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     isLoading,
     authLoading,
     dataLoading,
+    userRole,
     logout,
     setCurrentClassroom,
     setMode,

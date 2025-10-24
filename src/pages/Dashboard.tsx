@@ -9,7 +9,7 @@ import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 
 const Dashboard = () => {
-  const { user, logout, classrooms, setCurrentClassroom, authLoading, dataLoading, refreshClassrooms } = useApp();
+  const { user, logout, classrooms, setCurrentClassroom, authLoading, dataLoading, refreshClassrooms, userRole } = useApp();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const navigate = useNavigate();
 
@@ -27,6 +27,11 @@ const Dashboard = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Redirect recorders to their dashboard
+  if (userRole === 'recorder') {
+    return <Navigate to="/recorder-classroom" replace />;
   }
 
   const handleLogout = async () => {
