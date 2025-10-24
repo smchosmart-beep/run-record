@@ -9,17 +9,17 @@ import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 
 const Dashboard = () => {
-  const { user, logout, classrooms, setCurrentClassroom, authLoading, dataLoading, refreshClassrooms, userRole } = useApp();
+  const { user, logout, classrooms, setCurrentClassroom, authLoading, dataLoading, refreshClassrooms } = useApp();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const navigate = useNavigate();
 
-  // 인증 로딩 중이거나 사용자 역할 확인 중일 때 전체화면 스피너 표시
-  if (authLoading || (user && userRole === null)) {
+  // 인증 로딩 중일 때만 전체화면 스피너 표시
+  if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">사용자 정보 확인 중...</p>
+          <p className="text-muted-foreground">인증 확인 중...</p>
         </div>
       </div>
     );
@@ -27,11 +27,6 @@ const Dashboard = () => {
 
   if (!user) {
     return <Navigate to="/auth" replace />;
-  }
-
-  // Redirect recorders to their dashboard
-  if (userRole === 'recorder') {
-    return <Navigate to="/recorder-classroom" replace />;
   }
 
   const handleLogout = async () => {

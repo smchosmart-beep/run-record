@@ -33,15 +33,6 @@ export interface User {
   id: string;
   username: string;
   currentClassId?: string;
-  role?: 'teacher' | 'recorder';
-}
-
-export interface UserRole {
-  id: string;
-  userId: string;
-  role: 'teacher' | 'recorder';
-  classroomId?: string;
-  createdAt: Date;
 }
 
 export interface StudentStats {
