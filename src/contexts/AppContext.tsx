@@ -57,49 +57,14 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         console.log('Auth state changed:', event, session?.user?.id);
         setSession(session);
         
-        // Set user immediately to prevent navigation issues
-        if (session?.user) {
-          // Immediately check user role to prevent Dashboard flash for recorders
-          (async () => {
-            try {
-              // First, check role immediately
-              const { data: roleData } = await supabase
-                .from('user_roles')
-                .select('role')
-                .eq('user_id', session.user.id)
-                .maybeSingle();
-              
-              const role = roleData?.role || 'teacher';
-              setUserRole(role);
-              
-              // Then load profile for username
-              const profile = await getUserProfile();
-              console.log('User profile fetched:', profile.username);
-              
-              setUser({
-                id: profile.id,
-                username: profile.username,
-                role,
-              });
-            } catch (error) {
-              console.error('Error fetching user profile:', error);
-              // Keep fallback user info from session
-              setUserRole('teacher'); // Default to teacher
-              setUser({
-                id: session.user.id,
-                username: session.user.email?.split('@')[0] || 'Unknown',
-                role: 'teacher',
-              });
-            }
-          })();
-        } else {
+        if (!session?.user) {
           console.log('No session, clearing user data');
           setUser(null);
+          setUserRole(null);
           setClassrooms([]);
           setCurrentClassroomState(null);
+          setAuthLoading(false);
         }
-        
-        setAuthLoading(false);
       }
     );
 
@@ -117,6 +82,53 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       subscription.unsubscribe();
     };
   }, []);
+
+  // Load user profile and role when session changes
+  useEffect(() => {
+    if (!session?.user) {
+      return;
+    }
+
+    const loadUserData = async () => {
+      try {
+        setAuthLoading(true);
+        
+        // Load role and profile in parallel
+        const [roleResult, profile] = await Promise.all([
+          supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', session.user.id)
+            .maybeSingle(),
+          getUserProfile()
+        ]);
+        
+        const role = roleResult.data?.role || 'teacher';
+        
+        console.log('User profile fetched:', profile.username, 'Role:', role);
+        
+        setUserRole(role);
+        setUser({
+          id: profile.id,
+          username: profile.username,
+          role,
+        });
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+        // Fallback to session data
+        setUserRole('teacher');
+        setUser({
+          id: session.user.id,
+          username: session.user.email?.split('@')[0] || 'Unknown',
+          role: 'teacher',
+        });
+      } finally {
+        setAuthLoading(false);
+      }
+    };
+
+    loadUserData();
+  }, [session]);
 
   // Load classrooms when user is authenticated
   useEffect(() => {
