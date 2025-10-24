@@ -2,16 +2,18 @@ import { Timer, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
+import { useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useApp();
 
   // Redirect to dashboard if user is already logged in
-  if (user) {
-    navigate('/dashboard');
-    return null;
-  }
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard');
+    }
+  }, [user, navigate]);
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
       <div className="text-center max-w-2xl mx-auto px-4">
