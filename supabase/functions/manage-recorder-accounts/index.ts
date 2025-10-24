@@ -51,7 +51,7 @@ Deno.serve(async (req) => {
 
       console.log(`Creating ${accounts.length} recorder accounts for classroom ${classroomId}`);
 
-      // Verify user owns the classroom
+      // Verify user owns the classroom and get teacher info
       const { data: classroom, error: classroomError } = await supabase
         .from('classrooms')
         .select('id, user_id')
@@ -62,6 +62,19 @@ Deno.serve(async (req) => {
       if (classroomError || !classroom) {
         throw new Error('학급을 찾을 수 없거나 권한이 없습니다');
       }
+
+      // Get teacher's username for email generation
+      const { data: teacherProfile, error: profileError } = await supabase
+        .from('profiles')
+        .select('username')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError || !teacherProfile) {
+        throw new Error('교사 정보를 찾을 수 없습니다');
+      }
+
+      const teacherUsername = teacherProfile.username;
 
       // Validate accounts
       if (!accounts || accounts.length === 0) {
@@ -95,9 +108,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Generate email if not provided
+        // Generate email with teacher username subdomain
         const email = account.email || 
-          `${account.username.toLowerCase().replace(/\s+/g, '-')}@classroom-${classroomId}.speedup.app`;
+          `${account.username.toLowerCase().replace(/\s+/g, '-')}@speedup.${teacherUsername}.app`;
 
         try {
           // Create auth user with username in metadata

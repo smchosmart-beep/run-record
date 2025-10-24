@@ -21,6 +21,47 @@ const Auth = () => {
   const [signupPassword, setSignupPassword] = useState("");
   const [signupUsername, setSignupUsername] = useState("");
 
+  // QR 코드 자동 로그인 처리
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    
+    if (token) {
+      try {
+        const loginData = JSON.parse(atob(token));
+        if (loginData.email && loginData.password) {
+          setLoginUsername('QR 코드 로그인 중...');
+          handleQRLogin(loginData.email, loginData.password);
+        }
+      } catch (error) {
+        console.error('Invalid QR token:', error);
+        toast.error('유효하지 않은 QR 코드입니다');
+      }
+    }
+  }, []);
+
+  const handleQRLogin = async (email: string, password: string) => {
+    setIsLoading(true);
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        toast.error('QR 코드 로그인 실패: ' + error.message);
+        setLoginUsername('');
+      } else {
+        toast.success('QR 코드로 로그인되었습니다!');
+      }
+    } catch (error) {
+      toast.error('로그인 중 오류가 발생했습니다');
+      setLoginUsername('');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // 인증 상태 변경 감지하여 네비게이션  
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {

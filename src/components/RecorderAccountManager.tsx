@@ -7,9 +7,10 @@ import { Label } from '@/components/ui/label';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { Copy, Plus, Trash2, UserPlus, X, AlertCircle } from 'lucide-react';
+import { Copy, Plus, Trash2, UserPlus, X, AlertCircle, Download, QrCode } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { QRCodeSVG } from 'qrcode.react';
 
 interface RecorderAccount {
   id: string;
@@ -239,6 +240,41 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
     toast.success(`${label}이(가) 복사되었습니다`);
   };
 
+  const downloadQRCode = (username: string) => {
+    const svg = document.getElementById(`qr-${username}`);
+    if (!svg) return;
+
+    const svgData = new XMLSerializer().serializeToString(svg);
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const img = new Image();
+
+    img.onload = () => {
+      canvas.width = img.width;
+      canvas.height = img.height;
+      ctx?.drawImage(img, 0, 0);
+      canvas.toBlob((blob) => {
+        if (blob) {
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = `${username}-qr.png`;
+          link.click();
+          URL.revokeObjectURL(url);
+          toast.success('QR 코드가 다운로드되었습니다');
+        }
+      });
+    };
+
+    img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
+  };
+
+  const generateLoginUrl = (email: string, password: string) => {
+    const loginData = { email, password };
+    const encodedData = btoa(JSON.stringify(loginData));
+    return `${window.location.origin}/auth?token=${encodedData}`;
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center">
@@ -390,7 +426,7 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
           <DialogHeader>
             <DialogTitle>생성된 계정 정보</DialogTitle>
             <DialogDescription>
-              아래 정보를 학생들에게 전달하세요. 이 정보는 다시 확인할 수 없으니 반드시 복사해두세요!
+              아래 정보를 학생들에게 전달하세요. QR 코드를 스캔하면 자동으로 로그인됩니다!
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
@@ -399,32 +435,59 @@ export function RecorderAccountManager({ classroomId }: RecorderAccountManagerPr
                 <CardHeader>
                   <CardTitle className="text-base">{account.username}</CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">이메일</Label>
-                      <p className="text-sm font-mono">{account.email}</p>
+                <CardContent className="space-y-4">
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <div className="flex-1 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1 flex-1">
+                          <Label className="text-xs text-muted-foreground">아이디</Label>
+                          <p className="text-sm font-mono break-all">{account.username}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(account.username, '아이디')}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1 flex-1">
+                          <Label className="text-xs text-muted-foreground">비밀번호</Label>
+                          <p className="text-sm font-mono">{account.password}</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => copyToClipboard(account.password!, '비밀번호')}
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(account.email!, '이메일')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                    <div className="flex flex-col items-center gap-2">
+                      <div className="p-2 bg-white rounded-lg">
+                        <QRCodeSVG 
+                          id={`qr-${account.username}`}
+                          value={generateLoginUrl(account.email!, account.password!)}
+                          size={120}
+                          level="H"
+                          includeMargin={true}
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => downloadQRCode(account.username)}
+                        className="w-full"
+                      >
+                        <Download className="h-4 w-4 mr-2" />
+                        QR 다운로드
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">비밀번호</Label>
-                      <p className="text-sm font-mono">{account.password}</p>
-                    </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => copyToClipboard(account.password!, '비밀번호')}
-                    >
-                      <Copy className="h-4 w-4" />
-                    </Button>
+                  <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                    💡 QR 코드를 스캔하면 자동으로 로그인됩니다
                   </div>
                 </CardContent>
               </Card>
