@@ -59,26 +59,22 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
         
         // Set user immediately to prevent navigation issues
         if (session?.user) {
-          setUser({
-            id: session.user.id,
-            username: session.user.email?.split('@')[0] || 'Unknown',
-          });
-          
-          // Defer profile loading but don't block user state
-          setTimeout(async () => {
+          // Immediately check user role to prevent Dashboard flash for recorders
+          (async () => {
             try {
-              const profile = await getUserProfile();
-              console.log('User profile fetched:', profile.username);
-              
-              // Check user role
+              // First, check role immediately
               const { data: roleData } = await supabase
                 .from('user_roles')
                 .select('role')
-                .eq('user_id', profile.id)
+                .eq('user_id', session.user.id)
                 .maybeSingle();
               
               const role = roleData?.role || 'teacher';
               setUserRole(role);
+              
+              // Then load profile for username
+              const profile = await getUserProfile();
+              console.log('User profile fetched:', profile.username);
               
               setUser({
                 id: profile.id,
@@ -89,8 +85,13 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
               console.error('Error fetching user profile:', error);
               // Keep fallback user info from session
               setUserRole('teacher'); // Default to teacher
+              setUser({
+                id: session.user.id,
+                username: session.user.email?.split('@')[0] || 'Unknown',
+                role: 'teacher',
+              });
             }
-          }, 0);
+          })();
         } else {
           console.log('No session, clearing user data');
           setUser(null);
