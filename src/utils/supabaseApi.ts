@@ -105,72 +105,61 @@ export async function getClassrooms(): Promise<ClassRoom[]> {
     return [];
   }
 
-  const classIds = classrooms.map(c => c.id);
-  
-  // Step 2: Fetch all students for all classrooms in one query
-  console.log('📡 모든 학급의 학생 데이터 일괄 조회 중...');
-  const { data: students, error: studentsError } = await withTimeout(
-    Promise.resolve(
-      supabase
-        .from('students')
-        .select('*')
-        .in('classroom_id', classIds)
-        .order('number')
-    )
+  // Fetch students and records for each classroom
+  console.log('📡 학생 및 기록 데이터 요청 시작');
+  const classroomsWithStudents = await Promise.all(
+    classrooms.map(async (classroom, index) => {
+      console.log(`📚 학급 ${index + 1}/${classrooms.length}: ${classroom.class_name} 처리 중`);
+      
+      const { data: students, error: studentsError } = await withTimeout(
+        Promise.resolve(
+          supabase
+            .from('students')
+            .select('*')
+            .eq('classroom_id', classroom.id)
+            .order('number')
+        )
+      );
+
+      if (studentsError) {
+        console.error('❌ 학생 목록 조회 실패:', studentsError);
+        throw studentsError;
+      }
+
+      console.log(`👥 학급 ${classroom.class_name}: ${students?.length || 0}명 학생 조회`);
+
+      const studentsWithRecords = await Promise.all(
+        (students || []).map(async (student, studentIndex) => {
+          console.log(`📊 학생 ${studentIndex + 1}/${students?.length}: ${student.name} 기록 조회 중`);
+          
+          const { data: records, error: recordsError } = await withTimeout(
+            Promise.resolve(
+              supabase
+                .from('records')
+                .select('*')
+                .eq('student_id', student.id)
+                .order('slot_index')
+            )
+          );
+
+          if (recordsError) {
+            console.error('❌ 기록 조회 실패:', recordsError);
+            throw recordsError;
+          }
+
+          const appRecords = (records || []).map(convertDbRecordToAppRecord);
+          console.log(`📈 학생 ${student.name}: ${appRecords.length}개 기록 조회`);
+          return convertDbStudentToAppStudent(student, appRecords);
+        })
+      );
+
+      console.log(`✅ 학급 ${classroom.class_name} 처리 완료`);
+      return convertDbClassroomToAppClassroom(classroom, studentsWithRecords);
+    })
   );
-  
-  if (studentsError) {
-    console.error('❌ 학생 목록 조회 실패:', studentsError);
-    throw studentsError;
-  }
 
-  console.log('✅ 전체 학생 조회 완료:', students?.length || 0, '명');
-
-  const studentIds = (students || []).map(s => s.id);
-  
-  // Step 3: Fetch all records for all students in one query
-  console.log('📡 모든 학생의 기록 데이터 일괄 조회 중...');
-  const { data: records, error: recordsError } = studentIds.length > 0 ? await withTimeout(
-    Promise.resolve(
-      supabase
-        .from('records')
-        .select('*')
-        .in('student_id', studentIds)
-        .order('slot_index')
-    )
-  ) : { data: [], error: null };
-
-  if (recordsError) {
-    console.error('❌ 기록 조회 실패:', recordsError);
-    throw recordsError;
-  }
-
-  console.log('✅ 전체 기록 조회 완료:', records?.length || 0, '개');
-
-  // Step 4: Group records by student_id
-  const recordsByStudent = new Map<string, DatabaseRecord[]>();
-  (records || []).forEach(record => {
-    if (!recordsByStudent.has(record.student_id)) {
-      recordsByStudent.set(record.student_id, []);
-    }
-    recordsByStudent.get(record.student_id)!.push(record);
-  });
-
-  // Step 5: Group students by classroom_id with their records
-  const studentsByClass = new Map<string, Student[]>();
-  (students || []).forEach(student => {
-    if (!studentsByClass.has(student.classroom_id)) {
-      studentsByClass.set(student.classroom_id, []);
-    }
-    const studentRecords = (recordsByStudent.get(student.id) || []).map(convertDbRecordToAppRecord);
-    studentsByClass.get(student.classroom_id)!.push(convertDbStudentToAppStudent(student, studentRecords));
-  });
-
-  // Step 6: Assemble classrooms with their students
   console.log('🎉 모든 데이터 로딩 완료!');
-  return classrooms.map(classroom =>
-    convertDbClassroomToAppClassroom(classroom, studentsByClass.get(classroom.id) || [])
-  );
+  return classroomsWithStudents;
 }
 
 export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'createdAt' | 'updatedAt'>): Promise<ClassRoom> {
@@ -478,9 +467,20 @@ export async function updateStudentNumberSafely(studentId: string, newNumber: nu
 }
 
 export async function updateStudentRecords(studentId: string, records: Record[]): Promise<void> {
-  // Use UPSERT instead of DELETE + INSERT to avoid duplicate key errors
+  // Delete existing records for this student
+  const { error: deleteError } = await supabase
+    .from('records')
+    .delete()
+    .eq('student_id', studentId);
+
+  if (deleteError) {
+    console.error('Error deleting existing records:', deleteError);
+    throw deleteError;
+  }
+
+  // Insert new records
   if (records.length > 0) {
-    const recordsToUpsert = records.map((record) => ({
+    const recordsToInsert = records.map((record) => ({
       student_id: studentId,
       time_ms: record.time,
       is_dnf: record.isDNF,
@@ -489,44 +489,14 @@ export async function updateStudentRecords(studentId: string, records: Record[])
       record_date: toYMD(record.recordDate),
     }));
 
-    const { error: upsertError } = await supabase
+    const { error: insertError } = await supabase
       .from('records')
-      .upsert(recordsToUpsert, {
-        onConflict: 'student_id,slot_index,record_date',
-        ignoreDuplicates: false
-      });
+      .insert(recordsToInsert);
 
-    if (upsertError) {
-      console.error('Error upserting records:', upsertError);
-      throw upsertError;
+    if (insertError) {
+      console.error('Error inserting records:', insertError);
+      throw insertError;
     }
-  }
-}
-
-// Upsert a single record (efficient for individual updates)
-export async function upsertSingleRecord(
-  studentId: string, 
-  record: Record
-): Promise<void> {
-  const recordToUpsert = {
-    student_id: studentId,
-    time_ms: record.time,
-    is_dnf: record.isDNF,
-    slot_index: record.slotIndex,
-    recorded_at: record.recordedAt.toISOString(),
-    record_date: toYMD(record.recordDate),
-  };
-
-  const { error } = await supabase
-    .from('records')
-    .upsert(recordToUpsert, {
-      onConflict: 'student_id,slot_index,record_date',
-      ignoreDuplicates: false
-    });
-
-  if (error) {
-    console.error('Error upserting single record:', error);
-    throw error;
   }
 }
 

@@ -2,18 +2,16 @@ import { Timer, Zap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useApp } from "@/contexts/AppContext";
-import { useEffect } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useApp();
 
   // Redirect to dashboard if user is already logged in
-  useEffect(() => {
-    if (user) {
-      navigate('/dashboard');
-    }
-  }, [user, navigate]);
+  if (user) {
+    navigate('/dashboard');
+    return null;
+  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/10 to-secondary/10 flex items-center justify-center">
       <div className="text-center max-w-2xl mx-auto px-4">
@@ -35,15 +33,7 @@ const Index = () => {
           학생들의 달리기 기록을 쉽게 입력하고 순위를 확인해보세요
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button 
-            onClick={() => navigate('/features')}
-            size="lg"
-            variant="outline"
-            className="border-2"
-          >
-            주요 기능
-          </Button>
+        <div className="space-y-4">
           <Button 
             onClick={() => navigate('/auth')}
             size="lg" 

@@ -23,9 +23,7 @@ import {
   AlertDialogTitle, 
   AlertDialogTrigger 
 } from '@/components/ui/alert-dialog';
-import { updateRecordSessionSlots, upsertRecordSession, upsertSingleRecord } from '@/utils/supabaseApi';
-import { supabase } from '@/integrations/supabase/client';
-import { toYMD } from '@/utils/time';
+import { updateRecordSessionSlots, upsertRecordSession } from '@/utils/supabaseApi';
 
 interface RecordSessionProps {
   session: RecordSessionType;
@@ -100,7 +98,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
   const getCellId = (studentId: string, slotIndex: number) =>
     `cell-${studentId}-${slotIndex}`;
 
-  // Debounced auto-save function with direct database upsert
+  // Debounced auto-save function
   const debouncedSave = useCallback((student: Student, slotIndex: number, value: string) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
@@ -120,38 +118,44 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
         time,
         isDNF,
         recordedAt: new Date(),
-        recordDate: selectedDate,
+        recordDate: selectedDate, // Set the record date to selected date
         slotIndex,
       };
 
+      console.log('Saving record for date:', {
+        studentId: student.id,
+        recordId: newRecord.id,
+        slotIndex,
+        recordDate: format(selectedDate, 'yyyy-MM-dd'),
+        time,
+        isDNF
+      });
+
+      // Remove any existing record for this slot on this date
+      const updatedRecords = student.records.filter(r => 
+        !(r.slotIndex === slotIndex && isSameDay(r.recordDate, selectedDate))
+      );
+      updatedRecords.push(newRecord);
+
+      const updatedStudents = currentClassroom.students.map(s =>
+        s.id === student.id ? { ...s, records: updatedRecords } : s
+      );
+
       try {
-        // Use direct upsert instead of updateClassroom to avoid conflicts
-        await upsertSingleRecord(student.id, newRecord);
-
-        // Update local state optimistically
-        const updatedRecords = student.records.filter(r => 
-          !(r.slotIndex === slotIndex && isSameDay(r.recordDate, selectedDate))
-        );
-        updatedRecords.push(newRecord);
-
-        const updatedStudents = currentClassroom.students.map(s =>
-          s.id === student.id ? { ...s, records: updatedRecords } : s
-        );
-
-        // Update context without triggering full save
         await updateClassroom(currentClassroom.id, {
           students: updatedStudents,
         });
 
-        // Clear input and error
+        // Clear input and error on successful save
         const key = getInputKey(student.id, slotIndex);
         setInputValues(prev => ({ ...prev, [key]: '' }));
         setErrors(prev => ({ ...prev, [key]: '' }));
         
-        console.log('Record saved successfully');
+        console.log('Record saved successfully for date:', format(selectedDate, 'yyyy-MM-dd'));
       } catch (error) {
         console.error('Failed to save record:', error);
         
+        // Keep the input value and show error
         const key = getInputKey(student.id, slotIndex);
         setErrors(prev => ({ ...prev, [key]: '저장 실패' }));
         
@@ -256,44 +260,22 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
     return dateRecords[student.id]?.find(r => r.slotIndex === slotIndex) || null;
   };
 
-  const clearRecord = async (student: Student, slotIndex: number) => {
-    try {
-      // Delete directly from database
-      const dateKey = toYMD(selectedDate);
-      
-      const { error } = await supabase
-        .from('records')
-        .delete()
-        .eq('student_id', student.id)
-        .eq('slot_index', slotIndex)
-        .eq('record_date', dateKey);
+  const clearRecord = (student: Student, slotIndex: number) => {
+    const updatedRecords = student.records.filter(r => 
+      !(r.slotIndex === slotIndex && isSameDay(r.recordDate, selectedDate))
+    );
+    
+    const updatedStudents = currentClassroom.students.map(s =>
+      s.id === student.id ? { ...s, records: updatedRecords } : s
+    );
 
-      if (error) throw error;
+    updateClassroom(currentClassroom.id, {
+      students: updatedStudents,
+    });
 
-      // Update local state
-      const updatedRecords = student.records.filter(r => 
-        !(r.slotIndex === slotIndex && isSameDay(r.recordDate, selectedDate))
-      );
-      
-      const updatedStudents = currentClassroom.students.map(s =>
-        s.id === student.id ? { ...s, records: updatedRecords } : s
-      );
-
-      await updateClassroom(currentClassroom.id, {
-        students: updatedStudents,
-      });
-
-      // Clear input
-      const key = getInputKey(student.id, slotIndex);
-      setInputValues(prev => ({ ...prev, [key]: '' }));
-    } catch (error) {
-      console.error('Failed to clear record:', error);
-      toast({
-        title: "삭제 실패",
-        description: "기록 삭제 중 오류가 발생했습니다.",
-        variant: "destructive",
-      });
-    }
+    // Clear input
+    const key = getInputKey(student.id, slotIndex);
+    setInputValues(prev => ({ ...prev, [key]: '' }));
   };
 
   const addRecordSlot = async () => {
