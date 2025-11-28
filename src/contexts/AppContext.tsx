@@ -34,7 +34,7 @@ export function useApp() {
   return context;
 }
 
-const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+export function AppProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [classrooms, setClassrooms] = useState<ClassRoom[]>([]);
@@ -300,6 +300,4 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       {children}
     </AppContext.Provider>
   );
-};
-
-export { AppProvider };
+}
