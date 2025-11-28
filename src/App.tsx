@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import ClassroomManager from "./pages/ClassroomManager";
 import RecorderDashboard from "./pages/RecorderDashboard";
+import Features from "./pages/Features";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,6 +24,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/features" element={<Features />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/classroom" element={<ClassroomManager />} />
             <Route path="/recorder-classroom" element={<RecorderDashboard />} />
