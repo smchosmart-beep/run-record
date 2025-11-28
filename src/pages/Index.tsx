@@ -35,7 +35,15 @@ const Index = () => {
           학생들의 달리기 기록을 쉽게 입력하고 순위를 확인해보세요
         </p>
         
-        <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Button 
+            onClick={() => navigate('/features')}
+            size="lg"
+            variant="outline"
+            className="border-2"
+          >
+            주요 기능
+          </Button>
           <Button 
             onClick={() => navigate('/auth')}
             size="lg" 
