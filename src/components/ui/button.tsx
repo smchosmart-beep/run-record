@@ -5,22 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg hover:shadow-xl transition-all duration-300",
+        // 파랑 → 네이비 그라데이션 (주요 액션)
+        default: "bg-gradient-to-r from-[hsl(200,98%,45%)] to-[hsl(220,60%,25%)] text-white hover:from-[hsl(200,98%,40%)] hover:to-[hsl(220,60%,20%)] shadow-lg hover:shadow-xl duration-300",
         destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 shadow-lg hover:shadow-xl transition-all duration-300",
+        // 네이비 → 파랑 그라데이션 (보조 액션)
+        outline: "border-2 border-[hsl(200,98%,45%)] bg-transparent text-[hsl(200,98%,40%)] hover:bg-gradient-to-r hover:from-[hsl(220,60%,25%)] hover:to-[hsl(200,98%,45%)] hover:text-white hover:border-transparent duration-300",
+        secondary: "bg-gradient-to-r from-[hsl(220,60%,25%)] to-[hsl(200,98%,45%)] text-white hover:from-[hsl(220,60%,20%)] hover:to-[hsl(200,98%,40%)] shadow-lg hover:shadow-xl duration-300",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
-        accent: "bg-accent text-accent-foreground hover:bg-accent/90 shadow-lg hover:shadow-xl transition-all duration-300",
-        success: "bg-success text-success-foreground hover:bg-success/90 shadow-lg hover:shadow-xl transition-all duration-300",
-        gold: "bg-gold text-gold-foreground hover:bg-gold/90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold",
-        silver: "bg-silver text-silver-foreground hover:bg-silver/90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold",
-        bronze: "bg-bronze text-bronze-foreground hover:bg-bronze/90 shadow-lg hover:shadow-xl transition-all duration-300 font-semibold",
-        speed: "bg-gradient-to-r from-primary to-primary-glow text-primary-foreground hover:from-primary/90 hover:to-primary-glow/90 shadow-lg hover:shadow-xl transition-all duration-300 font-medium",
+        // 파랑 → 네이비 그라데이션
+        accent: "bg-gradient-to-r from-[hsl(200,98%,45%)] to-[hsl(220,60%,25%)] text-white hover:from-[hsl(200,98%,40%)] hover:to-[hsl(220,60%,20%)] shadow-lg hover:shadow-xl duration-300",
+        success: "bg-gradient-to-r from-[hsl(200,98%,45%)] to-[hsl(220,60%,25%)] text-white hover:from-[hsl(200,98%,40%)] hover:to-[hsl(220,60%,20%)] shadow-lg hover:shadow-xl duration-300",
+        gold: "bg-gold text-gold-foreground hover:bg-gold/90 shadow-lg hover:shadow-xl duration-300 font-semibold",
+        silver: "bg-silver text-silver-foreground hover:bg-silver/90 shadow-lg hover:shadow-xl duration-300 font-semibold",
+        bronze: "bg-bronze text-bronze-foreground hover:bg-bronze/90 shadow-lg hover:shadow-xl duration-300 font-semibold",
+        // 파랑 → 네이비 그라데이션 (CTA)
+        speed: "bg-gradient-to-r from-[hsl(200,98%,45%)] to-[hsl(220,60%,25%)] text-white hover:from-[hsl(200,98%,40%)] hover:to-[hsl(220,60%,20%)] shadow-lg hover:shadow-xl duration-300 font-medium",
       },
       size: {
         default: "h-10 px-4 py-2",
