@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/contexts/AppContext';
 import { calculateClassRankings, getClassBestRecord, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
-import { Trophy, Medal, Award, Crown, Timer } from 'lucide-react';
+import { Trophy, Medal, Timer } from 'lucide-react';
 
 const Rankings = () => {
   const { currentClassroom } = useApp();
@@ -21,11 +21,11 @@ const Rankings = () => {
   const getRankIcon = (position: number) => {
     switch (position) {
       case 1:
-        return <Crown className="h-5 w-5 text-gold" />;
+        return <Medal className="h-5 w-5 text-gold" />;
       case 2:
         return <Medal className="h-5 w-5 text-silver" />;
       case 3:
-        return <Award className="h-5 w-5 text-bronze" />;
+        return <Medal className="h-5 w-5 text-bronze" />;
       default:
         return <Trophy className="h-4 w-4 text-muted-foreground" />;
     }
@@ -166,7 +166,7 @@ const Rankings = () => {
         <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <Crown className="h-5 w-5 text-gold" />
+              <Medal className="h-5 w-5 text-gold" />
               <span>학급 최고 기록</span>
             </CardTitle>
           </CardHeader>
