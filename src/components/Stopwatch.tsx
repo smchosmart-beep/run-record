@@ -12,13 +12,15 @@ interface StopwatchProps {
   onOpenChange: (open: boolean) => void;
   selectedStudentCount: number;
   onComplete: (times: number[]) => void;
+  rankingType?: 'fastest' | 'slowest';
 }
 
 const Stopwatch: React.FC<StopwatchProps> = ({
   open,
   onOpenChange,
   selectedStudentCount,
-  onComplete
+  onComplete,
+  rankingType = 'fastest'
 }) => {
   const [isRunning, setIsRunning] = useState(false);
   const [startTime, setStartTime] = useState<number | null>(null);
@@ -187,18 +189,25 @@ const Stopwatch: React.FC<StopwatchProps> = ({
                   </p>
                 </div>
               ) : (
-                recordedTimes.map((time, index) => (
-                  <Card key={index} className="p-2">
-                    <div className="text-center">
-                      <Badge variant="outline" className="text-xs mb-1">
-                        {index + 1}등
-                      </Badge>
-                      <div className="font-mono text-sm font-semibold">
-                        {formatTime(time)}
+                recordedTimes.map((time, index) => {
+                  // rankingType에 따라 등수 계산
+                  const rank = rankingType === 'slowest' 
+                    ? recordedTimes.length - index  // 느린순: 나중에 정지한 것이 1등
+                    : index + 1;                     // 빠른순: 먼저 정지한 것이 1등
+                  
+                  return (
+                    <Card key={index} className="p-2">
+                      <div className="text-center">
+                        <Badge variant="outline" className="text-xs mb-1">
+                          {rank}등
+                        </Badge>
+                        <div className="font-mono text-sm font-semibold">
+                          {formatTime(time)}
+                        </div>
                       </div>
-                    </div>
-                  </Card>
-                ))
+                    </Card>
+                  );
+                })
               )}
             </div>
           </div>
