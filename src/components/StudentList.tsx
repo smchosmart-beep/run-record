@@ -648,6 +648,7 @@ const StudentList = () => {
                          </div>
                       </div>
                       
+                      {/* 입력 모드: 번호/이름/숨김 수정 버튼 */}
                       {currentMode === 'input' && !isEditing && !isEditingNumber && <div className="flex space-x-1">
                           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleNumberEditStart(student); }} className="h-8 w-8 p-0" title="번호 수정">
                             <Hash className="h-3 w-3" />
@@ -658,10 +659,14 @@ const StudentList = () => {
                           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleToggleVisibility(student); }} className="h-8 w-8 p-0">
                             {student.isHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); toggleCardFlip(student.id); }} className="h-8 w-8 p-0" title="차트 보기">
-                            <BarChart3 className="h-3 w-3" />
-                          </Button>
                         </div>}
+                      
+                      {/* 보기 모드: 차트 보기 버튼 */}
+                      {currentMode === 'view' && (
+                        <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); toggleCardFlip(student.id); }} className="h-8 w-8 p-0" title="차트 보기">
+                          <BarChart3 className="h-3 w-3" />
+                        </Button>
+                      )}
                     </div>
                   </CardHeader>
                   
