@@ -52,33 +52,46 @@ const Rankings = () => {
     if (position > 3) return null;
 
     return (
-      <Card className={`text-center transition-all duration-300 hover:shadow-lg ${
+      <Card className={`transition-all duration-300 hover:shadow-lg ${
         position === 1 ? 'ring-2 ring-gold/30 bg-gold/5' :
         position === 2 ? 'ring-2 ring-silver/30 bg-silver/5' :
         'ring-2 ring-bronze/30 bg-bronze/5'
       }`}>
-        <CardHeader className="pb-2">
-          <div className="flex justify-center mb-2">
-            {getRankIcon(position)}
-          </div>
-          <Badge 
-            className={`mx-auto ${
-              position === 1 ? 'bg-gold text-gold-foreground' :
-              position === 2 ? 'bg-silver text-silver-foreground' :
-              'bg-bronze text-bronze-foreground'
-            }`}
-          >
-            {position}위
-          </Badge>
-        </CardHeader>
-        <CardContent>
-          <h3 className="font-bold text-lg mb-1">{student.name}</h3>
-          <p className="text-sm text-muted-foreground mb-2">{student.number}번</p>
-          <div className="space-y-1">
-            <p className="text-2xl font-bold text-primary">
-              {time ? formatTime(time) : '--'}
-            </p>
-            <p className="text-xs text-muted-foreground">{title}</p>
+        <CardContent className="px-6 py-4">
+          <div className="flex items-center justify-between">
+            {/* 왼쪽: 아이콘 + 순위 */}
+            <div className="flex items-center gap-3">
+              <div className={`p-2.5 rounded-lg ${
+                position === 1 ? 'bg-gold/20' :
+                position === 2 ? 'bg-silver/20' :
+                'bg-bronze/20'
+              }`}>
+                {getRankIcon(position)}
+              </div>
+              <Badge 
+                className={
+                  position === 1 ? 'bg-gold text-gold-foreground' :
+                  position === 2 ? 'bg-silver text-silver-foreground' :
+                  'bg-bronze text-bronze-foreground'
+                }
+              >
+                {position}위
+              </Badge>
+            </div>
+            
+            {/* 중앙: 이름 + 번호 */}
+            <div className="text-center">
+              <h3 className="font-bold text-lg">{student.name}</h3>
+              <p className="text-sm text-muted-foreground">{student.number}번</p>
+            </div>
+            
+            {/* 오른쪽: 시간 + 라벨 */}
+            <div className="text-right">
+              <p className="text-xl font-bold text-primary">
+                {time ? formatTime(time) : '--'}
+              </p>
+              <p className="text-xs text-muted-foreground">{title}</p>
+            </div>
           </div>
         </CardContent>
       </Card>
