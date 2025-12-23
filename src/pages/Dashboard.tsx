@@ -85,7 +85,7 @@ const Dashboard = () => {
           <Card className="hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-primary/10 rounded-lg">
+                <div className="p-3 bg-sky-100 rounded-lg">
                   <School className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
@@ -99,7 +99,7 @@ const Dashboard = () => {
           <Card className="hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-secondary/10 rounded-lg">
+                <div className="p-3 bg-sky-100 rounded-lg">
                   <Users className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
@@ -115,7 +115,7 @@ const Dashboard = () => {
           <Card className="hover:shadow-lg transition-all duration-300">
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
-                <div className="p-3 bg-accent/10 rounded-lg">
+                <div className="p-3 bg-sky-100 rounded-lg">
                   <ListChecks className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
