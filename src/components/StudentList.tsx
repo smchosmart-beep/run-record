@@ -447,7 +447,6 @@ const StudentList = () => {
           <Button
             onClick={() => setMode(currentMode === 'input' ? 'view' : 'input')}
             variant={currentMode === 'view' ? 'default' : 'outline'}
-            size="sm"
             className={`transition-all duration-200 ${
               currentMode === 'view' 
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90' 
@@ -480,7 +479,6 @@ const StudentList = () => {
             <Button
               onClick={handleSelectAll}
               variant="outline"
-              size="sm"
               className="border-2 border-primary text-primary hover:bg-primary/10"
             >
               <CheckSquare className="h-4 w-4 mr-2" />
