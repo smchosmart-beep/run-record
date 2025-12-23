@@ -37,17 +37,17 @@ const RecordDateManager = () => {
   if (!currentClassroom) return null;
 
   // Fetch record sessions from database
-  useEffect(() => {
-    const fetchSessions = async () => {
-      try {
-        const sessions = await getRecordSessions(currentClassroom.id);
-        setRecordSessions(sessions);
-      } catch (error) {
-        console.error('기록 세션 조회 실패:', error);
-      }
-    };
+  const refreshSessions = async () => {
+    try {
+      const sessions = await getRecordSessions(currentClassroom.id);
+      setRecordSessions(sessions);
+    } catch (error) {
+      console.error('기록 세션 조회 실패:', error);
+    }
+  };
 
-    fetchSessions();
+  useEffect(() => {
+    refreshSessions();
   }, [currentClassroom.id]);
 
   // Group records by date and merge with database sessions
@@ -344,6 +344,7 @@ const RecordDateManager = () => {
         <RecordSessionComponent 
           session={currentSession}
           selectedDate={selectedDate}
+          onSlotsChange={refreshSessions}
         />
       ) : (
         <Card>

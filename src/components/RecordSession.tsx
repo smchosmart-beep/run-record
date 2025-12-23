@@ -28,9 +28,10 @@ import { updateRecordSessionSlots, upsertRecordSession } from '@/utils/supabaseA
 interface RecordSessionProps {
   session: RecordSessionType;
   selectedDate: Date;
+  onSlotsChange?: () => void;
 }
 
-export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedDate }) => {
+export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedDate, onSlotsChange }) => {
   const { currentClassroom, updateClassroom, currentMode, setMode } = useApp();
   const { toast } = useToast();
   const [inputValues, setInputValues] = useState<Record<string, string>>({});
@@ -300,6 +301,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
       await updateRecordSessionSlots(currentClassroom.id, selectedDate, newSlotCount);
       
       setMaxSlots(newSlotCount);
+      onSlotsChange?.();
       
       toast({
         title: "회차 추가 완료",
@@ -351,6 +353,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
       await updateRecordSessionSlots(currentClassroom.id, selectedDate, newSlotCount);
 
       setMaxSlots(newSlotCount);
+      onSlotsChange?.();
 
       toast({
         title: "회차 삭제 완료",
