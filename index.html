@@ -28,6 +28,32 @@
 
   <body>
     <div id="root"></div>
+
+    <script>
+      // 서비스워커가 Vite 모듈(/node_modules/.vite/deps/*)을 캐시하면 React가 중복/불일치로 로딩되어
+      // Invalid hook call(useEffect null)이 발생할 수 있어, 앱 로드 전에 1회 정리합니다.
+      (function () {
+        const flag = "sw_cleanup_done_v1";
+        if (sessionStorage.getItem(flag)) return;
+
+        if ("serviceWorker" in navigator && navigator.serviceWorker.controller) {
+          sessionStorage.setItem(flag, "1");
+
+          Promise.all([
+            navigator.serviceWorker
+              .getRegistrations()
+              .then((regs) => Promise.all(regs.map((r) => r.unregister()))),
+            "caches" in window
+              ? caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))))
+              : Promise.resolve(),
+          ]).finally(() => {
+            // 정리 후, SW가 더 이상 컨트롤하지 않는 상태로 새로 로드
+            location.reload();
+          });
+        }
+      })();
+    </script>
+
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
