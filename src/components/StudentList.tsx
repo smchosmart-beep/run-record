@@ -769,6 +769,7 @@ const StudentList = () => {
         onOpenChange={setShowStopwatch}
         selectedStudentCount={selectedStudents.size}
         onComplete={handleStopwatchComplete}
+        rankingType={currentClassroom?.rankingType as 'fastest' | 'slowest' || 'fastest'}
       />
 
       <RecordAssignment
@@ -777,6 +778,7 @@ const StudentList = () => {
         recordedTimes={recordedTimes}
         selectedStudents={selectedStudentsData}
         onSave={handleRecordAssignment}
+        rankingType={currentClassroom?.rankingType as 'fastest' | 'slowest' || 'fastest'}
       />
     </div>;
 };

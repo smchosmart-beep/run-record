@@ -14,6 +14,7 @@ interface RecordAssignmentProps {
   recordedTimes: number[];
   selectedStudents: Student[];
   onSave: (assignments: { studentId: string; time: number; rank: number }[]) => void;
+  rankingType?: 'fastest' | 'slowest';
 }
 
 const RecordAssignment: React.FC<RecordAssignmentProps> = ({
@@ -21,14 +22,15 @@ const RecordAssignment: React.FC<RecordAssignmentProps> = ({
   onOpenChange,
   recordedTimes,
   selectedStudents,
-  onSave
+  onSave,
+  rankingType = 'fastest'
 }) => {
   const [assignments, setAssignments] = useState<{ [timeIndex: number]: string }>({});
 
-  // Sort times in ascending order (fastest first) with original indices
+  // rankingType에 따라 정렬 (fastest: 오름차순, slowest: 내림차순)
   const sortedTimesWithIndex = recordedTimes
     .map((time, index) => ({ time, originalIndex: index }))
-    .sort((a, b) => a.time - b.time);
+    .sort((a, b) => rankingType === 'slowest' ? b.time - a.time : a.time - b.time);
 
   const handleAssignment = (timeIndex: number, studentId: string) => {
     const newAssignments = { ...assignments };
