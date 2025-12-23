@@ -635,3 +635,195 @@ export async function getUserProfile() {
     username: profile.username,
   };
 }
+
+// 모든 학급에서 학생 검색 (이름 또는 번호로)
+export interface SearchStudentResult {
+  student: {
+    id: string;
+    number: number;
+    name: string;
+    classroomId: string;
+  };
+  classroom: {
+    id: string;
+    grade: number;
+    className: string;
+    school: string;
+  };
+}
+
+export async function searchStudentsAcrossClassrooms(query: string): Promise<SearchStudentResult[]> {
+  if (!query.trim()) return [];
+
+  console.log('📡 전체 학급 학생 검색:', query);
+
+  // 현재 사용자의 모든 학급 조회
+  const { data: classrooms, error: classroomsError } = await supabase
+    .from('classrooms')
+    .select('id, grade, class_name, school');
+
+  if (classroomsError) {
+    console.error('❌ 학급 조회 실패:', classroomsError);
+    throw classroomsError;
+  }
+
+  if (!classrooms || classrooms.length === 0) return [];
+
+  const classroomIds = classrooms.map(c => c.id);
+
+  // 학생 검색 (이름 또는 번호)
+  const isNumber = /^\d+$/.test(query.trim());
+  
+  let studentsQuery = supabase
+    .from('students')
+    .select('id, number, name, classroom_id, is_hidden')
+    .in('classroom_id', classroomIds)
+    .eq('is_hidden', false);
+
+  if (isNumber) {
+    studentsQuery = studentsQuery.eq('number', parseInt(query.trim()));
+  } else {
+    studentsQuery = studentsQuery.ilike('name', `%${query.trim()}%`);
+  }
+
+  const { data: students, error: studentsError } = await studentsQuery.limit(20);
+
+  if (studentsError) {
+    console.error('❌ 학생 검색 실패:', studentsError);
+    throw studentsError;
+  }
+
+  console.log('✅ 검색 결과:', students?.length || 0, '명');
+
+  // 결과 조합
+  const results: SearchStudentResult[] = (students || []).map(student => {
+    const classroom = classrooms.find(c => c.id === student.classroom_id)!;
+    return {
+      student: {
+        id: student.id,
+        number: student.number,
+        name: student.name,
+        classroomId: student.classroom_id,
+      },
+      classroom: {
+        id: classroom.id,
+        grade: classroom.grade,
+        className: classroom.class_name,
+        school: classroom.school,
+      },
+    };
+  });
+
+  return results;
+}
+
+// 오늘 날짜의 기록 세션이 있는지 확인하고 없으면 생성
+export async function ensureRecordSessionForToday(classroomId: string): Promise<{ slotIndex: number }> {
+  const today = new Date();
+  const todayStr = toYMD(today);
+
+  console.log('📡 오늘 기록 세션 확인/생성:', { classroomId, date: todayStr });
+
+  // 오늘 세션이 있는지 확인
+  const { data: existingSession, error: sessionError } = await supabase
+    .from('record_sessions')
+    .select('*')
+    .eq('classroom_id', classroomId)
+    .eq('session_date', todayStr)
+    .maybeSingle();
+
+  if (sessionError) {
+    console.error('❌ 세션 조회 실패:', sessionError);
+    throw sessionError;
+  }
+
+  if (existingSession) {
+    // 기존 세션이 있으면 slots_count를 1 증가
+    const newSlotsCount = existingSession.slots_count + 1;
+    const { error: updateError } = await supabase
+      .from('record_sessions')
+      .update({ slots_count: newSlotsCount })
+      .eq('id', existingSession.id);
+
+    if (updateError) {
+      console.error('❌ 세션 업데이트 실패:', updateError);
+      throw updateError;
+    }
+
+    console.log('✅ 기존 세션 슬롯 증가:', newSlotsCount);
+    return { slotIndex: newSlotsCount - 1 }; // 0-based index
+  }
+
+  // 새 세션 생성
+  const { data: newSession, error: createError } = await supabase
+    .from('record_sessions')
+    .insert({
+      classroom_id: classroomId,
+      session_date: todayStr,
+      slots_count: 1,
+    })
+    .select()
+    .single();
+
+  if (createError) {
+    console.error('❌ 세션 생성 실패:', createError);
+    throw createError;
+  }
+
+  console.log('✅ 새 세션 생성됨:', newSession);
+  return { slotIndex: 0 };
+}
+
+// 여러 학급의 학생들에게 기록 저장
+export interface MultiClassRecordInput {
+  studentId: string;
+  classroomId: string;
+  timeMs: number;
+}
+
+export async function saveMultiClassRecords(records: MultiClassRecordInput[]): Promise<void> {
+  if (records.length === 0) return;
+
+  console.log('📡 크로스-클래스 기록 저장 시작:', records.length, '개');
+
+  const today = new Date();
+  const todayStr = toYMD(today);
+
+  // 학급별로 그룹화
+  const byClassroom = records.reduce((acc, record) => {
+    if (!acc[record.classroomId]) {
+      acc[record.classroomId] = [];
+    }
+    acc[record.classroomId].push(record);
+    return acc;
+  }, {} as { [classroomId: string]: MultiClassRecordInput[] });
+
+  // 각 학급별로 세션 확보 및 기록 저장
+  for (const [classroomId, classRecords] of Object.entries(byClassroom)) {
+    // 세션 확보 (없으면 생성, 있으면 슬롯 증가)
+    const { slotIndex } = await ensureRecordSessionForToday(classroomId);
+
+    // 해당 학급의 모든 기록 저장
+    const recordsToInsert = classRecords.map(record => ({
+      student_id: record.studentId,
+      time_ms: record.timeMs,
+      is_dnf: false,
+      slot_index: slotIndex,
+      recorded_at: new Date().toISOString(),
+      record_date: todayStr,
+    }));
+
+    const { error: insertError } = await supabase
+      .from('records')
+      .insert(recordsToInsert);
+
+    if (insertError) {
+      console.error('❌ 기록 저장 실패:', insertError);
+      throw insertError;
+    }
+
+    console.log(`✅ ${classroomId} 학급 ${classRecords.length}명 기록 저장 완료`);
+  }
+
+  console.log('🎉 모든 크로스-클래스 기록 저장 완료');
+}
