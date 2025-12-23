@@ -246,7 +246,7 @@ const Rankings = () => {
           {/* Podium */}
           {byAverage.length >= 3 && (
             <div>
-              <h4 className="text-lg font-semibold mb-4 text-center">🏆 신기록 🏆</h4>
+              <h4 className="text-lg font-semibold mb-4 text-center">🏆 Rank 🏆</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 {/* 1st Place */}
                 {byAverage[0] && (
