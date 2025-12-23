@@ -7,10 +7,12 @@ import { useApp } from '@/contexts/AppContext';
 import { Plus, LogOut, Users, Timer, RefreshCw, School } from 'lucide-react';
 import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
+import DashboardStopwatch from '@/components/DashboardStopwatch';
 
 const Dashboard = () => {
   const { user, logout, classrooms, setCurrentClassroom, authLoading, dataLoading, refreshClassrooms } = useApp();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isStopwatchOpen, setIsStopwatchOpen] = useState(false);
   const navigate = useNavigate();
 
   // 인증 로딩 중일 때만 전체화면 스피너 표시
@@ -137,6 +139,10 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold text-foreground">학급 목록</h3>
           <div className="flex space-x-2">
+            <Button onClick={() => setIsStopwatchOpen(true)} variant="outline" className="shadow-md">
+              <Timer className="h-4 w-4 mr-2" />
+              스톱워치
+            </Button>
             <Button onClick={refreshClassrooms} variant="outline" disabled={dataLoading} className="w-28">
               <RefreshCw className={`h-4 w-4 mr-2 ${dataLoading ? 'animate-spin' : ''}`} />
               새로고침
@@ -199,6 +205,12 @@ const Dashboard = () => {
       <CreateClassModal
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
+      />
+
+      <DashboardStopwatch
+        open={isStopwatchOpen}
+        onOpenChange={setIsStopwatchOpen}
+        onComplete={refreshClassrooms}
       />
     </div>
   );
