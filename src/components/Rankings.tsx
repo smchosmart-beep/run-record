@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useApp } from '@/contexts/AppContext';
-import { calculateClassRankings, getClassBestRecord, getBestTimeForRanking } from '@/utils/calculations';
+import { calculateClassRankings, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { Trophy, Medal, Timer } from 'lucide-react';
 
@@ -16,7 +16,6 @@ const Rankings = () => {
   const activeStudents = currentClassroom.students.filter(s => !s.isHidden);
   const rankingType = currentClassroom.rankingType || 'fastest'; // Default to 'fastest' for existing classrooms
   const { byPersonalBest, byAverage } = calculateClassRankings(activeStudents, rankingType);
-  const { time: bestTime, holders } = getClassBestRecord(activeStudents, rankingType);
 
   const getRankIcon = (position: number, large: boolean = false) => {
     const size = large ? "h-12 w-12" : "h-5 w-5";
@@ -169,32 +168,6 @@ const Rankings = () => {
           {rankingType === 'slowest' && ' (시간 느린 순)'}
         </p>
       </div>
-
-      {/* Class Best Record */}
-      {bestTime && holders.length > 0 && (
-        <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border-primary/20">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Medal className="h-5 w-5 text-gold" />
-              <span>학급 최고 기록</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center">
-              <p className="text-3xl font-bold text-primary mb-2">
-                {formatTime(bestTime)}
-              </p>
-              <div className="flex flex-wrap justify-center gap-2">
-                {holders.map(holder => (
-                  <Badge key={holder.id} variant="secondary" className="text-sm bg-gold text-gold-foreground">
-                    {holder.name} ({holder.number}번)
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       {/* Rankings */}
       <Tabs defaultValue="pb" className="space-y-4">
