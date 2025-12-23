@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ClassRoom } from '@/types';
-import { Users, Calendar, Trophy, ArrowRight, Trash2, Edit } from 'lucide-react';
+import { Users, Calendar, Timer, ArrowRight, Trash2, Edit } from 'lucide-react';
 import EditClassModal from '@/components/EditClassModal';
 import { calculateClassRankings, getClassBestRecord } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
@@ -139,7 +139,7 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
           
           <div className="text-center">
             <div className="flex items-center justify-center mb-1">
-              <Trophy className="h-4 w-4 text-secondary mr-1" />
+              <Timer className="h-4 w-4 text-secondary mr-1" />
             </div>
             <p className="text-2xl font-bold text-secondary">{totalRecords}</p>
             <p className="text-xs text-muted-foreground">기록</p>
