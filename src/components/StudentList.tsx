@@ -740,6 +740,21 @@ const StudentList = () => {
       })}
       </div>
 
+      {/* 하단 스톱워치 버튼 */}
+      {selectedStudents.size > 0 && (
+        <div className="flex justify-center py-4">
+          <Button
+            onClick={handleStartStopwatch}
+            variant="default"
+            size="lg"
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Timer className="h-5 w-5 mr-2" />
+            스톱워치 ({selectedStudents.size}명)
+          </Button>
+        </div>
+      )}
+
       {students.length === 0 && <Card className="text-center py-12">
           <CardContent>
             <p className="text-muted-foreground">등록된 학생이 없습니다.</p>
