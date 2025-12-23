@@ -137,21 +137,13 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold text-foreground">학급 목록</h3>
           <div className="flex space-x-2">
-            <Button
-              onClick={refreshClassrooms}
-              variant="outline"
-              disabled={dataLoading}
-            >
+            <Button onClick={refreshClassrooms} variant="outline" disabled={dataLoading} className="w-28">
               <RefreshCw className={`h-4 w-4 mr-2 ${dataLoading ? 'animate-spin' : ''}`} />
               새로고침
             </Button>
-            <Button
-              onClick={() => setIsCreateModalOpen(true)}
-              variant="speed"
-              className="shadow-lg"
-            >
+            <Button onClick={() => setIsCreateModalOpen(true)} variant="speed" className="w-28 shadow-lg">
               <Plus className="h-4 w-4 mr-2" />
-              새 학급 만들기
+              학급추가
             </Button>
           </div>
         </div>
