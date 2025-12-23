@@ -18,14 +18,15 @@ const Rankings = () => {
   const { byPersonalBest, byAverage } = calculateClassRankings(activeStudents, rankingType);
   const { time: bestTime, holders } = getClassBestRecord(activeStudents, rankingType);
 
-  const getRankIcon = (position: number) => {
+  const getRankIcon = (position: number, large: boolean = false) => {
+    const size = large ? "h-12 w-12" : "h-5 w-5";
     switch (position) {
       case 1:
-        return <Medal className="h-5 w-5 text-gold" />;
+        return <Medal className={`${size} text-gold`} />;
       case 2:
-        return <Medal className="h-5 w-5 text-silver" />;
+        return <Medal className={`${size} text-silver`} />;
       case 3:
-        return <Medal className="h-5 w-5 text-bronze" />;
+        return <Medal className={`${size} text-bronze`} />;
       default:
         return <Trophy className="h-4 w-4 text-muted-foreground" />;
     }
@@ -57,16 +58,16 @@ const Rankings = () => {
         position === 2 ? 'ring-2 ring-silver/30 bg-silver/5' :
         'ring-2 ring-bronze/30 bg-bronze/5'
       }`}>
-        <CardContent className="px-6 py-4">
-          <div className="flex items-center justify-between">
-            {/* 왼쪽: 아이콘 + 순위 */}
-            <div className="flex items-center gap-3">
-              <div className={`p-2.5 rounded-lg ${
+        <CardContent className="px-6 py-5">
+          <div className="flex items-center">
+            {/* 왼쪽 절반: 큰 아이콘 + 순위 배지 (세로 배열) */}
+            <div className="flex-1 flex flex-col items-center gap-2">
+              <div className={`p-4 rounded-xl ${
                 position === 1 ? 'bg-gold/20' :
                 position === 2 ? 'bg-silver/20' :
                 'bg-bronze/20'
               }`}>
-                {getRankIcon(position)}
+                {getRankIcon(position, true)}
               </div>
               <Badge 
                 className={
@@ -79,14 +80,9 @@ const Rankings = () => {
               </Badge>
             </div>
             
-            {/* 중앙: 이름 + 번호 */}
-            <div className="text-center">
-              <h3 className="font-bold text-lg">{student.name}</h3>
-              <p className="text-sm text-muted-foreground">{student.number}번</p>
-            </div>
-            
-            {/* 오른쪽: 시간 + 라벨 */}
-            <div className="text-right">
+            {/* 오른쪽 절반: 번호+이름 + 기록 (세로 배열) */}
+            <div className="flex-1 flex flex-col items-center gap-1">
+              <h3 className="font-bold text-lg">{student.number}번 {student.name}</h3>
               <p className="text-xl font-bold text-primary">
                 {time ? formatTime(time) : '--'}
               </p>
