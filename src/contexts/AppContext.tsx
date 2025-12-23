@@ -130,12 +130,17 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       setClassrooms(data);
       
       // Update currentClassroom if it exists and was refreshed
-      if (currentClassroom) {
-        const refreshedClassroom = data.find(c => c.id === currentClassroom.id);
-        if (refreshedClassroom) {
-          setCurrentClassroomState(refreshedClassroom);
+      // Use functional update to avoid stale closure issues
+      setCurrentClassroomState(prev => {
+        if (prev) {
+          const refreshedClassroom = data.find(c => c.id === prev.id);
+          if (refreshedClassroom) {
+            console.log('🔄 현재 학급 데이터 갱신:', refreshedClassroom.id);
+            return refreshedClassroom;
+          }
         }
-      }
+        return prev;
+      });
       
       if (data.length === 0) {
         toast.success('첫 번째 학급을 만들어보세요!');
