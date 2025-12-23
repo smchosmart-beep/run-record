@@ -562,10 +562,10 @@ const StudentList = () => {
                   onClick={() => !isEditing && !isEditingNumber && toggleCardFlip(student.id)}
                 >
                    <CardHeader className="pb-2">
-                     <div className="flex justify-between items-start">
+                     <div className="flex justify-between items-center">
                         {/* Checkbox for student selection (only in input mode) */}
                         {currentMode === 'input' && !student.isHidden && (
-                          <div className="mr-3 pt-1 hover:bg-accent/50 rounded-md p-2 -m-2 transition-colors">
+                          <div className="mr-3 hover:bg-accent/50 rounded-md p-2 -m-2 transition-colors">
                             <Checkbox
                               checked={selectedStudents.has(student.id)}
                               onCheckedChange={(checked) => handleStudentSelect(student.id, checked as boolean)}
@@ -576,7 +576,7 @@ const StudentList = () => {
                        
                         <div className="flex-1">
                           {/* Number and Name on same line */}
-                          <div className="flex items-center space-x-2 mb-2">
+                          <div className="flex items-center space-x-2">
                            {isEditingNumber ? (
                              <div className="flex items-center space-x-1">
                                <Input 
