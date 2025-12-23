@@ -5,8 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Timer, Search, X, Plus, Check } from 'lucide-react';
+import { Timer, Search, X, Plus, Check, ArrowLeft, Users } from 'lucide-react';
 import { toast } from 'sonner';
 import { searchStudentsAcrossClassrooms, saveMultiClassRecords, SearchStudentResult } from '@/utils/supabaseApi';
 import { useApp } from '@/contexts/AppContext';
@@ -34,13 +33,20 @@ const DashboardStopwatch: React.FC<DashboardStopwatchProps> = ({
 }) => {
   const { classrooms } = useApp();
   
-  const [activeTab, setActiveTab] = useState<string>('search');
+  // 2단계 네비게이션: null = 학급 선택, classroomId = 학생 선택
+  const [selectedClassroomId, setSelectedClassroomId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchStudentResult[]>([]);
   const [selectedStudents, setSelectedStudents] = useState<SelectedStudent[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [isStopwatchOpen, setIsStopwatchOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // 현재 선택된 학급 정보
+  const selectedClassroom = useMemo(
+    () => classrooms.find(c => c.id === selectedClassroomId),
+    [classrooms, selectedClassroomId]
+  );
 
   // 선택된 학생 ID Set (빠른 lookup용)
   const selectedStudentIds = useMemo(
@@ -179,10 +185,22 @@ const DashboardStopwatch: React.FC<DashboardStopwatchProps> = ({
       setSearchQuery('');
       setSearchResults([]);
       setSelectedStudents([]);
-      setActiveTab('search');
+      setSelectedClassroomId(null);
     }
     onOpenChange(isOpen);
   };
+
+  // 학생 선택 화면의 학생들
+  const visibleStudents = useMemo(() => {
+    if (!selectedClassroom) return [];
+    return selectedClassroom.students
+      .filter(s => !s.isHidden)
+      .sort((a, b) => a.number - b.number);
+  }, [selectedClassroom]);
+
+  const classroomLabel = selectedClassroom 
+    ? `${selectedClassroom.grade}-${selectedClassroom.className}` 
+    : '';
 
   return (
     <>
@@ -196,28 +214,10 @@ const DashboardStopwatch: React.FC<DashboardStopwatchProps> = ({
           </DialogHeader>
 
           <div className="flex flex-col gap-4 flex-1 overflow-hidden">
-            {/* 탭: 검색 + 각 학급 */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-              <div className="overflow-x-auto pb-1">
-                <TabsList className="inline-flex w-max h-auto p-1 gap-1">
-                  <TabsTrigger value="search" className="flex items-center gap-1.5 px-3 py-2">
-                    <Search className="h-4 w-4" />
-                    검색
-                  </TabsTrigger>
-                  {classrooms.map(classroom => (
-                    <TabsTrigger 
-                      key={classroom.id} 
-                      value={classroom.id}
-                      className="px-3 py-2 whitespace-nowrap"
-                    >
-                      {classroom.grade}-{classroom.className}
-                    </TabsTrigger>
-                  ))}
-                </TabsList>
-              </div>
-
-              {/* 검색 탭 콘텐츠 */}
-              <TabsContent value="search" className="flex-1 flex flex-col gap-3 mt-3 overflow-hidden">
+            {selectedClassroomId === null ? (
+              /* ========== 1단계: 학급 선택 화면 ========== */
+              <div className="flex-1 flex flex-col gap-4 overflow-hidden">
+                {/* 검색 영역 */}
                 <div className="flex gap-2">
                   <div className="relative flex-1">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -240,7 +240,7 @@ const DashboardStopwatch: React.FC<DashboardStopwatchProps> = ({
                     <p className="text-xs text-muted-foreground mb-2 px-2">
                       검색 결과 ({searchResults.length}명)
                     </p>
-                    <ScrollArea className="max-h-48">
+                    <ScrollArea className="max-h-32">
                       <div className="space-y-1">
                         {searchResults.map((result) => (
                           <div
@@ -270,67 +270,100 @@ const DashboardStopwatch: React.FC<DashboardStopwatchProps> = ({
                   </Card>
                 )}
 
-                {searchResults.length === 0 && searchQuery === '' && (
-                  <div className="flex-1 flex items-center justify-center text-muted-foreground text-sm">
-                    학생 이름이나 번호를 검색하거나, 위 탭에서 학급을 선택하세요
-                  </div>
-                )}
-              </TabsContent>
+                {/* 학급 카드 그리드 */}
+                <div className="flex-1 overflow-hidden">
+                  <p className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    학급을 선택하세요
+                  </p>
+                  <ScrollArea className="h-full max-h-[240px]">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 p-1">
+                      {classrooms.map(classroom => {
+                        const studentCount = classroom.students.filter(s => !s.isHidden).length;
+                        return (
+                          <Card
+                            key={classroom.id}
+                            onClick={() => setSelectedClassroomId(classroom.id)}
+                            className="p-4 cursor-pointer hover:bg-muted/50 transition-all hover:scale-105 hover:shadow-md"
+                          >
+                            <div className="text-center">
+                              <span className="text-xl font-bold">
+                                {classroom.grade}-{classroom.className}
+                              </span>
+                              <p className="text-sm text-muted-foreground mt-1">
+                                {studentCount}명
+                              </p>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            ) : (
+              /* ========== 2단계: 학생 선택 화면 ========== */
+              <div className="flex-1 flex flex-col gap-3 overflow-hidden">
+                {/* 뒤로가기 버튼 */}
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setSelectedClassroomId(null)}
+                  className="w-full sm:w-auto self-start"
+                >
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  학급 선택으로 돌아가기
+                </Button>
 
-              {/* 각 학급 탭 콘텐츠 (키오스크 모드) */}
-              {classrooms.map(classroom => {
-                const classroomLabel = `${classroom.grade}-${classroom.className}`;
-                const visibleStudents = classroom.students
-                  .filter(s => !s.isHidden)
-                  .sort((a, b) => a.number - b.number);
+                {/* 학급명 헤더 */}
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">
+                    {classroomLabel} 학생 선택
+                  </h3>
+                  <Badge variant="outline">{visibleStudents.length}명</Badge>
+                </div>
 
-                return (
-                  <TabsContent 
-                    key={classroom.id} 
-                    value={classroom.id} 
-                    className="flex-1 mt-3 overflow-hidden"
-                  >
-                    <ScrollArea className="h-full max-h-[300px]">
-                      <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 p-1">
-                        {visibleStudents.map(student => {
-                          const isSelected = selectedStudentIds.has(student.id);
-                          const selectionOrder = selectionOrderMap.get(student.id);
+                {/* 학생 카드 그리드 */}
+                <ScrollArea className="flex-1 max-h-[280px]">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-7 gap-2 p-1">
+                    {visibleStudents.map(student => {
+                      const isSelected = selectedStudentIds.has(student.id);
+                      const selectionOrder = selectionOrderMap.get(student.id);
 
-                          return (
-                            <Card
-                              key={student.id}
-                              onClick={() => handleToggleStudent(student, classroom.id, classroomLabel)}
-                              className={cn(
-                                "p-3 cursor-pointer transition-all hover:scale-105 relative",
-                                "flex flex-col items-center justify-center text-center min-h-[72px]",
-                                isSelected 
-                                  ? "ring-2 ring-primary bg-primary/10 shadow-md" 
-                                  : "hover:bg-muted/50"
-                              )}
+                      return (
+                        <Card
+                          key={student.id}
+                          onClick={() => handleToggleStudent(student, selectedClassroomId, classroomLabel)}
+                          className={cn(
+                            "p-3 cursor-pointer transition-all hover:scale-105 relative",
+                            "flex flex-col items-center justify-center text-center min-h-[72px]",
+                            isSelected 
+                              ? "ring-2 ring-primary bg-primary/10 shadow-md" 
+                              : "hover:bg-muted/50"
+                          )}
+                        >
+                          {/* 선택 순서 뱃지 */}
+                          {isSelected && selectionOrder && (
+                            <Badge 
+                              className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 flex items-center justify-center text-xs"
+                              variant="default"
                             >
-                              {/* 선택 순서 뱃지 */}
-                              {isSelected && selectionOrder && (
-                                <Badge 
-                                  className="absolute -top-1.5 -right-1.5 h-5 w-5 p-0 flex items-center justify-center text-xs"
-                                  variant="default"
-                                >
-                                  {selectionOrder}
-                                </Badge>
-                              )}
-                              <span className="text-lg font-bold">{student.number}번</span>
-                              <span className="text-sm truncate w-full">{student.name}</span>
-                              {isSelected && (
-                                <Check className="h-4 w-4 text-primary mt-1" />
-                              )}
-                            </Card>
-                          );
-                        })}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-                );
-              })}
-            </Tabs>
+                              {selectionOrder}
+                            </Badge>
+                          )}
+                          <span className="text-lg font-bold">{student.number}번</span>
+                          <span className="text-sm truncate w-full">{student.name}</span>
+                          {isSelected && (
+                            <Check className="h-4 w-4 text-primary mt-1" />
+                          )}
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </ScrollArea>
+              </div>
+            )}
 
             {/* 선택된 학생 목록 */}
             <div className="border-t pt-3">
