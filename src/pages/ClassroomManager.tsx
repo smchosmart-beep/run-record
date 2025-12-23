@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useApp } from '@/contexts/AppContext';
-import { ArrowLeft, Timer, Users, Trophy, BarChart3, Edit, Eye } from 'lucide-react';
+import { ArrowLeft, Timer, Users, Layers } from 'lucide-react';
 import StudentList from '@/components/StudentList';
 import RecordDateManager from '@/components/RecordDateManager';
 import Rankings from '@/components/Rankings';
@@ -99,8 +99,8 @@ const ClassroomManager = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Users className="h-5 w-5 text-primary" />
+                <div className="p-2 bg-sky-100 rounded-lg">
+                  <Users className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-xl font-bold">{activeStudents.length}</p>
@@ -113,8 +113,8 @@ const ClassroomManager = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-secondary/10 rounded-lg">
-                  <BarChart3 className="h-5 w-5 text-secondary" />
+                <div className="p-2 bg-sky-100 rounded-lg">
+                  <Timer className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-xl font-bold">{totalRecords}</p>
@@ -127,8 +127,8 @@ const ClassroomManager = () => {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-accent/10 rounded-lg">
-                  <Trophy className="h-5 w-5 text-accent" />
+                <div className="p-2 bg-sky-100 rounded-lg">
+                  <Layers className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
                   <p className="text-xl font-bold">{currentClassroom.maxRecordSlots}</p>
