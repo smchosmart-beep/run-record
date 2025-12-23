@@ -10,7 +10,7 @@ import { Student, Record } from '@/types';
 import { calculateStudentStats, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, RotateCcw, Timer, CheckSquare } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, Undo2, Timer, CheckSquare } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 import StudentChart from './StudentChart';
@@ -703,7 +703,7 @@ const StudentList = () => {
                       className="h-8 w-8 p-0"
                       title="뒤집기"
                     >
-                      <RotateCcw className="h-3 w-3" />
+                      <Undo2 className="h-3 w-3" />
                     </Button>
                   </div>
                 </CardHeader>
