@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useApp } from '@/contexts/AppContext';
 import { calculateClassRankings, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
@@ -16,6 +15,7 @@ const Rankings = () => {
   const activeStudents = currentClassroom.students.filter(s => !s.isHidden);
   const rankingType = currentClassroom.rankingType || 'fastest'; // Default to 'fastest' for existing classrooms
   const { byPersonalBest, byAverage } = calculateClassRankings(activeStudents, rankingType);
+  const [rankingMode, setRankingMode] = useState<'pb' | 'avg'>('pb');
 
   const getRankIcon = (position: number, large: boolean = false) => {
     const size = large ? "h-12 w-12" : "h-5 w-5";
@@ -169,34 +169,39 @@ const Rankings = () => {
         </p>
       </div>
 
-      {/* Rankings */}
-      <Tabs defaultValue="pb" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="pb">{rankingType === 'slowest' ? '최장' : '최고'} 기록 순위</TabsTrigger>
-          <TabsTrigger value="avg">평균 기록 순위</TabsTrigger>
-        </TabsList>
-        
-        <TabsContent value="pb" className="space-y-6">
+      {/* Toggle */}
+      <ToggleGroup 
+        type="single" 
+        value={rankingMode} 
+        onValueChange={(value) => value && setRankingMode(value as 'pb' | 'avg')}
+        className="justify-center"
+      >
+        <ToggleGroupItem value="pb" className="px-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+          {rankingType === 'slowest' ? '최장' : '최고'} 기록 순위
+        </ToggleGroupItem>
+        <ToggleGroupItem value="avg" className="px-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+          평균 기록 순위
+        </ToggleGroupItem>
+      </ToggleGroup>
+
+      {/* Rankings Content */}
+      {rankingMode === 'pb' && (
+        <div className="space-y-6">
           {/* Podium */}
           {byPersonalBest.length >= 3 && (
             <div>
               <h4 className="text-lg font-semibold mb-4 text-center">🏆 Rank 🏆</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {/* 1st Place */}
                 {byPersonalBest[0] && (
                   <div className="order-1 md:order-1">
                     <PodiumCard ranking={byPersonalBest[0]} type="pb" />
                   </div>
                 )}
-                
-                {/* 2nd Place */}
                 {byPersonalBest[1] && (
                   <div className="order-2 md:order-2">
                     <PodiumCard ranking={byPersonalBest[1]} type="pb" />
                   </div>
                 )}
-                
-                {/* 3rd Place */}
                 {byPersonalBest[2] && (
                   <div className="order-3 md:order-3">
                     <PodiumCard ranking={byPersonalBest[2]} type="pb" />
@@ -222,29 +227,26 @@ const Rankings = () => {
               </Card>
             )}
           </div>
-        </TabsContent>
-        
-        <TabsContent value="avg" className="space-y-6">
+        </div>
+      )}
+
+      {rankingMode === 'avg' && (
+        <div className="space-y-6">
           {/* Podium */}
           {byAverage.length >= 3 && (
             <div>
               <h4 className="text-lg font-semibold mb-4 text-center">🏆 Rank 🏆</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                {/* 1st Place */}
                 {byAverage[0] && (
                   <div className="order-1 md:order-1">
                     <PodiumCard ranking={byAverage[0]} type="avg" />
                   </div>
                 )}
-                
-                {/* 2nd Place */}
                 {byAverage[1] && (
                   <div className="order-2 md:order-2">
                     <PodiumCard ranking={byAverage[1]} type="avg" />
                   </div>
                 )}
-                
-                {/* 3rd Place */}
                 {byAverage[2] && (
                   <div className="order-3 md:order-3">
                     <PodiumCard ranking={byAverage[2]} type="avg" />
@@ -270,8 +272,8 @@ const Rankings = () => {
               </Card>
             )}
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+      )}
     </div>
   );
 };
