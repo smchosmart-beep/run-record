@@ -98,6 +98,8 @@ const Rankings = () => {
     const filteredRankings = rankings.filter(r => r.position > 3);
     
     if (filteredRankings.length === 0) return null;
+
+    const title = type === 'pb' ? (rankingType === 'slowest' ? '최장 기록' : '최고 기록') : '평균 기록';
     
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -107,45 +109,23 @@ const Rankings = () => {
           
           return (
             <Card key={student.id} className="hover:shadow-md transition-all duration-200">
-              <CardContent className="p-4">
-                <div className="flex flex-col items-center text-center space-y-2">
+              <CardContent className="px-6 py-5">
+                <div className="flex flex-col items-center text-center gap-2">
                   {/* 순위 뱃지 */}
                   <Badge variant="secondary">
                     {position}위
                   </Badge>
                   
-                  {/* 이름 + 번호 */}
-                  <div>
-                    <h4 className="font-semibold">{student.name}</h4>
-                    <p className="text-sm text-muted-foreground">{student.number}번</p>
-                  </div>
+                  {/* 번호 + 이름 (한 줄) */}
+                  <h3 className="font-bold text-lg">{student.number}번 {student.name}</h3>
                   
                   {/* 기록 시간 */}
                   <p className="text-xl font-bold text-primary">
                     {time ? formatTime(time) : '--'}
                   </p>
                   
-                  {/* 기록 횟수 */}
-                  <div className="flex items-center text-sm text-muted-foreground">
-                    <Timer className="h-3 w-3 mr-1" />
-                    {stats.validRecordsCount}회 기록
-                  </div>
-                </div>
-                
-                {/* Additional stats */}
-                <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-4 text-sm">
-                  <div className="text-center">
-                    <p className="text-muted-foreground">개인 {rankingType === 'slowest' ? '최장' : '최고'}</p>
-                    <p className="font-medium">
-                      {getBestTimeForRanking(student.records, rankingType) ? formatTime(getBestTimeForRanking(student.records, rankingType)!) : '--'}
-                    </p>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-muted-foreground">평균 기록</p>
-                    <p className="font-medium">
-                      {stats.averageTime ? formatTime(stats.averageTime) : '--'}
-                    </p>
-                  </div>
+                  {/* 기록 타입 */}
+                  <p className="text-xs text-muted-foreground">{title}</p>
                 </div>
               </CardContent>
             </Card>
