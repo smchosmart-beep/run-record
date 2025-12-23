@@ -136,13 +136,13 @@ const Rankings = () => {
                 
                 {/* Additional stats */}
                 <div className="mt-3 pt-3 border-t grid grid-cols-2 gap-4 text-sm">
-                  <div>
+                  <div className="text-center">
                     <p className="text-muted-foreground">개인 {rankingType === 'slowest' ? '최장' : '최고'}</p>
                     <p className="font-medium">
                       {getBestTimeForRanking(student.records, rankingType) ? formatTime(getBestTimeForRanking(student.records, rankingType)!) : '--'}
                     </p>
                   </div>
-                  <div>
+                  <div className="text-center">
                     <p className="text-muted-foreground">평균 기록</p>
                     <p className="font-medium">
                       {stats.averageTime ? formatTime(stats.averageTime) : '--'}
