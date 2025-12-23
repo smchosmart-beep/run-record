@@ -569,19 +569,19 @@ const StudentList = () => {
                 >
                    <CardHeader className="pb-2">
                      <div className="flex justify-between items-center">
-                        {/* 그래프 아이콘 - 카드 뒤집기 */}
-                        {!student.isHidden && (
+                        {/* 휴지통 버튼 - 왼쪽으로 이동 */}
+                        {currentMode === 'input' && !student.isHidden && !isEditing && !isEditingNumber && (
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={(e) => {
                               e.stopPropagation();
-                              toggleCardFlip(student.id);
+                              handleDeleteStudent(student);
                             }}
-                            className="mr-2 h-8 w-8 p-0"
-                            title="차트 보기"
+                            className="mr-2 h-8 w-8 p-0 text-destructive hover:text-destructive"
+                            title="삭제"
                           >
-                            <BarChart3 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         )}
                        
@@ -662,8 +662,8 @@ const StudentList = () => {
                           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleToggleVisibility(student); }} className="h-8 w-8 p-0">
                             {student.isHidden ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
                           </Button>
-                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); handleDeleteStudent(student); }} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                            <Trash2 className="h-3 w-3" />
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); toggleCardFlip(student.id); }} className="h-8 w-8 p-0" title="차트 보기">
+                            <BarChart3 className="h-3 w-3" />
                           </Button>
                         </div>}
                     </div>
