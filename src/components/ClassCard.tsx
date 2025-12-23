@@ -44,18 +44,18 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
 
   return (
     <Card className="hover:shadow-lg transition-all duration-300 cursor-pointer group">
-      <CardHeader className="py-5 px-6">
-        <div className="space-y-3">
+      <CardHeader className="py-3 px-4">
+        <div className="space-y-1">
           {/* 상단: 학교명 + 편집 버튼 vs 학년도 + 삭제 버튼 */}
-          <div className="flex justify-between items-center gap-4">
-            <div className="flex items-center gap-3">
-              <CardTitle className="text-lg">
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-base">
                 {classroom.school}
               </CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
-                className="h-6 w-6 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
+                className="h-5 w-5 p-0 text-muted-foreground hover:text-primary hover:bg-primary/10 flex-shrink-0"
                 aria-label="학급 정보 수정"
                 onClick={(e) => {
                   e.stopPropagation();
@@ -65,14 +65,13 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
                 <Edit className="h-3 w-3" />
               </Button>
             </div>
-            <div className="flex items-center space-x-3 flex-shrink-0">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               <div className="text-right">
-                <div className="flex items-center text-sm text-muted-foreground">
+                <div className="flex items-center text-xs text-muted-foreground">
                   <Calendar className="h-3 w-3 mr-1" />
                   {(() => {
                     const year = classroom.createdAt.getFullYear();
-                    const month = classroom.createdAt.getMonth(); // 0-based (0=January)
-                    // 3월(month=2) 이전이면 이전 학년도
+                    const month = classroom.createdAt.getMonth();
                     return month < 2 ? year - 1 : year;
                   })()}학년도
                 </div>
@@ -82,11 +81,11 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                    className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                     aria-label="학급 삭제"
                     onClick={(e) => e.stopPropagation()}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3.5 w-3.5" />
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -118,40 +117,38 @@ const ClassCard: React.FC<ClassCardProps> = ({ classroom, onSelect }) => {
             </div>
           </div>
           
-          {/* 하단: 학급명 전체 폭으로 배치 */}
-          <div>
-            <CardDescription className="text-base font-medium text-left">
-              {classroom.grade}학년 {classroom.className}
-            </CardDescription>
-          </div>
+          {/* 하단: 학급명 */}
+          <CardDescription className="text-sm font-medium text-left">
+            {classroom.grade}학년 {classroom.className}
+          </CardDescription>
         </div>
       </CardHeader>
       
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
+      <CardContent className="px-4 pb-3 pt-0 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
           <div className="text-center">
-            <div className="flex items-center justify-center mb-1">
-              <Users className="h-4 w-4 text-primary mr-1" />
+            <div className="flex items-center justify-center">
+              <Users className="h-3.5 w-3.5 text-primary mr-1" />
+              <span className="text-lg font-bold text-primary">{activeStudents.length}</span>
             </div>
-            <p className="text-2xl font-bold text-primary">{activeStudents.length}</p>
             <p className="text-xs text-muted-foreground">학생</p>
           </div>
           
           <div className="text-center">
-            <div className="flex items-center justify-center mb-1">
-              <Timer className="h-4 w-4 text-secondary mr-1" />
+            <div className="flex items-center justify-center">
+              <Timer className="h-3.5 w-3.5 text-secondary mr-1" />
+              <span className="text-lg font-bold text-secondary">{totalRecords}</span>
             </div>
-            <p className="text-2xl font-bold text-secondary">{totalRecords}</p>
             <p className="text-xs text-muted-foreground">기록</p>
           </div>
         </div>
 
         {bestTime && holders.length > 0 && (
-          <div className="bg-muted/50 rounded-lg p-3 text-center">
-            <p className="text-xs text-muted-foreground mb-1">
+          <div className="bg-muted/50 rounded-md p-2 text-center">
+            <p className="text-xs text-muted-foreground">
               {classroom.rankingType === 'slowest' ? '최장 기록' : '최고 기록'}
             </p>
-            <p className="font-bold text-lg text-gold">
+            <p className="font-bold text-base text-gold">
               {formatTime(bestTime)}
             </p>
             <p className="text-xs text-muted-foreground">
