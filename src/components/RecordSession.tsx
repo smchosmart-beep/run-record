@@ -40,6 +40,11 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
   const [sortOrder, setSortOrder] = useState<'none' | 'asc' | 'desc'>('none');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
 
+  // session.maxSlots가 변경될 때 maxSlots 상태 동기화
+  useEffect(() => {
+    setMaxSlots(session.maxSlots);
+  }, [session.maxSlots]);
+
   if (!currentClassroom) return null;
 
   useEffect(() => {
