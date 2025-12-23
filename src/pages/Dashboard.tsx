@@ -140,11 +140,10 @@ const Dashboard = () => {
             <Button
               onClick={refreshClassrooms}
               variant="outline"
-              size="sm"
               disabled={dataLoading}
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${dataLoading ? 'animate-spin' : ''}`} />
-              다시 불러오기
+              새로고침
             </Button>
             <Button
               onClick={() => setIsCreateModalOpen(true)}
