@@ -86,7 +86,7 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-primary/10 rounded-lg">
-                  <School className="h-6 w-6 text-primary" />
+                  <School className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{classrooms.length}</p>
@@ -100,7 +100,7 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-secondary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-secondary" />
+                  <Users className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
@@ -116,7 +116,7 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-accent/10 rounded-lg">
-                  <ListChecks className="h-6 w-6 text-accent-foreground" />
+                  <ListChecks className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
