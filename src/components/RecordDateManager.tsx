@@ -133,8 +133,8 @@ const RecordDateManager = () => {
 
     setLoading(true);
     try {
-      // Create session in database
-      await upsertRecordSession(currentClassroom.id, selectedDate, currentClassroom.maxRecordSlots);
+      // Create session in database with default 2 slots
+      await upsertRecordSession(currentClassroom.id, selectedDate, 2);
       
       // Refresh sessions from database
       const updatedSessions = await getRecordSessions(currentClassroom.id);
