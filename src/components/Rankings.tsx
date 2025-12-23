@@ -94,9 +94,14 @@ const Rankings = () => {
   };
 
   const RankingTable = ({ rankings, type }: { rankings: any[]; type: 'pb' | 'avg' }) => {
+    // 4위부터만 표시 (1~3위는 Podium에서 표시)
+    const filteredRankings = rankings.filter(r => r.position > 3);
+    
+    if (filteredRankings.length === 0) return null;
+    
     return (
-      <div className="space-y-3">
-        {rankings.map((ranking) => {
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {filteredRankings.map((ranking) => {
           const { student, stats, position } = ranking;
           const time = type === 'pb' ? getBestTimeForRanking(student.records, rankingType) : stats.averageTime;
           
@@ -104,18 +109,10 @@ const Rankings = () => {
             <Card key={student.id} className="hover:shadow-md transition-all duration-200">
               <CardContent className="p-4">
                 <div className="flex flex-col items-center text-center space-y-2">
-                  {/* 순위 아이콘 + 뱃지 */}
-                  <div className="flex items-center space-x-2">
-                    {getRankIcon(position)}
-                    <Badge className={
-                      position === 1 ? 'bg-gold text-gold-foreground' :
-                      position === 2 ? 'bg-silver text-silver-foreground' :
-                      position === 3 ? 'bg-bronze text-bronze-foreground' :
-                      ''
-                    }>
-                      {position}위
-                    </Badge>
-                  </div>
+                  {/* 순위 뱃지 */}
+                  <Badge variant="secondary">
+                    {position}위
+                  </Badge>
                   
                   {/* 이름 + 번호 */}
                   <div>
