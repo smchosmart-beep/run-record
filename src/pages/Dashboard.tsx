@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/contexts/AppContext';
-import { Plus, LogOut, Users, Timer, RefreshCw, School, ListChecks } from 'lucide-react';
+import { Plus, LogOut, Users, Timer, RefreshCw, School, Activity } from 'lucide-react';
 import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 
@@ -116,7 +116,7 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-sky-100 rounded-lg">
-                  <ListChecks className="h-6 w-6 text-foreground" />
+                  <Activity className="h-6 w-6 text-foreground" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
