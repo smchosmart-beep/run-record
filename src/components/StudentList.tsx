@@ -3,14 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Checkbox } from '@/components/ui/checkbox';
+
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useApp } from '@/contexts/AppContext';
 import { Student, Record } from '@/types';
 import { calculateStudentStats, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, Undo2, Timer, CheckSquare, Maximize2 } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, Undo2, Timer, CheckSquare, Maximize2, BarChart3 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 import StudentChart from './StudentChart';
@@ -552,24 +552,37 @@ const StudentList = () => {
         const isEditing = editingStudent === student.id;
         const isEditingNumber = editingStudentNumber === student.id;
         const isFlipped = flippedCards.has(student.id);
-        return <Card key={student.id} className={`card-flip transition-all duration-500 ${student.isHidden ? 'opacity-50 grayscale' : 'hover:shadow-lg'} ${isFlipped ? 'flipped' : ''}`}>
+        return <Card key={student.id} className={`card-flip transition-all duration-500 ${student.isHidden ? 'opacity-50 grayscale' : 'hover:shadow-lg'} ${isFlipped ? 'flipped' : ''} ${selectedStudents.has(student.id) ? 'ring-2 ring-primary bg-primary/5' : ''}`}>
               {/* Card Front */}
               <div className={`card-face card-front ${isFlipped ? 'hidden' : ''}`}>
                 <div 
                   className="cursor-pointer"
-                  onClick={() => !isEditing && !isEditingNumber && toggleCardFlip(student.id)}
+                  onClick={() => {
+                    if (currentMode === 'input' && !student.isHidden && !isEditing && !isEditingNumber) {
+                      // 입력 모드에서는 카드 클릭 시 학생 선택
+                      handleStudentSelect(student.id, !selectedStudents.has(student.id));
+                    } else if (!isEditing && !isEditingNumber) {
+                      // 보기 모드에서는 기존처럼 카드 뒤집기
+                      toggleCardFlip(student.id);
+                    }
+                  }}
                 >
                    <CardHeader className="pb-2">
                      <div className="flex justify-between items-center">
-                        {/* Checkbox for student selection (only in input mode) */}
-                        {currentMode === 'input' && !student.isHidden && (
-                          <div className="mr-3 hover:bg-accent/50 rounded-md p-2 -m-2 transition-colors">
-                            <Checkbox
-                              checked={selectedStudents.has(student.id)}
-                              onCheckedChange={(checked) => handleStudentSelect(student.id, checked as boolean)}
-                              onClick={(e) => e.stopPropagation()}
-                            />
-                          </div>
+                        {/* 그래프 아이콘 - 카드 뒤집기 */}
+                        {!student.isHidden && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleCardFlip(student.id);
+                            }}
+                            className="mr-2 h-8 w-8 p-0"
+                            title="차트 보기"
+                          >
+                            <BarChart3 className="h-4 w-4" />
+                          </Button>
                         )}
                        
                         <div className="flex-1">
