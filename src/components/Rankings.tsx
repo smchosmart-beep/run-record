@@ -103,34 +103,35 @@ const Rankings = () => {
           return (
             <Card key={student.id} className="hover:shadow-md transition-all duration-200">
               <CardContent className="p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-2">
-                      {getRankIcon(position)}
-                      <Badge className={
-                        position === 1 ? 'bg-gold text-gold-foreground' :
-                        position === 2 ? 'bg-silver text-silver-foreground' :
-                        position === 3 ? 'bg-bronze text-bronze-foreground' :
-                        ''
-                      }>
-                        {position}위
-                      </Badge>
-                    </div>
-                    
-                    <div>
-                      <h4 className="font-semibold">{student.name}</h4>
-                      <p className="text-sm text-muted-foreground">{student.number}번</p>
-                    </div>
+                <div className="flex flex-col items-center text-center space-y-2">
+                  {/* 순위 아이콘 + 뱃지 */}
+                  <div className="flex items-center space-x-2">
+                    {getRankIcon(position)}
+                    <Badge className={
+                      position === 1 ? 'bg-gold text-gold-foreground' :
+                      position === 2 ? 'bg-silver text-silver-foreground' :
+                      position === 3 ? 'bg-bronze text-bronze-foreground' :
+                      ''
+                    }>
+                      {position}위
+                    </Badge>
                   </div>
                   
-                  <div className="text-right">
-                    <p className="text-xl font-bold text-primary">
-                      {time ? formatTime(time) : '--'}
-                    </p>
-                    <div className="flex items-center text-sm text-muted-foreground">
-                      <Timer className="h-3 w-3 mr-1" />
-                      {stats.validRecordsCount}회 기록
-                    </div>
+                  {/* 이름 + 번호 */}
+                  <div>
+                    <h4 className="font-semibold">{student.name}</h4>
+                    <p className="text-sm text-muted-foreground">{student.number}번</p>
+                  </div>
+                  
+                  {/* 기록 시간 */}
+                  <p className="text-xl font-bold text-primary">
+                    {time ? formatTime(time) : '--'}
+                  </p>
+                  
+                  {/* 기록 횟수 */}
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Timer className="h-3 w-3 mr-1" />
+                    {stats.validRecordsCount}회 기록
                   </div>
                 </div>
                 
