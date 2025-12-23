@@ -81,52 +81,52 @@ const Dashboard = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card className="hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-sky-100 rounded-lg">
-                  <School className="h-6 w-6 text-foreground" />
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-sky-100 rounded-lg">
+                  <School className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{classrooms.length}</p>
-                  <p className="text-muted-foreground text-sm">학급 수</p>
+                  <p className="text-xl font-bold">{classrooms.length}</p>
+                  <p className="text-muted-foreground text-xs">학급 수</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card className="hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-sky-100 rounded-lg">
-                  <Users className="h-6 w-6 text-foreground" />
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-sky-100 rounded-lg">
+                  <Users className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p className="text-xl font-bold">
                     {classrooms.reduce((sum, c) => sum + c.students.length, 0)}
                   </p>
-                  <p className="text-muted-foreground text-sm">등록 학생 수</p>
+                  <p className="text-muted-foreground text-xs">등록 학생 수</p>
                 </div>
               </div>
             </CardContent>
           </Card>
           
           <Card className="hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex items-center space-x-4">
-                <div className="p-3 bg-sky-100 rounded-lg">
-                  <Timer className="h-6 w-6 text-foreground" />
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-sky-100 rounded-lg">
+                  <Timer className="h-5 w-5 text-foreground" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p className="text-xl font-bold">
                     {classrooms.reduce((sum, c) => 
                       sum + c.students.reduce((studentSum, s) => 
                         studentSum + s.records.filter(r => r.time !== null).length, 0
                       ), 0
                     )}
                   </p>
-                  <p className="text-muted-foreground text-sm">총 기록 수</p>
+                  <p className="text-muted-foreground text-xs">총 기록 수</p>
                 </div>
               </div>
             </CardContent>
