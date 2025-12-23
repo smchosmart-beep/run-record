@@ -51,8 +51,9 @@ const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => 
       }
     });
 
-    // 날짜순 정렬
-    return dailyBestData.sort((a, b) => a.date.localeCompare(b.date));
+    // 날짜순 정렬 후 최근 5회만 표시
+    const sortedData = dailyBestData.sort((a, b) => a.date.localeCompare(b.date));
+    return sortedData.slice(-5);
   }, [student.records, rankingType]);
 
   if (chartData.length === 0) {
