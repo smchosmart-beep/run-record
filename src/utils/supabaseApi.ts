@@ -717,7 +717,68 @@ export async function searchStudentsAcrossClassrooms(query: string): Promise<Sea
   return results;
 }
 
-// 오늘 날짜의 기록 세션이 있는지 확인하고 없으면 생성
+// 학생의 오늘 날짜 기록 중 비어있는 첫 번째 슬롯 찾기
+async function findFirstEmptySlotForStudent(
+  studentId: string,
+  classroomId: string,
+  todayStr: string
+): Promise<{ slotIndex: number; needNewSlot: boolean; currentSlotsCount: number }> {
+  // 1. 오늘 날짜의 세션 정보 가져오기
+  const { data: session } = await supabase
+    .from('record_sessions')
+    .select('slots_count')
+    .eq('classroom_id', classroomId)
+    .eq('session_date', todayStr)
+    .maybeSingle();
+
+  const totalSlots = session?.slots_count || 0;
+
+  // 2. 학생의 오늘 기록 가져오기
+  const { data: existingRecords } = await supabase
+    .from('records')
+    .select('slot_index')
+    .eq('student_id', studentId)
+    .eq('record_date', todayStr);
+
+  const usedSlots = new Set((existingRecords || []).map(r => r.slot_index));
+
+  // 3. 비어있는 첫 번째 슬롯 찾기
+  for (let i = 0; i < totalSlots; i++) {
+    if (!usedSlots.has(i)) {
+      return { slotIndex: i, needNewSlot: false, currentSlotsCount: totalSlots };
+    }
+  }
+
+  // 4. 모든 슬롯이 차있으면 새 슬롯 필요
+  return { slotIndex: totalSlots, needNewSlot: true, currentSlotsCount: totalSlots };
+}
+
+// 세션의 slots_count를 특정 값으로 보장 (필요시 증가)
+async function ensureSlotExists(classroomId: string, todayStr: string, requiredSlots: number): Promise<void> {
+  const { data: session } = await supabase
+    .from('record_sessions')
+    .select('id, slots_count')
+    .eq('classroom_id', classroomId)
+    .eq('session_date', todayStr)
+    .maybeSingle();
+
+  if (!session) {
+    // 세션이 없으면 생성
+    await supabase.from('record_sessions').insert({
+      classroom_id: classroomId,
+      session_date: todayStr,
+      slots_count: requiredSlots,
+    });
+  } else if (session.slots_count < requiredSlots) {
+    // 기존 세션의 슬롯 수가 부족하면 증가
+    await supabase
+      .from('record_sessions')
+      .update({ slots_count: requiredSlots })
+      .eq('id', session.id);
+  }
+}
+
+// 오늘 날짜의 기록 세션이 있는지 확인하고 없으면 생성 (슬롯 자동 증가 없음)
 export async function ensureRecordSessionForToday(classroomId: string): Promise<{ slotIndex: number }> {
   const today = new Date();
   const todayStr = toYMD(today);
@@ -738,20 +799,8 @@ export async function ensureRecordSessionForToday(classroomId: string): Promise<
   }
 
   if (existingSession) {
-    // 기존 세션이 있으면 slots_count를 1 증가
-    const newSlotsCount = existingSession.slots_count + 1;
-    const { error: updateError } = await supabase
-      .from('record_sessions')
-      .update({ slots_count: newSlotsCount })
-      .eq('id', existingSession.id);
-
-    if (updateError) {
-      console.error('❌ 세션 업데이트 실패:', updateError);
-      throw updateError;
-    }
-
-    console.log('✅ 기존 세션 슬롯 증가:', newSlotsCount);
-    return { slotIndex: newSlotsCount - 1 }; // 0-based index
+    console.log('✅ 기존 세션 확인됨:', existingSession.slots_count, '슬롯');
+    return { slotIndex: existingSession.slots_count - 1 };
   }
 
   // 새 세션 생성
@@ -789,40 +838,41 @@ export async function saveMultiClassRecords(records: MultiClassRecordInput[]): P
   const today = new Date();
   const todayStr = toYMD(today);
 
-  // 학급별로 그룹화
-  const byClassroom = records.reduce((acc, record) => {
-    if (!acc[record.classroomId]) {
-      acc[record.classroomId] = [];
+  // 각 학생별로 첫 번째 비어있는 슬롯 찾아서 기록
+  for (const record of records) {
+    // 1. 학생별로 비어있는 첫 번째 슬롯 찾기
+    const { slotIndex, needNewSlot, currentSlotsCount } = await findFirstEmptySlotForStudent(
+      record.studentId,
+      record.classroomId,
+      todayStr
+    );
+
+    // 2. 새 슬롯이 필요하면 세션 slots_count 증가
+    if (needNewSlot) {
+      await ensureSlotExists(record.classroomId, todayStr, currentSlotsCount + 1);
+    } else if (currentSlotsCount === 0) {
+      // 세션이 없는 경우 생성
+      await ensureSlotExists(record.classroomId, todayStr, 1);
     }
-    acc[record.classroomId].push(record);
-    return acc;
-  }, {} as { [classroomId: string]: MultiClassRecordInput[] });
 
-  // 각 학급별로 세션 확보 및 기록 저장
-  for (const [classroomId, classRecords] of Object.entries(byClassroom)) {
-    // 세션 확보 (없으면 생성, 있으면 슬롯 증가)
-    const { slotIndex } = await ensureRecordSessionForToday(classroomId);
-
-    // 해당 학급의 모든 기록 저장
-    const recordsToInsert = classRecords.map(record => ({
-      student_id: record.studentId,
-      time_ms: record.timeMs,
-      is_dnf: false,
-      slot_index: slotIndex,
-      recorded_at: new Date().toISOString(),
-      record_date: todayStr,
-    }));
-
+    // 3. 해당 슬롯에 기록 저장
     const { error: insertError } = await supabase
       .from('records')
-      .insert(recordsToInsert);
+      .insert({
+        student_id: record.studentId,
+        time_ms: record.timeMs,
+        is_dnf: false,
+        slot_index: slotIndex,
+        recorded_at: new Date().toISOString(),
+        record_date: todayStr,
+      });
 
     if (insertError) {
       console.error('❌ 기록 저장 실패:', insertError);
       throw insertError;
     }
 
-    console.log(`✅ ${classroomId} 학급 ${classRecords.length}명 기록 저장 완료`);
+    console.log(`✅ ${record.studentId} 학생 슬롯 ${slotIndex}에 기록 저장 완료`);
   }
 
   console.log('🎉 모든 크로스-클래스 기록 저장 완료');
