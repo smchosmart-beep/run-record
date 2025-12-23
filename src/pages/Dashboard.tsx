@@ -89,9 +89,9 @@ const Dashboard = () => {
                   <div className="p-2.5 bg-sky-100 rounded-lg">
                     <School className="h-6 w-6 text-foreground" />
                   </div>
-                  <p className="text-2xl font-medium text-muted-foreground">학급 수</p>
+                  <p className="text-xl font-bold text-muted-foreground">학급 수</p>
                 </div>
-                <p className="text-2xl font-bold">{classrooms.length}</p>
+                <p className="text-xl font-bold">{classrooms.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -103,9 +103,9 @@ const Dashboard = () => {
                   <div className="p-2.5 bg-sky-100 rounded-lg">
                     <Users className="h-6 w-6 text-foreground" />
                   </div>
-                  <p className="text-2xl font-medium text-muted-foreground">등록 학생 수</p>
+                  <p className="text-xl font-bold text-muted-foreground">등록 학생 수</p>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {classrooms.reduce((sum, c) => sum + c.students.length, 0)}
                 </p>
               </div>
@@ -119,9 +119,9 @@ const Dashboard = () => {
                   <div className="p-2.5 bg-sky-100 rounded-lg">
                     <Timer className="h-6 w-6 text-foreground" />
                   </div>
-                  <p className="text-2xl font-medium text-muted-foreground">총 기록 수</p>
+                  <p className="text-xl font-bold text-muted-foreground">총 기록 수</p>
                 </div>
-                <p className="text-2xl font-bold">
+                <p className="text-xl font-bold">
                   {classrooms.reduce((sum, c) => 
                     sum + c.students.reduce((studentSum, s) => 
                       studentSum + s.records.filter(r => r.time !== null).length, 0

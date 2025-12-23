@@ -103,9 +103,9 @@ const ClassroomManager = () => {
                   <div className="p-2.5 bg-sky-100 rounded-lg">
                     <Users className="h-6 w-6 text-foreground" />
                   </div>
-                  <p className="text-2xl font-medium text-muted-foreground">활성 학생</p>
+                  <p className="text-xl font-bold text-muted-foreground">활성 학생</p>
                 </div>
-                <p className="text-2xl font-bold">{activeStudents.length}</p>
+                <p className="text-xl font-bold">{activeStudents.length}</p>
               </div>
             </CardContent>
           </Card>
@@ -117,9 +117,9 @@ const ClassroomManager = () => {
                   <div className="p-2.5 bg-sky-100 rounded-lg">
                     <Timer className="h-6 w-6 text-foreground" />
                   </div>
-                  <p className="text-2xl font-medium text-muted-foreground">총 기록</p>
+                  <p className="text-xl font-bold text-muted-foreground">총 기록</p>
                 </div>
-                <p className="text-2xl font-bold">{totalRecords}</p>
+                <p className="text-xl font-bold">{totalRecords}</p>
               </div>
             </CardContent>
           </Card>
@@ -131,9 +131,9 @@ const ClassroomManager = () => {
                   <div className="p-2.5 bg-sky-100 rounded-lg">
                     <Layers className="h-6 w-6 text-foreground" />
                   </div>
-                  <p className="text-2xl font-medium text-muted-foreground">기록 슬롯</p>
+                  <p className="text-xl font-bold text-muted-foreground">기록 슬롯</p>
                 </div>
-                <p className="text-2xl font-bold">{currentClassroom.maxRecordSlots}</p>
+                <p className="text-xl font-bold">{currentClassroom.maxRecordSlots}</p>
               </div>
             </CardContent>
           </Card>
