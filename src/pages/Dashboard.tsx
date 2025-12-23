@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/contexts/AppContext';
-import { Plus, LogOut, Users, Trophy, Timer, BarChart3, RefreshCw } from 'lucide-react';
+import { Plus, LogOut, Users, Timer, RefreshCw, School, ClipboardList } from 'lucide-react';
 import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 
@@ -86,11 +86,11 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-primary/10 rounded-lg">
-                  <Users className="h-6 w-6 text-primary" />
+                  <School className="h-6 w-6 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">{classrooms.length}</p>
-                  <p className="text-muted-foreground text-sm">생성된 학급</p>
+                  <p className="text-muted-foreground text-sm">학급 수</p>
                 </div>
               </div>
             </CardContent>
@@ -100,13 +100,13 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-secondary/10 rounded-lg">
-                  <Trophy className="h-6 w-6 text-secondary" />
+                  <Users className="h-6 w-6 text-secondary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
                     {classrooms.reduce((sum, c) => sum + c.students.length, 0)}
                   </p>
-                  <p className="text-muted-foreground text-sm">등록된 학생</p>
+                  <p className="text-muted-foreground text-sm">등록 학생 수</p>
                 </div>
               </div>
             </CardContent>
@@ -116,7 +116,7 @@ const Dashboard = () => {
             <CardContent className="p-6">
               <div className="flex items-center space-x-4">
                 <div className="p-3 bg-accent/10 rounded-lg">
-                  <BarChart3 className="h-6 w-6 text-accent" />
+                  <ClipboardList className="h-6 w-6 text-accent" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
