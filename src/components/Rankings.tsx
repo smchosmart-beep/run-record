@@ -102,25 +102,25 @@ const Rankings = () => {
     const title = type === 'pb' ? (rankingType === 'slowest' ? '최장 기록' : '최고 기록') : '평균 기록';
     
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {filteredRankings.map((ranking) => {
           const { student, stats, position } = ranking;
           const time = type === 'pb' ? getBestTimeForRanking(student.records, rankingType) : stats.averageTime;
           
           return (
             <Card key={student.id} className="hover:shadow-md transition-all duration-200">
-              <CardContent className="px-6 py-5">
-                <div className="flex flex-col items-center text-center gap-2">
+              <CardContent className="px-4 py-3">
+                <div className="flex flex-col items-center text-center gap-1">
                   {/* 순위 뱃지 */}
-                  <Badge variant="secondary">
+                  <Badge variant="secondary" className="text-xs">
                     {position}위
                   </Badge>
                   
                   {/* 번호 + 이름 (한 줄) */}
-                  <h3 className="font-bold text-lg">{student.number}번 {student.name}</h3>
+                  <h3 className="font-bold text-base">{student.number}번 {student.name}</h3>
                   
                   {/* 기록 시간 */}
-                  <p className="text-xl font-bold text-primary">
+                  <p className="text-lg font-bold text-primary">
                     {time ? formatTime(time) : '--'}
                   </p>
                   
