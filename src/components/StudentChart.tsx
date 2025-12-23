@@ -9,6 +9,8 @@ import { useApp } from '@/contexts/AppContext';
 interface StudentChartProps {
   student: Student;
   yAxisDomain?: [number, number] | null;
+  maxRecords?: number;
+  isExpanded?: boolean;
 }
 
 interface ChartData {
@@ -18,7 +20,7 @@ interface ChartData {
   formattedTime: string;
 }
 
-const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => {
+const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain, maxRecords = 5, isExpanded = false }) => {
   const { currentClassroom } = useApp();
   const rankingType = currentClassroom?.rankingType || 'fastest';
   
@@ -51,10 +53,10 @@ const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => 
       }
     });
 
-    // 날짜순 정렬 후 최근 5회만 표시
+    // 날짜순 정렬 후 최근 기록만 표시
     const sortedData = dailyBestData.sort((a, b) => a.date.localeCompare(b.date));
-    return sortedData.slice(-5);
-  }, [student.records, rankingType]);
+    return sortedData.slice(-maxRecords);
+  }, [student.records, rankingType, maxRecords]);
 
   if (chartData.length === 0) {
     return (
@@ -79,9 +81,9 @@ const StudentChart: React.FC<StudentChartProps> = ({ student, yAxisDomain }) => 
   };
 
   return (
-    <div className="h-32">
+    <div className={isExpanded ? "h-[400px]" : "h-32"}>
       <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={chartData} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
+        <LineChart data={chartData} margin={{ top: 5, right: isExpanded ? 20 : 5, left: isExpanded ? 10 : 5, bottom: 5 }}>
           <XAxis 
             dataKey="displayDate" 
             axisLine={false}

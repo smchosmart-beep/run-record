@@ -10,13 +10,14 @@ import { Student, Record } from '@/types';
 import { calculateStudentStats, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
 import { reorderStudentNumbers, validateStudentNumber, getNextStudentNumber } from '@/utils/studentUtils';
-import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, Undo2, Timer, CheckSquare } from 'lucide-react';
+import { Plus, Eye, EyeOff, Hash, Type, Trash2, Edit, Undo2, Timer, CheckSquare, Maximize2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { deleteStudent, updateStudentNumberAtomically } from '@/utils/supabaseApi';
 import StudentChart from './StudentChart';
 import DateSlotSelector from './DateSlotSelector';
 import Stopwatch from './Stopwatch';
 import RecordAssignment from './RecordAssignment';
+import ExpandedChartModal from './ExpandedChartModal';
 
 const calculateClassTimeRange = (students: Student[]): [number, number] | null => {
   let minTime = Infinity;
@@ -62,6 +63,7 @@ const StudentList = () => {
   const [showRecordAssignment, setShowRecordAssignment] = useState(false);
   const [selectedDateSlot, setSelectedDateSlot] = useState<{ date: Date; slotIndex: number } | null>(null);
   const [recordedTimes, setRecordedTimes] = useState<number[]>([]);
+  const [expandedChartStudent, setExpandedChartStudent] = useState<Student | null>(null);
   if (!currentClassroom) return null;
   const students = [...currentClassroom.students].sort((a, b) => a.number - b.number);
   const classTimeRange = calculateClassTimeRange(students);
@@ -710,7 +712,21 @@ const StudentList = () => {
                 
                 <CardContent className="pt-0">
                   <div className="space-y-2">
-                    <p className="text-sm font-medium text-muted-foreground">날짜별 {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'}기록</p>
+                    <div className="flex justify-between items-center">
+                      <p className="text-sm font-medium text-muted-foreground">날짜별 {currentClassroom.rankingType === 'slowest' ? '최장' : '최고'}기록</p>
+                      <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setExpandedChartStudent(student);
+                        }}
+                        className="h-6 w-6 p-0"
+                        title="확대보기"
+                      >
+                        <Maximize2 className="h-3 w-3" />
+                      </Button>
+                    </div>
                     <StudentChart student={student} yAxisDomain={classTimeRange} />
                   </div>
                 </CardContent>
@@ -779,6 +795,13 @@ const StudentList = () => {
         selectedStudents={selectedStudentsData}
         onSave={handleRecordAssignment}
         rankingType={currentClassroom?.rankingType as 'fastest' | 'slowest' || 'fastest'}
+      />
+
+      <ExpandedChartModal
+        open={expandedChartStudent !== null}
+        onOpenChange={(open) => !open && setExpandedChartStudent(null)}
+        student={expandedChartStudent}
+        yAxisDomain={classTimeRange}
       />
     </div>;
 };
