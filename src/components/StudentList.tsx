@@ -456,26 +456,25 @@ const StudentList = () => {
             {currentMode === 'view' ? (
               <>
                 <Edit className="h-4 w-4 mr-2" />
-                입력 모드로 전환
+                학생 추가/수정
               </>
             ) : (
               <>
                 <Eye className="h-4 w-4 mr-2" />
-                보기 모드로 전환
+                학생 추가/수정 종료
               </>
             )}
           </Button>
 
-          {/* Input mode description - only shown in view mode */}
-          {currentMode === 'view' && (
+          {/* Input mode description - only shown in input mode */}
+          {currentMode === 'input' && (
             <div className="text-sm font-semibold text-foreground text-center mt-2 flex items-center justify-center gap-1">
-              [입력모드] 학생 추가 / 정보 수정 / 스톱워치
-              <Timer className="h-4 w-4 text-primary" />
+              학생을 추가하거나 정보를 수정할 수 있습니다
             </div>
           )}
 
-          {/* 3. Select All Button */}
-          {currentMode === 'input' && students.filter(s => !s.isHidden).length > 0 && (
+          {/* 3. Select All Button - 항상 표시 */}
+          {students.filter(s => !s.isHidden).length > 0 && (
             <Button
               onClick={handleSelectAll}
               variant="outline"
@@ -558,12 +557,9 @@ const StudentList = () => {
                 <div 
                   className="cursor-pointer"
                   onClick={() => {
-                    if (currentMode === 'input' && !student.isHidden && !isEditing && !isEditingNumber) {
-                      // 입력 모드에서는 카드 클릭 시 학생 선택
+                    if (!student.isHidden && !isEditing && !isEditingNumber) {
+                      // 모드와 관계없이 카드 클릭 시 학생 선택 (스톱워치용)
                       handleStudentSelect(student.id, !selectedStudents.has(student.id));
-                    } else if (!isEditing && !isEditingNumber) {
-                      // 보기 모드에서는 기존처럼 카드 뒤집기
-                      toggleCardFlip(student.id);
                     }
                   }}
                 >
