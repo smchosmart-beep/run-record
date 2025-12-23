@@ -96,44 +96,44 @@ const ClassroomManager = () => {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-sky-100 rounded-lg">
-                  <Users className="h-5 w-5 text-foreground" />
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-sky-100 rounded-lg">
+                    <Users className="h-6 w-6 text-foreground" />
+                  </div>
+                  <p className="text-2xl font-medium text-muted-foreground">활성 학생</p>
                 </div>
-                <div>
-                  <p className="text-xl font-bold">{activeStudents.length}</p>
-                  <p className="text-sm text-muted-foreground">활성 학생</p>
-                </div>
+                <p className="text-2xl font-bold">{activeStudents.length}</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-sky-100 rounded-lg">
-                  <Timer className="h-5 w-5 text-foreground" />
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-sky-100 rounded-lg">
+                    <Timer className="h-6 w-6 text-foreground" />
+                  </div>
+                  <p className="text-2xl font-medium text-muted-foreground">총 기록</p>
                 </div>
-                <div>
-                  <p className="text-xl font-bold">{totalRecords}</p>
-                  <p className="text-sm text-muted-foreground">총 기록</p>
-                </div>
+                <p className="text-2xl font-bold">{totalRecords}</p>
               </div>
             </CardContent>
           </Card>
           
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <div className="p-2 bg-sky-100 rounded-lg">
-                  <Layers className="h-5 w-5 text-foreground" />
+          <Card className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="px-8 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="p-2.5 bg-sky-100 rounded-lg">
+                    <Layers className="h-6 w-6 text-foreground" />
+                  </div>
+                  <p className="text-2xl font-medium text-muted-foreground">기록 슬롯</p>
                 </div>
-                <div>
-                  <p className="text-xl font-bold">{currentClassroom.maxRecordSlots}</p>
-                  <p className="text-sm text-muted-foreground">기록 슬롯</p>
-                </div>
+                <p className="text-2xl font-bold">{currentClassroom.maxRecordSlots}</p>
               </div>
             </CardContent>
           </Card>
