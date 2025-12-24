@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Plus, Timer } from 'lucide-react';
+import { ArrowLeft, Plus, Timer, Save } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskStudentCard, { KioskStudent } from '@/components/KioskStudentCard';
@@ -62,6 +62,45 @@ const KioskMode: React.FC = () => {
     }
   }, [refreshClassrooms]);
 
+  const handleSaveAllRecords = useCallback(async () => {
+    const studentsToSave = kioskStudents.filter(
+      s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
+    );
+
+    if (studentsToSave.length === 0) {
+      toast.warning('저장할 기록이 없습니다.');
+      return;
+    }
+
+    try {
+      const recordData = studentsToSave.map(student => ({
+        studentId: student.studentId,
+        classroomId: student.classroomId,
+        timeMs: student.elapsedTime,
+      }));
+
+      await saveMultiClassRecords(recordData);
+      
+      setKioskStudents(prev =>
+        prev.map(s =>
+          studentsToSave.find(saved => saved.id === s.id)
+            ? { ...s, status: 'idle' as const, startTime: null, elapsedTime: 0 }
+            : s
+        )
+      );
+
+      toast.success(`${studentsToSave.length}명의 기록이 저장되었습니다.`);
+      refreshClassrooms();
+    } catch (error) {
+      console.error('Failed to save records:', error);
+      toast.error('기록 저장에 실패했습니다.');
+    }
+  }, [kioskStudents, refreshClassrooms]);
+
+  const savableCount = kioskStudents.filter(
+    s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
+  ).length;
+
   const existingStudentIds = kioskStudents.map(s => s.studentId);
 
   return (
@@ -92,17 +131,26 @@ const KioskMode: React.FC = () => {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Add Button */}
-        <div className="mb-6">
+        {/* Action Buttons */}
+        <div className="mb-6 flex flex-wrap gap-3">
           <Button
             onClick={() => setIsAddModalOpen(true)}
             variant="outline"
             size="lg"
-            className="w-full sm:w-auto"
           >
             <Plus className="h-5 w-5 mr-2" />
             학생 추가
           </Button>
+          {kioskStudents.length > 0 && (
+            <Button
+              onClick={handleSaveAllRecords}
+              size="lg"
+              disabled={savableCount === 0}
+            >
+              <Save className="h-5 w-5 mr-2" />
+              일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
+            </Button>
+          )}
         </div>
 
         {/* Student Cards Grid */}
