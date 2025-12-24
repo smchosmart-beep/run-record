@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useApp } from '@/contexts/AppContext';
-import { Plus, LogOut, Users, Timer, RefreshCw, School } from 'lucide-react';
+import { Plus, LogOut, Users, Timer, RefreshCw, School, Monitor } from 'lucide-react';
 import CreateClassModal from '@/components/CreateClassModal';
 import ClassCard from '@/components/ClassCard';
 import DashboardStopwatch from '@/components/DashboardStopwatch';
@@ -139,6 +139,10 @@ const Dashboard = () => {
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-2xl font-bold text-foreground">학급 목록</h3>
           <div className="flex space-x-2">
+            <Button onClick={() => navigate('/kiosk')} variant="outline" className="shadow-md">
+              <Monitor className="h-4 w-4 mr-2" />
+              키오스크
+            </Button>
             <Button onClick={() => setIsStopwatchOpen(true)} variant="outline" className="shadow-md">
               <Timer className="h-4 w-4 mr-2" />
               스톱워치
