@@ -50,10 +50,10 @@ const Attendance = () => {
     if (stats.participationDays === 0) {
       return <Badge variant="destructive">❌ 미참여</Badge>;
     }
-    if (stats.participationRate >= 100) {
+    if (stats.participationRate >= 90) {
       return <Badge className="bg-amber-500 hover:bg-amber-600">🏆 완벽</Badge>;
     }
-    if (stats.participationRate >= 80) {
+    if (stats.participationRate >= 70) {
       return <Badge className="bg-emerald-500 hover:bg-emerald-600">✅ 달성</Badge>;
     }
     return <Badge variant="secondary" className="bg-orange-200 text-orange-800">⚠️ 미달</Badge>;
@@ -63,8 +63,8 @@ const Attendance = () => {
   const avgParticipation = participationData.length > 0
     ? Math.round(participationData.reduce((sum, p) => sum + p.participationRate, 0) / participationData.length)
     : 0;
-  const perfectCount = participationData.filter(p => p.participationRate >= 100).length;
-  const achievedCount = participationData.filter(p => p.participationRate >= 80 && p.participationRate < 100).length;
+  const perfectCount = participationData.filter(p => p.participationRate >= 90).length;
+  const achievedCount = participationData.filter(p => p.participationRate >= 70 && p.participationRate < 90).length;
 
   return (
     <div className="space-y-6">
@@ -134,7 +134,7 @@ const Attendance = () => {
                 <div className="p-2.5 bg-emerald-100 rounded-lg">
                   <span className="text-lg">✅</span>
                 </div>
-                <p className="font-semibold text-muted-foreground">80% 이상</p>
+                <p className="font-semibold text-muted-foreground">70% 이상</p>
               </div>
               <p className="text-xl font-bold">{achievedCount}명</p>
             </div>
