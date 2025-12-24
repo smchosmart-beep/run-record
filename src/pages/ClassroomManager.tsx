@@ -9,6 +9,7 @@ import { ArrowLeft, Timer, Users, Layers } from 'lucide-react';
 import StudentList from '@/components/StudentList';
 import RecordDateManager from '@/components/RecordDateManager';
 import Rankings from '@/components/Rankings';
+import Attendance from '@/components/Attendance';
 
 const ClassroomManager = () => {
   const { user, currentClassroom, currentMode, setMode, setCurrentClassroom, updateClassroom } = useApp();
@@ -141,10 +142,11 @@ const ClassroomManager = () => {
 
         {/* Main Content */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="students">학생 명단</TabsTrigger>
             <TabsTrigger value="records">기록 관리</TabsTrigger>
             <TabsTrigger value="rankings">순위 보기</TabsTrigger>
+            <TabsTrigger value="attendance">인증 관리</TabsTrigger>
           </TabsList>
           
           <TabsContent value="students">
@@ -157,6 +159,10 @@ const ClassroomManager = () => {
           
           <TabsContent value="rankings">
             <Rankings />
+          </TabsContent>
+          
+          <TabsContent value="attendance">
+            <Attendance />
           </TabsContent>
         </Tabs>
       </main>

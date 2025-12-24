@@ -23,6 +23,7 @@ export type Database = {
           max_record_slots: number
           ranking_type: string | null
           school: string
+          total_activity_days: number
           updated_at: string
           user_id: string
         }
@@ -34,6 +35,7 @@ export type Database = {
           max_record_slots?: number
           ranking_type?: string | null
           school: string
+          total_activity_days?: number
           updated_at?: string
           user_id: string
         }
@@ -45,6 +47,7 @@ export type Database = {
           max_record_slots?: number
           ranking_type?: string | null
           school?: string
+          total_activity_days?: number
           updated_at?: string
           user_id?: string
         }

@@ -22,6 +22,7 @@ export type DatabaseClassroom = {
   class_name: string;
   max_record_slots: number;
   ranking_type: string | null;
+  total_activity_days: number;
   created_at: string;
   updated_at: string;
 };
@@ -57,6 +58,7 @@ const convertDbClassroomToAppClassroom = (
   students,
   maxRecordSlots: dbClassroom.max_record_slots,
   rankingType: dbClassroom.ranking_type === 'slowest' ? 'slowest' : 'fastest',
+  totalActivityDays: dbClassroom.total_activity_days ?? 0,
   createdAt: new Date(dbClassroom.created_at),
   updatedAt: new Date(dbClassroom.updated_at),
 });
@@ -253,6 +255,7 @@ export async function updateClassroom(classroomId: string, updates: Partial<Clas
   if (updates.className !== undefined) updateData.class_name = updates.className;
   if (updates.maxRecordSlots !== undefined) updateData.max_record_slots = updates.maxRecordSlots;
   if (updates.rankingType !== undefined) updateData.ranking_type = updates.rankingType;
+  if (updates.totalActivityDays !== undefined) updateData.total_activity_days = updates.totalActivityDays;
 
   if (Object.keys(updateData).length > 0) {
     const { error } = await supabase

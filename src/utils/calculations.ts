@@ -205,3 +205,47 @@ export function calculateDailyBestForRanking(records: Record[], rankingType: 'fa
 
   return rankingType === 'fastest' ? Math.min(...validTimes) : Math.max(...validTimes);
 }
+
+// Participation Stats for Attendance Management
+export interface ParticipationStats {
+  student: Student;
+  participationDays: number;
+  totalDays: number;
+  participationRate: number;
+}
+
+export function calculateParticipationDays(student: Student): number {
+  const validRecords = student.records.filter(
+    record => record.time !== null && !record.isDNF
+  );
+  
+  // Count unique dates
+  const uniqueDates = new Set(
+    validRecords.map(record => 
+      new Date(record.recordDate).toISOString().split('T')[0]
+    )
+  );
+  
+  return uniqueDates.size;
+}
+
+export function calculateParticipationStats(
+  students: Student[], 
+  totalActivityDays: number
+): ParticipationStats[] {
+  return students
+    .map(student => {
+      const participationDays = calculateParticipationDays(student);
+      const participationRate = totalActivityDays > 0 
+        ? Math.round((participationDays / totalActivityDays) * 100) 
+        : 0;
+      
+      return {
+        student,
+        participationDays,
+        totalDays: totalActivityDays,
+        participationRate,
+      };
+    })
+    .sort((a, b) => a.student.number - b.student.number);
+}
