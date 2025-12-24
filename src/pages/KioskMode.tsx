@@ -111,7 +111,13 @@ const KioskMode: React.FC = () => {
   const existingStudentIds = kioskStudents.map(s => s.studentId);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 relative">
+      {/* MoRun 워터마크 */}
+      <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
+        <span className="text-[20vw] font-bold text-primary/5 select-none tracking-widest">
+          MoRun
+        </span>
+      </div>
       {/* Header */}
       <header className="bg-card border-b shadow-sm sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -137,7 +143,7 @@ const KioskMode: React.FC = () => {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 relative z-10">
         {/* Action Buttons */}
         <div className="mb-6 flex flex-wrap gap-3">
           <Button
