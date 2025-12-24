@@ -5,7 +5,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { useApp } from '@/contexts/AppContext';
 import { calculateClassRankings, getBestTimeForRanking } from '@/utils/calculations';
 import { formatTime } from '@/utils/time';
-import { Trophy, Medal, Timer } from 'lucide-react';
+import { Trophy, Medal, Timer, Hash } from 'lucide-react';
 
 const Rankings = () => {
   const { currentClassroom } = useApp();
@@ -13,9 +13,9 @@ const Rankings = () => {
   if (!currentClassroom) return null;
 
   const activeStudents = currentClassroom.students.filter(s => !s.isHidden);
-  const rankingType = currentClassroom.rankingType || 'fastest'; // Default to 'fastest' for existing classrooms
-  const { byPersonalBest, byAverage } = calculateClassRankings(activeStudents, rankingType);
-  const [rankingMode, setRankingMode] = useState<'pb' | 'avg'>('pb');
+  const rankingType = currentClassroom.rankingType || 'fastest';
+  const { byPersonalBest, byAverage, byRecordCount } = calculateClassRankings(activeStudents, rankingType);
+  const [rankingMode, setRankingMode] = useState<'pb' | 'avg' | 'count'>('pb');
 
   const getRankIcon = (position: number, large: boolean = false) => {
     const size = large ? "h-12 w-12" : "h-5 w-5";
@@ -44,10 +44,23 @@ const Rankings = () => {
     }
   };
 
-  const PodiumCard = ({ ranking, type }: { ranking: any; type: 'pb' | 'avg' }) => {
+  const PodiumCard = ({ ranking, type }: { ranking: any; type: 'pb' | 'avg' | 'count' }) => {
     const { student, stats, position } = ranking;
-    const time = type === 'pb' ? getBestTimeForRanking(student.records, rankingType) : stats.averageTime;
-    const title = type === 'pb' ? (rankingType === 'slowest' ? '최장 기록' : '최고 기록') : '평균 기록';
+    
+    let displayValue: string;
+    let title: string;
+    
+    if (type === 'count') {
+      displayValue = `${stats.validRecordsCount}회`;
+      title = '누적 횟수';
+    } else if (type === 'pb') {
+      const time = getBestTimeForRanking(student.records, rankingType);
+      displayValue = time ? formatTime(time) : '--';
+      title = rankingType === 'slowest' ? '최장 기록' : '최고 기록';
+    } else {
+      displayValue = stats.averageTime ? formatTime(stats.averageTime) : '--';
+      title = '평균 기록';
+    }
     
     if (position > 3) return null;
 
@@ -83,7 +96,7 @@ const Rankings = () => {
             <div className="flex-1 flex flex-col items-center gap-1">
               <h3 className="font-bold text-lg">{student.number}번 {student.name}</h3>
               <p className="text-xl font-bold text-primary">
-                {time ? formatTime(time) : '--'}
+                {displayValue}
               </p>
               <p className="text-xs text-muted-foreground">{title}</p>
             </div>
@@ -93,19 +106,35 @@ const Rankings = () => {
     );
   };
 
-  const RankingTable = ({ rankings, type }: { rankings: any[]; type: 'pb' | 'avg' }) => {
+  const RankingTable = ({ rankings, type }: { rankings: any[]; type: 'pb' | 'avg' | 'count' }) => {
     // 4위부터만 표시 (1~3위는 Podium에서 표시)
     const filteredRankings = rankings.filter(r => r.position > 3);
     
     if (filteredRankings.length === 0) return null;
 
-    const title = type === 'pb' ? (rankingType === 'slowest' ? '최장 기록' : '최고 기록') : '평균 기록';
+    let title: string;
+    if (type === 'count') {
+      title = '누적 횟수';
+    } else if (type === 'pb') {
+      title = rankingType === 'slowest' ? '최장 기록' : '최고 기록';
+    } else {
+      title = '평균 기록';
+    }
     
     return (
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3">
         {filteredRankings.map((ranking) => {
           const { student, stats, position } = ranking;
-          const time = type === 'pb' ? getBestTimeForRanking(student.records, rankingType) : stats.averageTime;
+          
+          let displayValue: string;
+          if (type === 'count') {
+            displayValue = `${stats.validRecordsCount}회`;
+          } else if (type === 'pb') {
+            const time = getBestTimeForRanking(student.records, rankingType);
+            displayValue = time ? formatTime(time) : '--';
+          } else {
+            displayValue = stats.averageTime ? formatTime(stats.averageTime) : '--';
+          }
           
           return (
             <Card key={student.id} className="hover:shadow-md transition-all duration-200">
@@ -119,9 +148,9 @@ const Rankings = () => {
                   {/* 번호 + 이름 (한 줄) */}
                   <h3 className="font-bold text-base">{student.number}번 {student.name}</h3>
                   
-                  {/* 기록 시간 */}
+                  {/* 기록 */}
                   <p className="text-lg font-bold text-primary">
-                    {time ? formatTime(time) : '--'}
+                    {displayValue}
                   </p>
                   
                   {/* 기록 타입 */}
@@ -151,7 +180,7 @@ const Rankings = () => {
       <ToggleGroup 
         type="single" 
         value={rankingMode} 
-        onValueChange={(value) => value && setRankingMode(value as 'pb' | 'avg')}
+        onValueChange={(value) => value && setRankingMode(value as 'pb' | 'avg' | 'count')}
         className="justify-center"
       >
         <ToggleGroupItem value="pb" className="px-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
@@ -159,6 +188,9 @@ const Rankings = () => {
         </ToggleGroupItem>
         <ToggleGroupItem value="avg" className="px-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
           평균 기록 순위
+        </ToggleGroupItem>
+        <ToggleGroupItem value="count" className="px-6 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground">
+          누적 횟수 순위
         </ToggleGroupItem>
       </ToggleGroup>
 
@@ -243,6 +275,51 @@ const Rankings = () => {
               <Card className="text-center py-12">
                 <CardContent>
                   <Trophy className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <p className="text-muted-foreground">
+                    아직 기록된 데이터가 없습니다.
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </div>
+      )}
+
+      {rankingMode === 'count' && (
+        <div className="space-y-6">
+          {/* Podium */}
+          {byRecordCount.length >= 3 && (
+            <div>
+              <h4 className="text-lg font-semibold mb-4 text-center">🏆 Rank 🏆</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                {byRecordCount[0] && (
+                  <div className="order-1 md:order-1">
+                    <PodiumCard ranking={byRecordCount[0]} type="count" />
+                  </div>
+                )}
+                {byRecordCount[1] && (
+                  <div className="order-2 md:order-2">
+                    <PodiumCard ranking={byRecordCount[1]} type="count" />
+                  </div>
+                )}
+                {byRecordCount[2] && (
+                  <div className="order-3 md:order-3">
+                    <PodiumCard ranking={byRecordCount[2]} type="count" />
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Full Rankings */}
+          <div>
+            <h4 className="text-lg font-semibold mb-4">전체 순위</h4>
+            {byRecordCount.length > 0 ? (
+              <RankingTable rankings={byRecordCount} type="count" />
+            ) : (
+              <Card className="text-center py-12">
+                <CardContent>
+                  <Hash className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                   <p className="text-muted-foreground">
                     아직 기록된 데이터가 없습니다.
                   </p>

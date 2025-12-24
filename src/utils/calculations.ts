@@ -53,6 +53,7 @@ export function calculateStudentStats(student: Student): StudentStats {
 export function calculateClassRankings(students: Student[], rankingType: 'fastest' | 'slowest' = 'fastest'): {
   byPersonalBest: RankingData[];
   byAverage: RankingData[];
+  byRecordCount: RankingData[];
 } {
   // Only include non-hidden students with valid records (based on ranking type)
   const eligibleStudents = students
@@ -114,7 +115,30 @@ export function calculateClassRankings(students: Student[], rankingType: 'fastes
       position: index + 1,
     }));
 
-  return { byPersonalBest, byAverage };
+  // Rank by Record Count (most records first)
+  const byRecordCount = eligibleStudents
+    .slice()
+    .filter(item => item.stats.validRecordsCount > 0)
+    .sort((a, b) => {
+      // Primary: more records = higher rank
+      const countDiff = b.stats.validRecordsCount - a.stats.validRecordsCount;
+      if (countDiff !== 0) return countDiff;
+      
+      // Tiebreaker 1: Personal best (based on ranking type)
+      const pbA = getBestTimeForRanking(a.student.records, rankingType) ?? (rankingType === 'fastest' ? Infinity : -Infinity);
+      const pbB = getBestTimeForRanking(b.student.records, rankingType) ?? (rankingType === 'fastest' ? Infinity : -Infinity);
+      const pbDiff = rankingType === 'fastest' ? pbA - pbB : pbB - pbA;
+      if (pbDiff !== 0) return pbDiff;
+      
+      // Tiebreaker 2: Student number
+      return a.student.number - b.student.number;
+    })
+    .map((item, index) => ({
+      ...item,
+      position: index + 1,
+    }));
+
+  return { byPersonalBest, byAverage, byRecordCount };
 }
 
 export function getClassBestRecord(students: Student[], rankingType: 'fastest' | 'slowest' = 'fastest'): {
