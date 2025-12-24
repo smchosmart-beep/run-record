@@ -114,7 +114,7 @@ const KioskMode: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 relative">
       {/* MoRun 워터마크 */}
       <div className="fixed inset-0 flex items-center justify-center pointer-events-none z-0">
-        <span className="text-[20vw] font-bold text-primary/5 select-none tracking-widest">
+        <span className="text-[20vw] font-bold text-primary/10 select-none tracking-widest">
           MoRun
         </span>
       </div>
