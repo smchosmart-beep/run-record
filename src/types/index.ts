@@ -25,6 +25,7 @@ export interface ClassRoom {
   students: Student[];
   maxRecordSlots: number;
   rankingType?: 'fastest' | 'slowest'; // 'fastest' for 50m 달리기, 'slowest' for 플랭크
+  totalActivityDays?: number; // 전체 활동일수 (인증관리용)
   createdAt: Date;
   updatedAt: Date;
 }
