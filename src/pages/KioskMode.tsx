@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Plus, Timer, Save } from 'lucide-react';
+import { ArrowLeft, Plus, Timer, Save, Loader2 } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskStudentCard, { KioskStudent } from '@/components/KioskStudentCard';
@@ -14,6 +14,7 @@ const KioskMode: React.FC = () => {
   const { user, classrooms, refreshClassrooms } = useApp();
   const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>([]);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isSavingAll, setIsSavingAll] = useState(false);
   // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
 
   if (!user) {
@@ -63,6 +64,8 @@ const KioskMode: React.FC = () => {
   }, [refreshClassrooms]);
 
   const handleSaveAllRecords = useCallback(async () => {
+    if (isSavingAll) return;
+
     const studentsToSave = kioskStudents.filter(
       s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
     );
@@ -71,6 +74,8 @@ const KioskMode: React.FC = () => {
       toast.warning('저장할 기록이 없습니다.');
       return;
     }
+
+    setIsSavingAll(true);
 
     try {
       const recordData = studentsToSave.map(student => ({
@@ -94,8 +99,10 @@ const KioskMode: React.FC = () => {
     } catch (error) {
       console.error('Failed to save records:', error);
       toast.error('기록 저장에 실패했습니다.');
+    } finally {
+      setIsSavingAll(false);
     }
-  }, [kioskStudents, refreshClassrooms]);
+  }, [kioskStudents, refreshClassrooms, isSavingAll]);
 
   const savableCount = kioskStudents.filter(
     s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
@@ -145,10 +152,19 @@ const KioskMode: React.FC = () => {
             <Button
               onClick={handleSaveAllRecords}
               size="lg"
-              disabled={savableCount === 0}
+              disabled={savableCount === 0 || isSavingAll}
             >
-              <Save className="h-5 w-5 mr-2" />
-              일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
+              {isSavingAll ? (
+                <>
+                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                  저장 중...
+                </>
+              ) : (
+                <>
+                  <Save className="h-5 w-5 mr-2" />
+                  일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
+                </>
+              )}
             </Button>
           )}
         </div>
