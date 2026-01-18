@@ -184,7 +184,7 @@ const Auth = () => {
             <TabsContent value="login">
               <form onSubmit={handleLogin}>
                 <CardContent className="space-y-4">
-                  <CardTitle>로그인</CardTitle>
+                  
                   <CardDescription>
                     계정에 로그인하여 학급 관리를 시작하세요
                   </CardDescription>
