@@ -15,6 +15,7 @@ export interface Record {
   recordedAt: Date;
   slotIndex: number;
   recordDate: Date; // Date when this record was created
+  isAttendance?: boolean; // true if this is an attendance-only record
 }
 
 export interface ClassRoom {

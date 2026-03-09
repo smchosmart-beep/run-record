@@ -871,6 +871,7 @@ export async function saveMultiClassRecords(records: MultiClassRecordInput[]): P
         slot_index: slotIndex,
         recorded_at: new Date().toISOString(),
         record_date: todayStr,
+        is_attendance: record.isAttendance || false,
       });
 
     if (insertError) {

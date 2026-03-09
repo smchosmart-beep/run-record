@@ -197,7 +197,7 @@ export function calculateDailyBest(records: Record[]): number | null {
 
 export function calculateDailyBestForRanking(records: Record[], rankingType: 'fastest' | 'slowest'): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time!);
 
   if (validTimes.length === 0) {
