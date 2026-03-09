@@ -29,7 +29,7 @@ const KioskAttendance: React.FC = () => {
     }));
     setStudents(prev => [...prev, ...attendanceStudents]);
     toast.success(`${newStudents.length}명의 학생이 추가되었습니다.`);
-  };
+  }, []);
 
   const handleToggleAttendance = useCallback((id: string) => {
     setStudents(prev =>
