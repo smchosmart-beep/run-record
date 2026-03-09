@@ -216,8 +216,10 @@ export interface ParticipationStats {
 }
 
 export function calculateParticipationDays(student: Student): number {
+  // 속도 기록: non-DNF, non-null times
+  // 출석 기록: isAttendance === true (time_ms=0이지만 참여로 인정)
   const validRecords = student.records.filter(
-    record => record.time !== null && !record.isDNF
+    record => (record.time !== null && !record.isDNF)
   );
   
   // Count unique dates
