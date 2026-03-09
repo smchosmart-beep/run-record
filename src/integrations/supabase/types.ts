@@ -112,6 +112,7 @@ export type Database = {
       records: {
         Row: {
           id: string
+          is_attendance: boolean
           is_dnf: boolean
           record_date: string
           recorded_at: string
@@ -121,6 +122,7 @@ export type Database = {
         }
         Insert: {
           id?: string
+          is_attendance?: boolean
           is_dnf?: boolean
           record_date?: string
           recorded_at?: string
@@ -130,6 +132,7 @@ export type Database = {
         }
         Update: {
           id?: string
+          is_attendance?: boolean
           is_dnf?: boolean
           record_date?: string
           recorded_at?: string

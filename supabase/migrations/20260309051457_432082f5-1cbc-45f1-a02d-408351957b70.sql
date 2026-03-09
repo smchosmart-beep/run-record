@@ -1,0 +1,1 @@
+ALTER TABLE public.records ADD COLUMN is_attendance boolean NOT NULL DEFAULT false;
