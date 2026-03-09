@@ -22,11 +22,7 @@ const KioskAttendance: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  const handleAddStudents = (newStudents: KioskStudent[]) => {
+  const handleAddStudents = useCallback((newStudents: KioskStudent[]) => {
     const attendanceStudents: AttendanceStudent[] = newStudents.map(s => ({
       ...s,
       attendanceStatus: 'unchecked' as AttendanceStatus,
