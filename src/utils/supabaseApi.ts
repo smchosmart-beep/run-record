@@ -44,6 +44,7 @@ export type DatabaseRecord = {
   slot_index: number;
   recorded_at: string;
   record_date: string;
+  is_attendance: boolean;
 };
 
 // Convert database types to app types
