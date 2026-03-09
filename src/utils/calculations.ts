@@ -36,9 +36,10 @@ export function calculateAverage(records: Record[]): number | null {
 }
 
 export function calculateStudentStats(student: Student): StudentStats {
-  const personalBest = calculatePersonalBest(student.records);
-  const averageTime = calculateAverage(student.records);
-  const validRecordsCount = student.records.filter(
+  const speedRecords = student.records.filter(r => !r.isAttendance);
+  const personalBest = calculatePersonalBest(speedRecords);
+  const averageTime = calculateAverage(speedRecords);
+  const validRecordsCount = speedRecords.filter(
     record => record.time !== null && !record.isDNF
   ).length;
 
