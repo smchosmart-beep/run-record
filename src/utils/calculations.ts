@@ -4,7 +4,7 @@ import { Student, StudentStats, Record, RankingData } from '@/types';
 
 export function calculatePersonalBest(records: Record[]): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time as number);
   
   if (validTimes.length === 0) return null;
@@ -15,7 +15,7 @@ export function calculatePersonalBest(records: Record[]): number | null {
 // Helper: get best time depending on ranking type
 export function getBestTimeForRanking(records: Record[], rankingType: 'fastest' | 'slowest'): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time as number);
 
   if (validTimes.length === 0) return null;
@@ -27,7 +27,7 @@ export function getBestTimeForRanking(records: Record[], rankingType: 'fastest' 
 
 export function calculateAverage(records: Record[]): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time as number);
   
   if (validTimes.length === 0) return null;
@@ -36,9 +36,10 @@ export function calculateAverage(records: Record[]): number | null {
 }
 
 export function calculateStudentStats(student: Student): StudentStats {
-  const personalBest = calculatePersonalBest(student.records);
-  const averageTime = calculateAverage(student.records);
-  const validRecordsCount = student.records.filter(
+  const speedRecords = student.records.filter(r => !r.isAttendance);
+  const personalBest = calculatePersonalBest(speedRecords);
+  const averageTime = calculateAverage(speedRecords);
+  const validRecordsCount = speedRecords.filter(
     record => record.time !== null && !record.isDNF
   ).length;
 
@@ -184,7 +185,7 @@ export function generateClassId(): string {
 
 export function calculateDailyBest(records: Record[]): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time!);
 
   if (validTimes.length === 0) {
@@ -196,7 +197,7 @@ export function calculateDailyBest(records: Record[]): number | null {
 
 export function calculateDailyBestForRanking(records: Record[], rankingType: 'fastest' | 'slowest'): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time!);
 
   if (validTimes.length === 0) {
@@ -215,8 +216,10 @@ export interface ParticipationStats {
 }
 
 export function calculateParticipationDays(student: Student): number {
+  // 속도 기록: non-DNF, non-null times
+  // 출석 기록: isAttendance === true (time_ms=0이지만 참여로 인정)
   const validRecords = student.records.filter(
-    record => record.time !== null && !record.isDNF
+    record => (record.time !== null && !record.isDNF)
   );
   
   // Count unique dates

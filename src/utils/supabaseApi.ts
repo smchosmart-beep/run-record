@@ -44,6 +44,7 @@ export type DatabaseRecord = {
   slot_index: number;
   recorded_at: string;
   record_date: string;
+  is_attendance: boolean;
 };
 
 // Convert database types to app types
@@ -81,6 +82,7 @@ const convertDbRecordToAppRecord = (dbRecord: DatabaseRecord): Record => ({
   recordedAt: new Date(dbRecord.recorded_at),
   slotIndex: dbRecord.slot_index,
   recordDate: new Date(dbRecord.record_date + 'T00:00:00'),
+  isAttendance: dbRecord.is_attendance,
 });
 
 // API Functions
@@ -831,6 +833,7 @@ export interface MultiClassRecordInput {
   studentId: string;
   classroomId: string;
   timeMs: number;
+  isAttendance?: boolean;
 }
 
 export async function saveMultiClassRecords(records: MultiClassRecordInput[]): Promise<void> {
@@ -868,6 +871,7 @@ export async function saveMultiClassRecords(records: MultiClassRecordInput[]): P
         slot_index: slotIndex,
         recorded_at: new Date().toISOString(),
         record_date: todayStr,
+        is_attendance: record.isAttendance || false,
       });
 
     if (insertError) {

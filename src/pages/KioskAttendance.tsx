@@ -63,6 +63,7 @@ const KioskAttendance: React.FC = () => {
         studentId: s.studentId,
         classroomId: s.classroomId,
         timeMs: 0,
+        isAttendance: true,
       }));
 
       await saveMultiClassRecords(records);
