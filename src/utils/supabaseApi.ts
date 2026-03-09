@@ -833,6 +833,7 @@ export interface MultiClassRecordInput {
   studentId: string;
   classroomId: string;
   timeMs: number;
+  isAttendance?: boolean;
 }
 
 export async function saveMultiClassRecords(records: MultiClassRecordInput[]): Promise<void> {
