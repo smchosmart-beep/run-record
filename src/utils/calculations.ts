@@ -27,7 +27,7 @@ export function getBestTimeForRanking(records: Record[], rankingType: 'fastest' 
 
 export function calculateAverage(records: Record[]): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time as number);
   
   if (validTimes.length === 0) return null;
