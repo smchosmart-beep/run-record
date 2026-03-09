@@ -82,6 +82,7 @@ const convertDbRecordToAppRecord = (dbRecord: DatabaseRecord): Record => ({
   recordedAt: new Date(dbRecord.recorded_at),
   slotIndex: dbRecord.slot_index,
   recordDate: new Date(dbRecord.record_date + 'T00:00:00'),
+  isAttendance: dbRecord.is_attendance,
 });
 
 // API Functions
