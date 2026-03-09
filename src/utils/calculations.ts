@@ -15,7 +15,7 @@ export function calculatePersonalBest(records: Record[]): number | null {
 // Helper: get best time depending on ranking type
 export function getBestTimeForRanking(records: Record[], rankingType: 'fastest' | 'slowest'): number | null {
   const validTimes = records
-    .filter(record => record.time !== null && !record.isDNF)
+    .filter(record => record.time !== null && !record.isDNF && !record.isAttendance)
     .map(record => record.time as number);
 
   if (validTimes.length === 0) return null;
