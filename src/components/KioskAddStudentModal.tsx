@@ -122,9 +122,45 @@ const KioskAddStudentModal: React.FC<KioskAddStudentModalProps> = ({
                 학급 선택으로 돌아가기
               </Button>
 
-              <h3 className="text-lg font-semibold">
-                {selectedClassroom?.grade}-{selectedClassroom?.className} 학생 선택
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">
+                  {selectedClassroom?.grade}-{selectedClassroom?.className} 학생 선택
+                </h3>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    if (!selectedClassroom) return;
+                    const availableStudents = selectedClassroom.students
+                      .filter(s => !s.isHidden && !isStudentAlreadyAdded(s.id));
+                    const allSelected = availableStudents.every(s => isStudentSelected(s.id));
+                    if (allSelected) {
+                      const availableIds = new Set(availableStudents.map(s => s.id));
+                      setSelectedStudents(prev => prev.filter(s => !availableIds.has(s.studentId)));
+                    } else {
+                      const newStudents = availableStudents
+                        .filter(s => !isStudentSelected(s.id))
+                        .map(s => ({
+                          id: `${s.id}-${Date.now()}`,
+                          studentId: s.id,
+                          number: s.number,
+                          name: s.name,
+                          classroomId: selectedClassroom.id,
+                          classroomLabel: `${selectedClassroom.grade}-${selectedClassroom.className}`,
+                          status: 'idle' as const,
+                          startTime: null,
+                          elapsedTime: 0,
+                        }));
+                      setSelectedStudents(prev => [...prev, ...newStudents]);
+                    }
+                  }}
+                >
+                  {selectedClassroom && selectedClassroom.students
+                    .filter(s => !s.isHidden && !isStudentAlreadyAdded(s.id))
+                    .every(s => isStudentSelected(s.id))
+                    ? '전체 해제' : '전체 선택'}
+                </Button>
+              </div>
 
               <div className="grid grid-cols-4 sm:grid-cols-5 md:grid-cols-6 gap-2">
                 {selectedClassroom?.students
