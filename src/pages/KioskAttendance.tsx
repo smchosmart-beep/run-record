@@ -18,7 +18,12 @@ interface AttendanceStudent extends KioskStudent {
 const KioskAttendance: React.FC = () => {
   const navigate = useNavigate();
   const { user, refreshClassrooms } = useApp();
-  const [students, setStudents] = useState<AttendanceStudent[]>([]);
+  const [students, setStudents] = useState<AttendanceStudent[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('kiosk_attendance_students');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 

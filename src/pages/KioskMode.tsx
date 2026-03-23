@@ -12,7 +12,12 @@ import { saveMultiClassRecords, MultiClassRecordInput } from '@/utils/supabaseAp
 const KioskMode: React.FC = () => {
   const navigate = useNavigate();
   const { user, classrooms, refreshClassrooms } = useApp();
-  const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>([]);
+  const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('kiosk_speed_students');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
   // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
