@@ -138,22 +138,22 @@ const Dashboard = () => {
         {/* Classes Section */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
           <h3 className="text-2xl font-bold text-foreground whitespace-nowrap">학급 목록</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex gap-2">
             <Button onClick={() => navigate('/kiosk')} variant="outline" className="shadow-md">
-              <Monitor className="h-4 w-4 mr-2" />
-              키오스크
+              <Monitor className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">키오스크</span>
             </Button>
             <Button onClick={() => setIsStopwatchOpen(true)} variant="outline" className="shadow-md">
-              <Timer className="h-4 w-4 mr-2" />
-              스톱워치
+              <Timer className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">스톱워치</span>
             </Button>
-            <Button onClick={refreshClassrooms} variant="outline" disabled={dataLoading} className="w-28">
-              <RefreshCw className={`h-4 w-4 mr-2 ${dataLoading ? 'animate-spin' : ''}`} />
-              새로고침
+            <Button onClick={refreshClassrooms} variant="outline" disabled={dataLoading}>
+              <RefreshCw className={`h-4 w-4 sm:mr-2 ${dataLoading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">새로고침</span>
             </Button>
-            <Button onClick={() => setIsCreateModalOpen(true)} variant="speed" className="w-28 shadow-lg">
-              <Plus className="h-4 w-4 mr-2" />
-              학급추가
+            <Button onClick={() => setIsCreateModalOpen(true)} variant="speed" className="shadow-lg">
+              <Plus className="h-4 w-4 sm:mr-2" />
+              <span className="hidden sm:inline">학급추가</span>
             </Button>
           </div>
         </div>
