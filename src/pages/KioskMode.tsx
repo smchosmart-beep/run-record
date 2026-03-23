@@ -116,6 +116,10 @@ const KioskMode: React.FC = () => {
 
   const existingStudentIds = kioskStudents.map(s => s.studentId);
 
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 relative">
       {/* Morning Run 워터마크 */}
