@@ -27,10 +27,6 @@ const KioskMode: React.FC = () => {
 
   // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
   const handleAddStudents = (students: KioskStudent[]) => {
     setKioskStudents(prev => [...prev, ...students]);
     toast.success(`${students.length}명의 학생이 추가되었습니다.`);
