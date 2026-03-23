@@ -39,7 +39,7 @@ export function calculateStudentStats(student: Student): StudentStats {
   const speedRecords = student.records.filter(r => !r.isAttendance);
   const personalBest = calculatePersonalBest(speedRecords);
   const averageTime = calculateAverage(speedRecords);
-  const validRecordsCount = speedRecords.filter(
+  const validRecordsCount = student.records.filter(
     record => record.time !== null && !record.isDNF
   ).length;
 
