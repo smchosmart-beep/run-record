@@ -33,6 +33,7 @@ const RecordDateManager = () => {
   const [recordSessions, setRecordSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   if (!currentClassroom) return null;
 
@@ -197,6 +198,37 @@ const RecordDateManager = () => {
     }
   };
 
+  // Delete all record sessions
+  const handleDeleteAllSessions = async () => {
+    if (availableDates.length === 0) return;
+    
+    setDeletingAll(true);
+    try {
+      for (const dateKey of availableDates) {
+        const sessionDate = new Date(dateKey + 'T00:00:00');
+        await deleteRecordSession(currentClassroom.id, sessionDate);
+      }
+      
+      setRecordSessions([]);
+      await refreshClassrooms();
+      setSelectedDate(new Date());
+      
+      toast({
+        title: "전체 기록 삭제 완료",
+        description: `${availableDates.length}개 날짜의 모든 기록이 삭제되었습니다.`,
+      });
+    } catch (error) {
+      console.error('전체 기록 삭제 실패:', error);
+      toast({
+        title: "삭제 실패",
+        description: "전체 기록 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Date Selector */}
@@ -250,11 +282,45 @@ const RecordDateManager = () => {
       {/* Available Sessions Overview */}
       {availableDates.length > 0 && (
         <Card>
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5" />
               날짜별 기록 확인
             </CardTitle>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  disabled={deletingAll}
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  {deletingAll ? "삭제 중..." : "전체 삭제"}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>전체 기록 삭제</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    총 <span className="font-bold text-destructive">{availableDates.length}개 날짜</span>의 모든 기록을 삭제하시겠습니까?
+                    <br />
+                    <span className="text-destructive font-medium">
+                      이 작업은 되돌릴 수 없습니다.
+                    </span>
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>취소</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={handleDeleteAllSessions}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={deletingAll}
+                  >
+                    {deletingAll ? "삭제 중..." : "전체 삭제"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
