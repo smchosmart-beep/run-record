@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect } from 'react';
-import { useNavigate, Navigate } from 'react-router-dom';
+import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { ArrowLeft, Plus, Timer, Save, Loader2 } from 'lucide-react';
@@ -11,7 +11,11 @@ import { saveMultiClassRecords, MultiClassRecordInput } from '@/utils/supabaseAp
 
 const KioskMode: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const classId = searchParams.get('classId');
   const { user, classrooms, refreshClassrooms } = useApp();
+  const selectedClassroom = classrooms.find(c => c.id === classId);
+
   const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>(() => {
     try {
       const saved = sessionStorage.getItem('kiosk_speed_students');
@@ -24,8 +28,6 @@ const KioskMode: React.FC = () => {
   useEffect(() => {
     sessionStorage.setItem('kiosk_speed_students', JSON.stringify(kioskStudents));
   }, [kioskStudents]);
-
-  // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
 
   const handleAddStudents = (students: KioskStudent[]) => {
     setKioskStudents(prev => [...prev, ...students]);
@@ -52,7 +54,6 @@ const KioskMode: React.FC = () => {
 
       await saveMultiClassRecords(recordData);
       
-      // Remove or reset the student card after saving
       setKioskStudents(prev =>
         prev.map(s =>
           s.id === student.id
@@ -120,6 +121,10 @@ const KioskMode: React.FC = () => {
     return <Navigate to="/auth" replace />;
   }
 
+  const headerTitle = selectedClassroom
+    ? `${selectedClassroom.grade}-${selectedClassroom.className} 속도측정`
+    : '키오스크 모드';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 relative">
       {/* Morning Run 워터마크 */}
@@ -136,16 +141,16 @@ const KioskMode: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/dashboard')}
+                onClick={() => navigate('/kiosk/speed/select')}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                대시보드
+                학급 선택
               </Button>
               <span className="text-muted-foreground">|</span>
               <div className="flex items-center space-x-2">
                 <Timer className="h-6 w-6 text-primary" />
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  키오스크 모드
+                  {headerTitle}
                 </h1>
               </div>
             </div>
@@ -214,6 +219,7 @@ const KioskMode: React.FC = () => {
         onOpenChange={setIsAddModalOpen}
         onAddStudents={handleAddStudents}
         existingStudentIds={existingStudentIds}
+        classroomId={classId || undefined}
       />
     </div>
   );

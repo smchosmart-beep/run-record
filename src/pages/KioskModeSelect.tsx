@@ -46,7 +46,7 @@ const KioskModeSelect: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
           <Card
             className="p-8 cursor-pointer hover:shadow-lg transition-all hover:scale-105 border-2 hover:border-primary text-center"
-            onClick={() => navigate('/kiosk/speed')}
+            onClick={() => navigate('/kiosk/speed/select')}
           >
             <Timer className="h-16 w-16 mx-auto mb-4 text-primary" />
             <h2 className="text-2xl font-bold mb-2">속도측정</h2>
@@ -57,7 +57,7 @@ const KioskModeSelect: React.FC = () => {
 
           <Card
             className="p-8 cursor-pointer hover:shadow-lg transition-all hover:scale-105 border-2 hover:border-primary text-center"
-            onClick={() => navigate('/kiosk/attendance')}
+            onClick={() => navigate('/kiosk/attendance/select')}
           >
             <CheckCircle className="h-16 w-16 mx-auto mb-4 text-primary" />
             <h2 className="text-2xl font-bold mb-2">출석체크</h2>
