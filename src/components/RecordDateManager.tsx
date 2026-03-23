@@ -33,6 +33,7 @@ const RecordDateManager = () => {
   const [recordSessions, setRecordSessions] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
+  const [deletingAll, setDeletingAll] = useState(false);
 
   if (!currentClassroom) return null;
 
