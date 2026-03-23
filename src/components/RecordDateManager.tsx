@@ -198,7 +198,38 @@ const RecordDateManager = () => {
     }
   };
 
-  return (
+  // Delete all record sessions
+  const handleDeleteAllSessions = async () => {
+    if (availableDates.length === 0) return;
+    
+    setDeletingAll(true);
+    try {
+      for (const dateKey of availableDates) {
+        const sessionDate = new Date(dateKey + 'T00:00:00');
+        await deleteRecordSession(currentClassroom.id, sessionDate);
+      }
+      
+      setRecordSessions([]);
+      await refreshClassrooms();
+      setSelectedDate(new Date());
+      
+      toast({
+        title: "전체 기록 삭제 완료",
+        description: `${availableDates.length}개 날짜의 모든 기록이 삭제되었습니다.`,
+      });
+    } catch (error) {
+      console.error('전체 기록 삭제 실패:', error);
+      toast({
+        title: "삭제 실패",
+        description: "전체 기록 삭제 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    } finally {
+      setDeletingAll(false);
+    }
+  };
+
+
     <div className="space-y-6">
       {/* Header with Date Selector */}
       <div className="flex items-center justify-between">
