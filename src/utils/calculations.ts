@@ -116,10 +116,16 @@ export function calculateClassRankings(students: Student[], rankingType: 'fastes
       position: index + 1,
     }));
 
-  // Rank by Record Count (most records first)
-  const byRecordCount = eligibleStudents
-    .slice()
-    .filter(item => item.stats.validRecordsCount > 0)
+  // Rank by Record Count (most records first) - include all non-hidden students with valid records (including attendance-only)
+  const allEligibleStudents = students
+    .filter(student => !student.isHidden)
+    .map(student => ({
+      student,
+      stats: calculateStudentStats(student),
+    }))
+    .filter(item => item.stats.validRecordsCount > 0);
+
+  const byRecordCount = allEligibleStudents
     .sort((a, b) => {
       // Primary: more records = higher rank
       const countDiff = b.stats.validRecordsCount - a.stats.validRecordsCount;
