@@ -22,9 +22,11 @@ const KioskAttendance: React.FC = () => {
   const { user, classrooms, refreshClassrooms } = useApp();
   const selectedClassroom = classrooms.find(c => c.id === classId);
 
+  const storageKey = classId ? `kiosk_attendance_students_${classId}` : 'kiosk_attendance_students';
+
   const [students, setStudents] = useState<AttendanceStudent[]>(() => {
     try {
-      const saved = sessionStorage.getItem('kiosk_attendance_students');
+      const saved = sessionStorage.getItem(storageKey);
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -32,8 +34,8 @@ const KioskAttendance: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    sessionStorage.setItem('kiosk_attendance_students', JSON.stringify(students));
-  }, [students]);
+    sessionStorage.setItem(storageKey, JSON.stringify(students));
+  }, [students, storageKey]);
 
   const handleAddStudents = useCallback((newStudents: KioskStudent[]) => {
     const attendanceStudents: AttendanceStudent[] = newStudents.map(s => ({
