@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import ClassroomManager from "./pages/ClassroomManager";
 import KioskModeSelect from "./pages/KioskModeSelect";
+import KioskClassSelect from "./pages/KioskClassSelect";
 import KioskMode from "./pages/KioskMode";
 import KioskAttendance from "./pages/KioskAttendance";
 import NotFound from "./pages/NotFound";
@@ -28,6 +29,7 @@ const App = () => (
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/classroom" element={<ClassroomManager />} />
             <Route path="/kiosk" element={<KioskModeSelect />} />
+            <Route path="/kiosk/:mode/select" element={<KioskClassSelect />} />
             <Route path="/kiosk/speed" element={<KioskMode />} />
             <Route path="/kiosk/attendance" element={<KioskAttendance />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
