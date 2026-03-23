@@ -138,7 +138,7 @@ const Dashboard = () => {
         {/* Classes Section */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
           <h3 className="text-2xl font-bold text-foreground whitespace-nowrap">학급 목록</h3>
-          <div className="flex gap-2">
+          <div className="flex gap-2 w-full sm:w-auto justify-between sm:justify-end">
             <Button onClick={() => navigate('/kiosk')} variant="outline" className="shadow-md">
               <Monitor className="h-4 w-4 sm:mr-2" />
               <span className="hidden sm:inline">키오스크</span>
