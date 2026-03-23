@@ -229,7 +229,7 @@ const RecordDateManager = () => {
     }
   };
 
-
+  return (
     <div className="space-y-6">
       {/* Header with Date Selector */}
       <div className="flex items-center justify-between">
