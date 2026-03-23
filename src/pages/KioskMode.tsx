@@ -16,9 +16,11 @@ const KioskMode: React.FC = () => {
   const { user, classrooms, refreshClassrooms } = useApp();
   const selectedClassroom = classrooms.find(c => c.id === classId);
 
+  const storageKey = classId ? `kiosk_speed_students_${classId}` : 'kiosk_speed_students';
+
   const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>(() => {
     try {
-      const saved = sessionStorage.getItem('kiosk_speed_students');
+      const saved = sessionStorage.getItem(storageKey);
       return saved ? JSON.parse(saved) : [];
     } catch { return []; }
   });
@@ -26,8 +28,8 @@ const KioskMode: React.FC = () => {
   const [isSavingAll, setIsSavingAll] = useState(false);
 
   useEffect(() => {
-    sessionStorage.setItem('kiosk_speed_students', JSON.stringify(kioskStudents));
-  }, [kioskStudents]);
+    sessionStorage.setItem(storageKey, JSON.stringify(kioskStudents));
+  }, [kioskStudents, storageKey]);
 
   const handleAddStudents = (students: KioskStudent[]) => {
     setKioskStudents(prev => [...prev, ...students]);
