@@ -136,9 +136,9 @@ const Dashboard = () => {
         </div>
 
         {/* Classes Section */}
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-2xl font-bold text-foreground">학급 목록</h3>
-          <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6">
+          <h3 className="text-2xl font-bold text-foreground whitespace-nowrap">학급 목록</h3>
+          <div className="flex flex-wrap gap-2">
             <Button onClick={() => navigate('/kiosk')} variant="outline" className="shadow-md">
               <Monitor className="h-4 w-4 mr-2" />
               키오스크
