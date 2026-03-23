@@ -1,26 +1,17 @@
 
 
-## 키오스크 학생 상태 유지 계획
+## 누적 횟수 순위에 출석 기록 표시 안 되는 문제 수정
 
-### 문제
-키오스크에서 학생 추가 후 모드 선택(`/kiosk`)으로 돌아가면, 각 페이지의 `useState`가 초기화되어 학생 카드가 사라짐.
+### 원인
+`calculateClassRankings` 함수(66번째 줄)에서 모든 순위 유형의 학생 후보를 `getBestTimeForRanking() !== null`로 필터링함. 출석만 한 학생은 속도 기록이 없어 이 필터에서 제외되어, 누적 횟수 순위에도 나타나지 않음.
 
-### 해결: `sessionStorage`로 상태 유지
+### 수정: `src/utils/calculations.ts`
 
-각 키오스크 페이지에서 학생 목록을 `sessionStorage`에 저장하고, 페이지 마운트 시 복원.
+`byRecordCount` 계산 시 별도의 학생 목록 사용:
 
-#### 1. `src/pages/KioskMode.tsx`
-- `kioskStudents` 상태 변경 시 `sessionStorage.setItem('kiosk_speed_students', ...)` 저장
-- 초기값을 `sessionStorage`에서 읽어 복원
-- 일괄 저장 완료 후 `sessionStorage` 클리어
+- 기존 `eligibleStudents`는 속도 기록이 있는 학생만 포함 (PB/평균 순위용, 변경 없음)
+- **새로운** `allEligibleStudents`를 만들어 `isHidden`이 아닌 모든 학생에서 `validRecordsCount > 0`인 학생을 포함
+- `byRecordCount`는 이 새 목록에서 계산
 
-#### 2. `src/pages/KioskAttendance.tsx`
-- `students` 상태 변경 시 `sessionStorage.setItem('kiosk_attendance_students', ...)` 저장
-- 초기값을 `sessionStorage`에서 읽어 복원
-- 일괄 저장 완료 후 `sessionStorage` 클리어
-
-### 구현 방식
-- `useState` 초기값에 `() => JSON.parse(sessionStorage.getItem(...)) || []` 사용
-- `useEffect`로 상태 변경 시 자동 저장
-- 브라우저 탭을 닫으면 자동 소멸 (sessionStorage 특성)
+이렇게 하면 출석만 한 학생도 누적 횟수 순위에 표시됨.
 
