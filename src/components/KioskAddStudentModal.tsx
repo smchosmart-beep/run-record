@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -16,6 +16,7 @@ interface KioskAddStudentModalProps {
   onOpenChange: (open: boolean) => void;
   onAddStudents: (students: KioskStudent[]) => void;
   existingStudentIds: string[];
+  classroomId?: string;
 }
 
 const KioskAddStudentModal: React.FC<KioskAddStudentModalProps> = ({
@@ -23,16 +24,24 @@ const KioskAddStudentModal: React.FC<KioskAddStudentModalProps> = ({
   onOpenChange,
   onAddStudents,
   existingStudentIds,
+  classroomId,
 }) => {
   const { classrooms } = useApp();
   const [selectedClassroomId, setSelectedClassroomId] = useState<string | null>(null);
   const [selectedStudents, setSelectedStudents] = useState<KioskStudent[]>([]);
 
+  // If classroomId is provided, auto-select that classroom
+  useEffect(() => {
+    if (open && classroomId) {
+      setSelectedClassroomId(classroomId);
+    }
+  }, [open, classroomId]);
+
   const selectedClassroom = classrooms.find(c => c.id === selectedClassroomId);
 
   const handleClose = (isOpen: boolean) => {
     if (!isOpen) {
-      setSelectedClassroomId(null);
+      setSelectedClassroomId(classroomId || null);
       setSelectedStudents([]);
     }
     onOpenChange(isOpen);
@@ -72,6 +81,9 @@ const KioskAddStudentModal: React.FC<KioskAddStudentModalProps> = ({
     return existingStudentIds.includes(studentId);
   };
 
+  // Show classroom selection only if no classroomId is provided
+  const showClassroomSelection = !classroomId && selectedClassroomId === null;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
@@ -83,7 +95,7 @@ const KioskAddStudentModal: React.FC<KioskAddStudentModalProps> = ({
         </DialogHeader>
 
         <div className="flex-1 overflow-y-auto">
-          {selectedClassroomId === null ? (
+          {showClassroomSelection ? (
             // Classroom Selection View
             <div className="space-y-4">
               <p className="text-sm text-muted-foreground">학급을 선택하세요</p>
@@ -112,15 +124,17 @@ const KioskAddStudentModal: React.FC<KioskAddStudentModalProps> = ({
           ) : (
             // Student Selection View
             <div className="space-y-4">
-              <Button
-                variant="outline"
-                size="lg"
-                onClick={() => setSelectedClassroomId(null)}
-                className="w-full sm:w-auto"
-              >
-                <ArrowLeft className="h-5 w-5 mr-2" />
-                학급 선택으로 돌아가기
-              </Button>
+              {!classroomId && (
+                <Button
+                  variant="outline"
+                  size="lg"
+                  onClick={() => setSelectedClassroomId(null)}
+                  className="w-full sm:w-auto"
+                >
+                  <ArrowLeft className="h-5 w-5 mr-2" />
+                  학급 선택으로 돌아가기
+                </Button>
+              )}
 
               <div className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold">

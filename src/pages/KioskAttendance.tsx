@@ -17,7 +17,11 @@ interface AttendanceStudent extends KioskStudent {
 
 const KioskAttendance: React.FC = () => {
   const navigate = useNavigate();
-  const { user, refreshClassrooms } = useApp();
+  const [searchParams] = useSearchParams();
+  const classId = searchParams.get('classId');
+  const { user, classrooms, refreshClassrooms } = useApp();
+  const selectedClassroom = classrooms.find(c => c.id === classId);
+
   const [students, setStudents] = useState<AttendanceStudent[]>(() => {
     try {
       const saved = sessionStorage.getItem('kiosk_attendance_students');
@@ -77,7 +81,6 @@ const KioskAttendance: React.FC = () => {
 
       await saveMultiClassRecords(records);
 
-      // Reset all to unchecked after save
       setStudents(prev =>
         prev.map(s => ({ ...s, attendanceStatus: 'unchecked' as AttendanceStatus }))
       );
@@ -126,6 +129,10 @@ const KioskAttendance: React.FC = () => {
     }
   };
 
+  const headerTitle = selectedClassroom
+    ? `${selectedClassroom.grade}-${selectedClassroom.className} 출석체크`
+    : '출석체크 키오스크';
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 relative">
       {/* Morning Run 워터마크 */}
@@ -143,16 +150,16 @@ const KioskAttendance: React.FC = () => {
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={() => navigate('/kiosk')}
+                onClick={() => navigate('/kiosk/attendance/select')}
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                모드 선택
+                학급 선택
               </Button>
               <span className="text-muted-foreground">|</span>
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-6 w-6 text-primary" />
                 <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                  출석체크 키오스크
+                  {headerTitle}
                 </h1>
               </div>
             </div>
@@ -248,6 +255,7 @@ const KioskAttendance: React.FC = () => {
         onOpenChange={setIsAddModalOpen}
         onAddStudents={handleAddStudents}
         existingStudentIds={existingStudentIds}
+        classroomId={classId || undefined}
       />
     </div>
   );
