@@ -27,6 +27,10 @@ const KioskAttendance: React.FC = () => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    sessionStorage.setItem('kiosk_attendance_students', JSON.stringify(students));
+  }, [students]);
+
   const handleAddStudents = useCallback((newStudents: KioskStudent[]) => {
     const attendanceStudents: AttendanceStudent[] = newStudents.map(s => ({
       ...s,

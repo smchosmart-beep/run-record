@@ -20,6 +20,11 @@ const KioskMode: React.FC = () => {
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem('kiosk_speed_students', JSON.stringify(kioskStudents));
+  }, [kioskStudents]);
+
   // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
 
   if (!user) {
