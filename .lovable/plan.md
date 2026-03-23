@@ -1,33 +1,20 @@
 
 
-## 학급별 세션 분리 저장
+## 전체 기록 일괄 삭제 버튼 추가
 
-### 문제
-현재 `sessionStorage` 키가 `kiosk_attendance_students`, `kiosk_speed_students`로 고정되어 있어서 모든 학급이 같은 키를 공유함. 학급을 바꾸면 이전 학급 데이터가 덮어씌워짐.
+### 개요
+기록관리 탭의 "날짜별 기록 확인" 카드 헤더에 "전체 삭제" 버튼을 추가하여, 모든 날짜의 기록 세션을 한번에 삭제할 수 있도록 합니다.
 
-### 해결
+### 수정 파일: `src/components/RecordDateManager.tsx`
 
-**`src/pages/KioskAttendance.tsx` 수정:**
-- sessionStorage 키를 `kiosk_attendance_students_${classId}`로 변경
-- 초기 로드와 저장 모두 classId 기반 키 사용
+**1. 전체 삭제 함수 추가**
+- 모든 `availableDates`를 순회하며 `deleteRecordSession` 호출
+- 모든 학생의 records를 빈 배열로 초기화
+- `refreshClassrooms` 호출하여 UI 동기화
+- 삭제 중 로딩 상태 관리
 
-**`src/pages/KioskMode.tsx` 수정:**
-- sessionStorage 키를 `kiosk_speed_students_${classId}`로 변경
-- 동일 패턴 적용
-
-### 변경 코드 패턴
-
-```tsx
-// Before
-sessionStorage.getItem('kiosk_attendance_students')
-sessionStorage.setItem('kiosk_attendance_students', ...)
-
-// After
-sessionStorage.getItem(`kiosk_attendance_students_${classId}`)
-sessionStorage.setItem(`kiosk_attendance_students_${classId}`, ...)
-```
-
-이렇게 하면:
-- A학급 선택 → 학생 추가 → B학급으로 이동 → B학급 학생 추가 → 다시 A학급 돌아가면 A학급 학생이 그대로 유지됨
-- 태블릿 1대로 4개 학급이 각각 독립적으로 세션 유지
+**2. UI 변경**
+- "날짜별 기록 확인" 헤더 옆에 빨간색 "전체 삭제" 버튼 추가
+- `AlertDialog`로 확인 다이얼로그 표시 (총 기록 수, 날짜 수 안내)
+- 삭제 후 selectedDate를 오늘로 초기화
 
