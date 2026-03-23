@@ -113,7 +113,7 @@ const KioskAttendance: React.FC = () => {
     switch (status) {
       case 'present': return '출석';
       case 'absent': return '결석';
-      default: return '탭하여 체크';
+      default: return '탭하여 출석';
     }
   };
 
