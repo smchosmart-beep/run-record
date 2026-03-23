@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,14 +12,20 @@ import { saveMultiClassRecords, MultiClassRecordInput } from '@/utils/supabaseAp
 const KioskMode: React.FC = () => {
   const navigate = useNavigate();
   const { user, classrooms, refreshClassrooms } = useApp();
-  const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>([]);
+  const [kioskStudents, setKioskStudents] = useState<KioskStudent[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('kiosk_speed_students');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
-  // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+  useEffect(() => {
+    sessionStorage.setItem('kiosk_speed_students', JSON.stringify(kioskStudents));
+  }, [kioskStudents]);
+
+  // Note: selectedDate and selectedSlot are no longer needed as saveMultiClassRecords handles this automatically
 
   const handleAddStudents = (students: KioskStudent[]) => {
     setKioskStudents(prev => [...prev, ...students]);
@@ -109,6 +115,10 @@ const KioskMode: React.FC = () => {
   ).length;
 
   const existingStudentIds = kioskStudents.map(s => s.studentId);
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary/5 to-secondary/5 relative">

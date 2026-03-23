@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -18,9 +18,18 @@ interface AttendanceStudent extends KioskStudent {
 const KioskAttendance: React.FC = () => {
   const navigate = useNavigate();
   const { user, refreshClassrooms } = useApp();
-  const [students, setStudents] = useState<AttendanceStudent[]>([]);
+  const [students, setStudents] = useState<AttendanceStudent[]>(() => {
+    try {
+      const saved = sessionStorage.getItem('kiosk_attendance_students');
+      return saved ? JSON.parse(saved) : [];
+    } catch { return []; }
+  });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    sessionStorage.setItem('kiosk_attendance_students', JSON.stringify(students));
+  }, [students]);
 
   const handleAddStudents = useCallback((newStudents: KioskStudent[]) => {
     const attendanceStudents: AttendanceStudent[] = newStudents.map(s => ({
