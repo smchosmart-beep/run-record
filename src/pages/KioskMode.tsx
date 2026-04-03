@@ -119,6 +119,33 @@ const KioskMode: React.FC = () => {
     s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
   ).length;
 
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const idleSelectedCount = kioskStudents.filter(
+    s => selectedIds.has(s.id) && s.status === 'idle'
+  ).length;
+
+  const handleSimultaneousStart = useCallback(() => {
+    const now = Date.now();
+    setKioskStudents(prev =>
+      prev.map(s =>
+        selectedIds.has(s.id) && s.status === 'idle'
+          ? { ...s, status: 'running' as const, startTime: now, elapsedTime: 0 }
+          : s
+      )
+    );
+    setSelectedIds(new Set());
+    setIsSelectMode(false);
+    toast.success(`${idleSelectedCount}명 동시 시작!`);
+  }, [selectedIds, idleSelectedCount]);
+
   const existingStudentIds = kioskStudents.map(s => s.studentId);
 
   if (!user) {
