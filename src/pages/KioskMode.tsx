@@ -26,6 +26,8 @@ const KioskMode: React.FC = () => {
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     sessionStorage.setItem(storageKey, JSON.stringify(kioskStudents));
