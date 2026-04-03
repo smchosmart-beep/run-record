@@ -201,23 +201,47 @@ const KioskMode: React.FC = () => {
             학생 추가
           </Button>
           {kioskStudents.length > 0 && (
-            <Button
-              onClick={handleSaveAllRecords}
-              size="lg"
-              disabled={savableCount === 0 || isSavingAll}
-            >
-              {isSavingAll ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  저장 중...
-                </>
-              ) : (
-                <>
-                  <Save className="h-5 w-5 mr-2" />
-                  일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
-                </>
+            <>
+              <Button
+                onClick={() => {
+                  setIsSelectMode(prev => !prev);
+                  setSelectedIds(new Set());
+                }}
+                variant={isSelectMode ? "default" : "outline"}
+                size="lg"
+              >
+                <CheckSquare className="h-5 w-5 mr-2" />
+                {isSelectMode ? '선택 취소' : '선택 모드'}
+              </Button>
+              {isSelectMode && (
+                <Button
+                  onClick={handleSimultaneousStart}
+                  size="lg"
+                  disabled={idleSelectedCount === 0}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  동시 시작 {idleSelectedCount > 0 && `(${idleSelectedCount}명)`}
+                </Button>
               )}
-            </Button>
+              <Button
+                onClick={handleSaveAllRecords}
+                size="lg"
+                disabled={savableCount === 0 || isSavingAll}
+              >
+                {isSavingAll ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-5 w-5 mr-2" />
+                    일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
+                  </>
+                )}
+              </Button>
+            </>
           )}
         </div>
 
