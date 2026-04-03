@@ -34,6 +34,9 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
   onUpdate,
   onRemove,
   onSaveRecord,
+  isSelectMode = false,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   const [displayTime, setDisplayTime] = useState(student.elapsedTime);
   const animationRef = useRef<number | null>(null);
