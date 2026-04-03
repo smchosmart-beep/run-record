@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Play, Pause, RotateCcw, Save, X } from 'lucide-react';
 import { formatTime } from '@/utils/time';
 
@@ -23,6 +24,9 @@ interface KioskStudentCardProps {
   onUpdate: (id: string, updates: Partial<KioskStudent>) => void;
   onRemove: (id: string) => void;
   onSaveRecord: (student: KioskStudent) => void;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
