@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Plus, Timer, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Timer, Save, Loader2, Play, CheckSquare } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskStudentCard, { KioskStudent } from '@/components/KioskStudentCard';
