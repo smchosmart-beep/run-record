@@ -263,6 +263,9 @@ const KioskMode: React.FC = () => {
                 onUpdate={handleUpdateStudent}
                 onRemove={handleRemoveStudent}
                 onSaveRecord={handleSaveRecord}
+                isSelectMode={isSelectMode}
+                isSelected={selectedIds.has(student.id)}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>
