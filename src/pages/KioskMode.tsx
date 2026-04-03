@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ArrowLeft, Plus, Timer, Save, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Timer, Save, Loader2, Play, CheckSquare } from 'lucide-react';
 import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskStudentCard, { KioskStudent } from '@/components/KioskStudentCard';
@@ -26,6 +26,8 @@ const KioskMode: React.FC = () => {
   });
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isSavingAll, setIsSavingAll] = useState(false);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     sessionStorage.setItem(storageKey, JSON.stringify(kioskStudents));
@@ -117,6 +119,33 @@ const KioskMode: React.FC = () => {
     s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
   ).length;
 
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
+
+  const idleSelectedCount = kioskStudents.filter(
+    s => selectedIds.has(s.id) && s.status === 'idle'
+  ).length;
+
+  const handleSimultaneousStart = useCallback(() => {
+    const now = Date.now();
+    setKioskStudents(prev =>
+      prev.map(s =>
+        selectedIds.has(s.id) && s.status === 'idle'
+          ? { ...s, status: 'running' as const, startTime: now, elapsedTime: 0 }
+          : s
+      )
+    );
+    setSelectedIds(new Set());
+    setIsSelectMode(false);
+    toast.success(`${idleSelectedCount}명 동시 시작!`);
+  }, [selectedIds, idleSelectedCount]);
+
   const existingStudentIds = kioskStudents.map(s => s.studentId);
 
   if (!user) {
@@ -172,23 +201,47 @@ const KioskMode: React.FC = () => {
             학생 추가
           </Button>
           {kioskStudents.length > 0 && (
-            <Button
-              onClick={handleSaveAllRecords}
-              size="lg"
-              disabled={savableCount === 0 || isSavingAll}
-            >
-              {isSavingAll ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  저장 중...
-                </>
-              ) : (
-                <>
-                  <Save className="h-5 w-5 mr-2" />
-                  일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
-                </>
+            <>
+              <Button
+                onClick={() => {
+                  setIsSelectMode(prev => !prev);
+                  setSelectedIds(new Set());
+                }}
+                variant={isSelectMode ? "default" : "outline"}
+                size="lg"
+              >
+                <CheckSquare className="h-5 w-5 mr-2" />
+                {isSelectMode ? '선택 취소' : '선택 모드'}
+              </Button>
+              {isSelectMode && (
+                <Button
+                  onClick={handleSimultaneousStart}
+                  size="lg"
+                  disabled={idleSelectedCount === 0}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <Play className="h-5 w-5 mr-2" />
+                  동시 시작 {idleSelectedCount > 0 && `(${idleSelectedCount}명)`}
+                </Button>
               )}
-            </Button>
+              <Button
+                onClick={handleSaveAllRecords}
+                size="lg"
+                disabled={savableCount === 0 || isSavingAll}
+              >
+                {isSavingAll ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    저장 중...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-5 w-5 mr-2" />
+                    일괄 저장 {savableCount > 0 && `(${savableCount}명)`}
+                  </>
+                )}
+              </Button>
+            </>
           )}
         </div>
 
@@ -210,6 +263,9 @@ const KioskMode: React.FC = () => {
                 onUpdate={handleUpdateStudent}
                 onRemove={handleRemoveStudent}
                 onSaveRecord={handleSaveRecord}
+                isSelectMode={isSelectMode}
+                isSelected={selectedIds.has(student.id)}
+                onToggleSelect={handleToggleSelect}
               />
             ))}
           </div>

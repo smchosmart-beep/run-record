@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Play, Pause, RotateCcw, Save, X } from 'lucide-react';
 import { formatTime } from '@/utils/time';
 
@@ -23,6 +24,9 @@ interface KioskStudentCardProps {
   onUpdate: (id: string, updates: Partial<KioskStudent>) => void;
   onRemove: (id: string) => void;
   onSaveRecord: (student: KioskStudent) => void;
+  isSelectMode?: boolean;
+  isSelected?: boolean;
+  onToggleSelect?: (id: string) => void;
 }
 
 const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
@@ -30,6 +34,9 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
   onUpdate,
   onRemove,
   onSaveRecord,
+  isSelectMode = false,
+  isSelected = false,
+  onToggleSelect,
 }) => {
   const [displayTime, setDisplayTime] = useState(student.elapsedTime);
   const animationRef = useRef<number | null>(null);
@@ -55,6 +62,11 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
   }, [student.status, student.startTime, student.elapsedTime]);
 
   const handleCardClick = () => {
+    if (isSelectMode && student.status === 'idle') {
+      onToggleSelect?.(student.id);
+      return;
+    }
+
     if (student.status === 'actions') return;
 
     switch (student.status) {
@@ -107,6 +119,9 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
   };
 
   const getCardStyle = () => {
+    if (isSelectMode && isSelected && student.status === 'idle') {
+      return 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30';
+    }
     switch (student.status) {
       case 'running':
         return 'border-primary bg-primary/10 animate-pulse';
@@ -149,9 +164,22 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
       </div>
 
       {/* Status Indicator */}
+      {/* Select Mode Checkbox */}
+      {isSelectMode && student.status === 'idle' && (
+        <div className="absolute top-1 left-1">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect?.(student.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {student.status === 'idle' && (
         <div className="text-center">
-          <p className="text-xs text-muted-foreground">탭하여 시작</p>
+          <p className="text-xs text-muted-foreground">
+            {isSelectMode ? '탭하여 선택' : '탭하여 시작'}
+          </p>
         </div>
       )}
 
