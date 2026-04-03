@@ -164,9 +164,22 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
       </div>
 
       {/* Status Indicator */}
+      {/* Select Mode Checkbox */}
+      {isSelectMode && student.status === 'idle' && (
+        <div className="absolute top-1 left-1">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect?.(student.id)}
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+
       {student.status === 'idle' && (
         <div className="text-center">
-          <p className="text-xs text-muted-foreground">탭하여 시작</p>
+          <p className="text-xs text-muted-foreground">
+            {isSelectMode ? '탭하여 선택' : '탭하여 시작'}
+          </p>
         </div>
       )}
 
