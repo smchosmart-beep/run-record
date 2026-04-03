@@ -62,6 +62,11 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
   }, [student.status, student.startTime, student.elapsedTime]);
 
   const handleCardClick = () => {
+    if (isSelectMode && student.status === 'idle') {
+      onToggleSelect?.(student.id);
+      return;
+    }
+
     if (student.status === 'actions') return;
 
     switch (student.status) {
