@@ -119,6 +119,9 @@ const KioskStudentCard: React.FC<KioskStudentCardProps> = ({
   };
 
   const getCardStyle = () => {
+    if (isSelectMode && isSelected && student.status === 'idle') {
+      return 'border-blue-500 bg-blue-500/10 ring-2 ring-blue-500/30';
+    }
     switch (student.status) {
       case 'running':
         return 'border-primary bg-primary/10 animate-pulse';
