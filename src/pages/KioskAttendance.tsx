@@ -7,7 +7,7 @@ import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskAddStudentModal from '@/components/KioskAddStudentModal';
 import { KioskStudent } from '@/components/KioskStudentCard';
-import { saveMultiClassRecords } from '@/utils/supabaseApi';
+import { saveAttendanceBatch } from '@/utils/supabaseApi';
 
 type AttendanceStatus = 'unchecked' | 'present' | 'absent';
 
