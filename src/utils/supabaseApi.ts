@@ -884,3 +884,25 @@ export async function saveMultiClassRecords(records: MultiClassRecordInput[]): P
 
   console.log('🎉 모든 크로스-클래스 기록 저장 완료');
 }
+
+// 출석체크 일괄 저장 (RPC 방식 - 고성능)
+export async function saveAttendanceBatch(studentIds: string[], classroomId: string): Promise<void> {
+  if (studentIds.length === 0) return;
+
+  console.log('📡 출석 일괄 저장 RPC 호출:', { classroomId, count: studentIds.length });
+
+  const todayStr = toYMD(new Date());
+
+  const { error } = await supabase.rpc('batch_save_attendance', {
+    _student_ids: studentIds,
+    _classroom_id: classroomId,
+    _record_date: todayStr,
+  });
+
+  if (error) {
+    console.error('❌ 출석 일괄 저장 실패:', error);
+    throw error;
+  }
+
+  console.log('✅ 출석 일괄 저장 완료:', studentIds.length, '명');
+}

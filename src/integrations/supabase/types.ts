@@ -229,6 +229,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      batch_save_attendance: {
+        Args: {
+          _classroom_id: string
+          _record_date: string
+          _student_ids: string[]
+        }
+        Returns: undefined
+      }
       can_record_for_classroom: {
         Args: { _classroom_id: string; _user_id: string }
         Returns: boolean

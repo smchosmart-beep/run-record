@@ -7,7 +7,7 @@ import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskAddStudentModal from '@/components/KioskAddStudentModal';
 import { KioskStudent } from '@/components/KioskStudentCard';
-import { saveMultiClassRecords } from '@/utils/supabaseApi';
+import { saveAttendanceBatch } from '@/utils/supabaseApi';
 
 type AttendanceStatus = 'unchecked' | 'present' | 'absent';
 
@@ -74,14 +74,20 @@ const KioskAttendance: React.FC = () => {
 
     setIsSaving(true);
     try {
-      const records = presentStudents.map(s => ({
-        studentId: s.studentId,
-        classroomId: s.classroomId,
-        timeMs: 0,
-        isAttendance: true,
-      }));
+      // 학급별로 그룹핑
+      const byClass = new Map<string, string[]>();
+      for (const s of presentStudents) {
+        const arr = byClass.get(s.classroomId) || [];
+        arr.push(s.studentId);
+        byClass.set(s.classroomId, arr);
+      }
 
-      await saveMultiClassRecords(records);
+      // 학급별 병렬 RPC 호출
+      await Promise.all(
+        Array.from(byClass.entries()).map(([cId, sIds]) =>
+          saveAttendanceBatch(sIds, cId)
+        )
+      );
 
       setStudents(prev =>
         prev.map(s => ({ ...s, attendanceStatus: 'unchecked' as AttendanceStatus }))
