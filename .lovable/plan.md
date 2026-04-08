@@ -1,65 +1,44 @@
 
 
-## 출석체크 일괄 저장 RPC 최적화 — 최종 계획
+## 속도측정 일괄 저장 RPC 최적화 — 검토 결과
 
-### 검토 결과 요약
-- 기능 오작동 위험: 없음
-- 서버비 증가: 없음 (오히려 감소)
-- 보안: RPC 내부에 소유권 검증 포함하면 안전
+### 검토 항목
+
+**1. 기능 오작동 위험: 없음**
+- `batch_save_attendance` RPC가 이미 동일 패턴으로 정상 동작 중
+- 속도측정은 `time_ms`만 가변이고 나머지 로직(세션 upsert, 빈 슬롯 계산, 기록 삽입)은 동일
+- `is_attendance=false`, `is_dnf=false` 고정값 사용 → 기존 `saveMultiClassRecords`와 동일한 결과
+
+**2. 데이터 정합성: 안전**
+- 단일 트랜잭션 내에서 처리 → 중간 실패 시 전체 롤백
+- 기존 순차 방식은 중간 실패 시 일부만 저장되는 문제가 있었으나 RPC는 이를 해결
+- 슬롯 계산이 트랜잭션 내에서 이뤄지므로 동시성 문제 없음
+
+**3. 보안: 안전**
+- `auth.uid()` 기반 소유권 검증 포함 (출석체크 RPC와 동일 패턴)
+- `SECURITY DEFINER`이지만 내부에서 권한 체크 수행
+
+**4. 서버비: 감소**
+- 학생 20명 기준: 60~80회 → 1회 호출로 감소
+
+**5. 주의사항: 없음**
+- 두 배열(`_student_ids`, `_time_ms_values`)의 길이 불일치 시 에러 발생하도록 검증 코드 포함하면 더 안전
+- `handleSaveAllRecords`에서 `saveMultiClassRecords` → `saveSpeedRecordsBatch`로 교체만 하면 됨
 
 ### 구현 내용
 
-**1. DB 마이그레이션: `batch_save_attendance` RPC 함수**
-
-```sql
-CREATE OR REPLACE FUNCTION public.batch_save_attendance(
-  _student_ids UUID[],
-  _classroom_id UUID,
-  _record_date TEXT
-)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  _user_id UUID;
-  _session record;
-  _sid UUID;
-  _slot INT;
-  _used_slots INT[];
-BEGIN
-  -- 1. 소유권 검증
-  _user_id := auth.uid();
-  IF NOT EXISTS (
-    SELECT 1 FROM classrooms
-    WHERE id = _classroom_id AND user_id = _user_id
-  ) THEN
-    RAISE EXCEPTION 'Unauthorized';
-  END IF;
-
-  -- 2. 세션 확인/생성 (upsert)
-  -- 3. 각 학생별 빈 슬롯 계산 + 필요시 slots_count 증가
-  -- 4. records 일괄 INSERT
-END;
-$$;
-```
-
-- 단일 트랜잭션으로 전체 처리
-- `auth.uid()` 기반 소유권 검증 포함
-- `UNIQUE(classroom_id, session_date)` 제약조건 활용한 upsert
+**1. DB 마이그레이션: `batch_save_speed_records` RPC 함수**
+- 입력: `_student_ids UUID[]`, `_time_ms_values INT[]`, `_classroom_id UUID`, `_record_date TEXT`
+- 배열 길이 불일치 검증 추가
+- 나머지 로직은 `batch_save_attendance`와 동일 (세션 upsert → 빈 슬롯 계산 → 기록 삽입)
+- `is_attendance=false`, `time_ms=_time_ms_values[i]`
 
 **2. `src/utils/supabaseApi.ts` 수정**
-- `saveAttendanceBatch(studentIds: string[], classroomId: string)` 함수 추가
-- `supabase.rpc('batch_save_attendance', {...})` 호출
-- 기존 `saveMultiClassRecords`는 속도측정용으로 유지
+- `saveSpeedRecordsBatch(records: {studentId, timeMs}[], classroomId)` 함수 추가
+- `supabase.rpc('batch_save_speed_records', {...})` 호출
 
-**3. `src/pages/KioskAttendance.tsx` 수정**
-- `handleSaveAll`에서 출석 학생을 학급별로 그룹핑
-- 각 학급별 `saveAttendanceBatch` 호출 (`Promise.all`로 병렬 처리)
-- 기존 `saveMultiClassRecords` 호출 제거 (출석용)
-
-### 성능 효과
-- Before: 학생 20명 × 4~5쿼리 = 80~100회 순차 네트워크 요청
-- After: 학급 1개 = 1회 RPC 호출
+**3. `src/pages/KioskMode.tsx` 수정**
+- `handleSaveAllRecords`에서 저장 대상을 `classroomId`별로 그룹핑
+- 각 학급별 `saveSpeedRecordsBatch` 호출 (`Promise.all`로 병렬)
+- 개별 저장 `handleSaveRecord`도 동일 RPC 사용 (1명짜리 배열)
 
