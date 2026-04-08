@@ -237,6 +237,15 @@ export type Database = {
         }
         Returns: undefined
       }
+      batch_save_speed_records: {
+        Args: {
+          _classroom_id: string
+          _record_date: string
+          _student_ids: string[]
+          _time_ms_values: number[]
+        }
+        Returns: undefined
+      }
       can_record_for_classroom: {
         Args: { _classroom_id: string; _user_id: string }
         Returns: boolean
