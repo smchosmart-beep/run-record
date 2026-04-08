@@ -50,13 +50,10 @@ const KioskMode: React.FC = () => {
 
   const handleSaveRecord = useCallback(async (student: KioskStudent) => {
     try {
-      const recordData = [{
-        studentId: student.studentId,
-        classroomId: student.classroomId,
-        timeMs: student.elapsedTime,
-      }];
-
-      await saveMultiClassRecords(recordData);
+      await saveSpeedRecordsBatch(
+        [{ studentId: student.studentId, timeMs: student.elapsedTime }],
+        student.classroomId
+      );
       
       setKioskStudents(prev =>
         prev.map(s =>
@@ -89,13 +86,19 @@ const KioskMode: React.FC = () => {
     setIsSavingAll(true);
 
     try {
-      const recordData = studentsToSave.map(student => ({
-        studentId: student.studentId,
-        classroomId: student.classroomId,
-        timeMs: student.elapsedTime,
-      }));
+      // 학급별로 그룹핑
+      const byClass = new Map<string, { studentId: string; timeMs: number }[]>();
+      for (const s of studentsToSave) {
+        const arr = byClass.get(s.classroomId) || [];
+        arr.push({ studentId: s.studentId, timeMs: s.elapsedTime });
+        byClass.set(s.classroomId, arr);
+      }
 
-      await saveMultiClassRecords(recordData);
+      await Promise.all(
+        Array.from(byClass.entries()).map(([classroomId, records]) =>
+          saveSpeedRecordsBatch(records, classroomId)
+        )
+      );
       
       setKioskStudents(prev =>
         prev.map(s =>
