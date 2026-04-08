@@ -7,7 +7,7 @@ import { useApp } from '@/contexts/AppContext';
 import { toast } from 'sonner';
 import KioskStudentCard, { KioskStudent } from '@/components/KioskStudentCard';
 import KioskAddStudentModal from '@/components/KioskAddStudentModal';
-import { saveMultiClassRecords, MultiClassRecordInput } from '@/utils/supabaseApi';
+import { saveSpeedRecordsBatch } from '@/utils/supabaseApi';
 
 const KioskMode: React.FC = () => {
   const navigate = useNavigate();
