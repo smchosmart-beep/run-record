@@ -1,44 +1,56 @@
 
 
-## 속도측정 일괄 저장 RPC 최적화 — 검토 결과
+## 검토 결과: 안전하게 적용 가능
 
-### 검토 항목
+### 현재 상태 확인
 
-**1. 기능 오작동 위험: 없음**
-- `batch_save_attendance` RPC가 이미 동일 패턴으로 정상 동작 중
-- 속도측정은 `time_ms`만 가변이고 나머지 로직(세션 upsert, 빈 슬롯 계산, 기록 삽입)은 동일
-- `is_attendance=false`, `is_dnf=false` 고정값 사용 → 기존 `saveMultiClassRecords`와 동일한 결과
+| 학급 | 학생 수 | 기록 수 |
+|------|---------|---------|
+| 죽   | 30      | 41      |
+| 송   | 30      | 167     |
+| 난   | 30      | 108     |
+| 매   | 30      | 53      |
+| **합계** | **120** | **369** |
 
-**2. 데이터 정합성: 안전**
-- 단일 트랜잭션 내에서 처리 → 중간 실패 시 전체 롤백
-- 기존 순차 방식은 중간 실패 시 일부만 저장되는 문제가 있었으나 RPC는 이를 해결
-- 슬롯 계산이 트랜잭션 내에서 이뤄지므로 동시성 문제 없음
+현재 **125회 이상 순차 요청** → 최적화 후 **3회 배치 요청**으로 감소.
 
-**3. 보안: 안전**
-- `auth.uid()` 기반 소유권 검증 포함 (출석체크 RPC와 동일 패턴)
-- `SECURITY DEFINER`이지만 내부에서 권한 체크 수행
+### 검토 항목별 결과
+
+**1. 기능 오작동: 없음**
+- 3단계 배치 조회(classrooms → students → records)는 기존과 동일한 데이터를 반환
+- 메모리에서 student_id 기반 그룹핑만 추가 → 변환 로직은 기존 `convertDb*` 함수 그대로 사용
+
+**2. Supabase 1000행 제한: 현재 안전, 대비 필요**
+- 전체 기록 369개 → 1000행 이하로 안전
+- 단, 학생 120명이 각 10회 이상 기록하면 1200+ → 제한에 걸림
+- **대응**: records 조회 시 classroom_id별 학생 그룹으로 나누어 조회하거나, `.range()` 페이지네이션 적용
+
+**3. 인증 중복 호출: 부작용 있음 (수정 필요)**
+- 현재 `useEffect([user, session])`에서 `refreshClassrooms` 호출
+- `onAuthStateChange`에서 `user`와 `session`을 동시에 설정하지만, React 배치 처리로 보통 1회만 호출됨
+- 그러나 `getSession()`과 `onAuthStateChange`가 겹치면 2회 호출 가능
+- **대응**: `user.id` 기반 ref를 사용해 이미 로딩 중이면 스킵하는 guard 추가
 
 **4. 서버비: 감소**
-- 학생 20명 기준: 60~80회 → 1회 호출로 감소
+- 125회 → 3회 (97% 감소)
 
-**5. 주의사항: 없음**
-- 두 배열(`_student_ids`, `_time_ms_values`)의 길이 불일치 시 에러 발생하도록 검증 코드 포함하면 더 안전
-- `handleSaveAllRecords`에서 `saveMultiClassRecords` → `saveSpeedRecordsBatch`로 교체만 하면 됨
+**5. 데이터 정합성: 안전**
+- 읽기 전용 최적화이므로 데이터 변경 없음
 
-### 구현 내용
+### 구현 내용 (계획 확정)
 
-**1. DB 마이그레이션: `batch_save_speed_records` RPC 함수**
-- 입력: `_student_ids UUID[]`, `_time_ms_values INT[]`, `_classroom_id UUID`, `_record_date TEXT`
-- 배열 길이 불일치 검증 추가
-- 나머지 로직은 `batch_save_attendance`와 동일 (세션 upsert → 빈 슬롯 계산 → 기록 삽입)
-- `is_attendance=false`, `time_ms=_time_ms_values[i]`
+**1. `src/utils/supabaseApi.ts` — `getClassrooms()` 리팩토링**
+- 1단계: `classrooms` 전체 조회 (1회)
+- 2단계: `students` 전체 조회 WHERE `classroom_id IN [...]` (1회)
+- 3단계: `records` 전체 조회 WHERE `student_id IN [...]` (1회, 1000행 초과 시 청크 분할)
+- 메모리에서 `Map<student_id, Record[]>`, `Map<classroom_id, Student[]>` 구성
+- 기존 `convertDb*` 변환 함수 그대로 사용
 
-**2. `src/utils/supabaseApi.ts` 수정**
-- `saveSpeedRecordsBatch(records: {studentId, timeMs}[], classroomId)` 함수 추가
-- `supabase.rpc('batch_save_speed_records', {...})` 호출
+**2. `src/contexts/AppContext.tsx` — 중복 호출 방지**
+- `refreshClassrooms`에 `loadingRef` 추가하여 이미 실행 중이면 스킵
+- `useEffect` 의존성을 `user?.id`로 변경하여 불필요한 재실행 방지
 
-**3. `src/pages/KioskMode.tsx` 수정**
-- `handleSaveAllRecords`에서 저장 대상을 `classroomId`별로 그룹핑
-- 각 학급별 `saveSpeedRecordsBatch` 호출 (`Promise.all`로 병렬)
-- 개별 저장 `handleSaveRecord`도 동일 RPC 사용 (1명짜리 배열)
+### 수정하지 않는 것
+- 기존 개별 학생/기록 CRUD 함수들 (create, update, delete) — 이미 정상 동작
+- RPC 함수들 (batch_save_attendance, batch_save_speed_records) — 관련 없음
 
