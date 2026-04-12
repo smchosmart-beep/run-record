@@ -172,6 +172,7 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
       });
     } finally {
       setDataLoading(false);
+      refreshingRef.current = false;
     }
   };
 
