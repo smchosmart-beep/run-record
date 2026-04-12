@@ -121,6 +121,41 @@ async function fetchAllRecords(studentIds: string[]): Promise<DatabaseRecord[]> 
   return allRecords;
 }
 
+// Fetch all students with pagination to handle >1000 rows
+async function fetchAllStudents(classroomIds: string[]): Promise<DatabaseStudent[]> {
+  if (classroomIds.length === 0) return [];
+  
+  const CHUNK_SIZE = 200;
+  const chunks: string[][] = [];
+  for (let i = 0; i < classroomIds.length; i += CHUNK_SIZE) {
+    chunks.push(classroomIds.slice(i, i + CHUNK_SIZE));
+  }
+
+  const allStudents: DatabaseStudent[] = [];
+  for (const chunk of chunks) {
+    let from = 0;
+    const PAGE_SIZE = 1000;
+    while (true) {
+      const { data, error } = await supabase
+        .from('students')
+        .select('*')
+        .in('classroom_id', chunk)
+        .range(from, from + PAGE_SIZE - 1)
+        .order('number');
+      
+      if (error) {
+        console.error('❌ 학생 조회 실패:', error);
+        throw error;
+      }
+      
+      if (data) allStudents.push(...(data as DatabaseStudent[]));
+      if (!data || data.length < PAGE_SIZE) break;
+      from += PAGE_SIZE;
+    }
+  }
+  return allStudents;
+}
+
 // API Functions
 export async function getClassrooms(): Promise<ClassRoom[]> {
   console.log('📡 학급 목록 요청 시작 (배치 모드)');
