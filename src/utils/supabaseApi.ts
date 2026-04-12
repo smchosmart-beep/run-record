@@ -182,24 +182,11 @@ export async function getClassrooms(): Promise<ClassRoom[]> {
 
   console.log('✅ 학급 조회 완료:', classrooms.length, '개');
 
-  // 2단계: 전체 학생 일괄 조회
+  // 2단계: 전체 학생 일괄 조회 (1000행 제한 대응)
   const classroomIds = classrooms.map(c => c.id);
-  const { data: allStudents, error: studentsError } = await withTimeout(
-    Promise.resolve(
-      supabase
-        .from('students')
-        .select('*')
-        .in('classroom_id', classroomIds)
-        .order('number')
-    )
-  );
+  const allStudents = await fetchAllStudents(classroomIds);
 
-  if (studentsError) {
-    console.error('❌ 학생 일괄 조회 실패:', studentsError);
-    throw studentsError;
-  }
-
-  console.log('✅ 학생 일괄 조회 완료:', allStudents?.length || 0, '명');
+  console.log('✅ 학생 일괄 조회 완료:', allStudents.length, '명');
 
   if (!allStudents || allStudents.length === 0) {
     return classrooms.map(c => convertDbClassroomToAppClassroom(c as DatabaseClassroom, []));
