@@ -103,16 +103,25 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     };
   }, []);
 
-  // Load classrooms when user is authenticated
+  // Load classrooms when user is authenticated — use user.id to prevent duplicate calls
+  const lastLoadedUserIdRef = useRef<string | null>(null);
   useEffect(() => {
-    if (user && session) {
+    if (user?.id && session && user.id !== lastLoadedUserIdRef.current) {
+      lastLoadedUserIdRef.current = user.id;
       refreshClassrooms();
+    } else if (!user) {
+      lastLoadedUserIdRef.current = null;
     }
-  }, [user, session]);
+  }, [user?.id, session]);
 
+  const refreshingRef = useRef(false);
   const refreshClassrooms = async () => {
     if (!user || !session) return;
-
+    if (refreshingRef.current) {
+      console.log('⏭️ refreshClassrooms 이미 실행 중, 스킵');
+      return;
+    }
+    refreshingRef.current = true;
     try {
       console.log('🔄 학급 데이터 로딩 시작');
       setDataLoading(true);
