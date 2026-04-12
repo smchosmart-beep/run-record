@@ -188,7 +188,7 @@ export async function getClassrooms(): Promise<ClassRoom[]> {
 
   console.log('✅ 학생 일괄 조회 완료:', allStudents.length, '명');
 
-  if (!allStudents || allStudents.length === 0) {
+  if (allStudents.length === 0) {
     return classrooms.map(c => convertDbClassroomToAppClassroom(c as DatabaseClassroom, []));
   }
 
