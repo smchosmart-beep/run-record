@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, ReactNode } from 'react';
 import { User, ClassRoom, AppMode } from '@/types';
 import { supabase } from "@/integrations/supabase/client";
 import { getClassrooms, createClassroom, updateClassroom, deleteClassroom, getUserProfile } from '@/utils/supabaseApi';
