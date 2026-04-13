@@ -50,13 +50,24 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     console.log('Initializing auth state...');
     
     // Set up auth state listener
+    let wasSignedIn = false;
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
         console.log('Auth state changed:', event, session?.user?.id);
+        
+        if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed successfully');
+        }
+        
+        if (event === 'SIGNED_OUT' && wasSignedIn) {
+          toast.error('세션이 만료되었습니다. 다시 로그인해주세요.');
+        }
+        
         setSession(session);
         
         // Set user immediately to prevent navigation issues
         if (session?.user) {
+          wasSignedIn = true;
           setUser({
             id: session.user.id,
             username: session.user.email?.split('@')[0] || 'Unknown',
