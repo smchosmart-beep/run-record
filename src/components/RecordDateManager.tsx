@@ -204,10 +204,12 @@ const RecordDateManager = () => {
     
     setDeletingAll(true);
     try {
-      for (const dateKey of availableDates) {
-        const sessionDate = new Date(dateKey + 'T00:00:00');
-        await deleteRecordSession(currentClassroom.id, sessionDate);
-      }
+      await Promise.all(
+        availableDates.map(dateKey => {
+          const sessionDate = new Date(dateKey + 'T00:00:00');
+          return deleteRecordSession(currentClassroom.id, sessionDate);
+        })
+      );
       
       setRecordSessions([]);
       await refreshClassrooms();

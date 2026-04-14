@@ -316,7 +316,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
   );
 }
 
-export async function updateClassroom(classroomId: string, updates: Partial<ClassRoom>): Promise<void> {
+export async function updateClassroom(classroomId: string, updates: Partial<ClassRoom>, skipRecordUpdate: boolean = true): Promise<void> {
   const updateData: any = {};
 
   if (updates.school !== undefined) updateData.school = updates.school;
@@ -387,8 +387,10 @@ export async function updateClassroom(classroomId: string, updates: Partial<Clas
           student.id = newStudent.id;
         }
 
-        // Handle records for this student
-        await updateStudentRecords(student.id, student.records);
+        // Handle records for this student only when explicitly requested
+        if (!skipRecordUpdate) {
+          await updateStudentRecords(student.id, student.records);
+        }
       })
     );
   }
