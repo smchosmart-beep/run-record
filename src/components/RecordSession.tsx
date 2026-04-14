@@ -150,7 +150,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
       try {
         await updateClassroom(currentClassroom.id, {
           students: updatedStudents,
-        });
+        }, false);
 
         // Clear input and error on successful save
         const key = getInputKey(student.id, slotIndex);
@@ -277,7 +277,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
 
     updateClassroom(currentClassroom.id, {
       students: updatedStudents,
-    });
+    }, false);
 
     // Clear input
     const key = getInputKey(student.id, slotIndex);
@@ -347,7 +347,7 @@ export const RecordSession: React.FC<RecordSessionProps> = ({ session, selectedD
       // Update classroom records
       await updateClassroom(currentClassroom.id, {
         students: updatedStudents,
-      });
+      }, false);
 
       // Update session in database
       await updateRecordSessionSlots(currentClassroom.id, selectedDate, newSlotCount);

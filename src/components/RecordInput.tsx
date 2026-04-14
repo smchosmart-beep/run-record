@@ -85,7 +85,7 @@ const RecordInput = () => {
       try {
         await updateClassroom(currentClassroom.id, {
           students: updatedStudents,
-        });
+        }, false);
 
         // Clear input and error on successful save
         const key = getInputKey(student.id, slotIndex);
@@ -214,7 +214,7 @@ const RecordInput = () => {
 
     updateClassroom(currentClassroom.id, {
       students: updatedStudents,
-    });
+    }, false);
 
     // Clear input
     const key = getInputKey(student.id, slotIndex);
@@ -267,7 +267,7 @@ const RecordInput = () => {
     updateClassroom(currentClassroom.id, {
       students: updatedStudents,
       maxRecordSlots: currentClassroom.maxRecordSlots - 1,
-    });
+    }, false);
 
     toast({
       title: "회차 삭제 완료",
