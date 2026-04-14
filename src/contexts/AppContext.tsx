@@ -18,7 +18,7 @@ interface AppContextType {
   setCurrentClassroom: (classroom: ClassRoom | null) => void;
   setMode: (mode: AppMode) => void;
   addClassroom: (classroom: ClassRoom) => Promise<void>;
-  updateClassroom: (classroomId: string, updates: Partial<ClassRoom>) => Promise<void>;
+  updateClassroom: (classroomId: string, updates: Partial<ClassRoom>, skipRecordUpdate?: boolean) => Promise<void>;
   deleteClassroom: (classroomId: string) => Promise<void>;
   refreshClassrooms: () => Promise<void>;
 }
@@ -233,10 +233,10 @@ const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
   };
 
-  const updateClassroomData = async (classroomId: string, updates: Partial<ClassRoom>) => {
+  const updateClassroomData = async (classroomId: string, updates: Partial<ClassRoom>, skipRecordUpdate: boolean = true) => {
     try {
-      console.log('Updating classroom:', classroomId, updates);
-      await updateClassroom(classroomId, updates);
+      console.log('Updating classroom:', classroomId, updates, { skipRecordUpdate });
+      await updateClassroom(classroomId, updates, skipRecordUpdate);
       
       // Update local state
       setClassrooms(prev =>
