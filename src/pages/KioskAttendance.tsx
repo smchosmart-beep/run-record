@@ -19,7 +19,7 @@ const KioskAttendance: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const classId = searchParams.get('classId');
-  const { user, classrooms, refreshClassrooms } = useApp();
+  const { user, classrooms } = useApp();
   const selectedClassroom = classrooms.find(c => c.id === classId);
 
   const storageKey = classId ? `kiosk_attendance_students_${classId}` : 'kiosk_attendance_students';
@@ -94,14 +94,13 @@ const KioskAttendance: React.FC = () => {
       );
 
       toast.success(`${presentStudents.length}명의 출석이 저장되었습니다.`);
-      refreshClassrooms();
     } catch (error) {
       console.error('Failed to save attendance:', error);
       toast.error('출석 저장에 실패했습니다.');
     } finally {
       setIsSaving(false);
     }
-  }, [students, isSaving, refreshClassrooms]);
+  }, [students, isSaving]);
 
   const presentCount = students.filter(s => s.attendanceStatus === 'present').length;
   const absentCount = students.filter(s => s.attendanceStatus === 'absent').length;

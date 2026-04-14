@@ -235,6 +235,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
   if (!user.user) {
     throw new Error('User not authenticated');
   }
+  let newStudents: any[] | null = null;
 
 // Create classroom
   const { data: newClassroom, error: classroomError } = await supabase
@@ -264,7 +265,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
       is_hidden: student.isHidden,
     }));
 
-    const { data: newStudents, error: studentsError } = await supabase
+    const { data: insertedStudents, error: studentsError } = await supabase
       .from('students')
       .insert(studentsToInsert)
       .select();
@@ -273,6 +274,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
       console.error('Error creating students:', studentsError);
       throw studentsError;
     }
+    newStudents = insertedStudents;
 
     // Create records for students if they have any
     const recordsToInsert: any[] = [];
@@ -301,19 +303,20 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
     }
   }
 
-  // Fetch the complete classroom with students and records
-  const [createdClassroom] = await Promise.all([
-    getClassrooms().then(classrooms => classrooms.find(c => c.id === newClassroom.id))
-  ]);
+  // 직접 조합하여 반환 (전체 재조회 제거)
+  const appStudents: Student[] = classroom.students.map((student, idx) => ({
+    ...student,
+    id: classroom.students.length > 0 && newStudents ? newStudents[idx]?.id || student.id : student.id,
+    records: student.records, // 새 학급이므로 records는 그대로 유지
+  }));
 
-  if (!createdClassroom) {
-    throw new Error('Failed to retrieve created classroom');
-  }
-
-  return createdClassroom;
+  return convertDbClassroomToAppClassroom(
+    newClassroom as DatabaseClassroom,
+    appStudents
+  );
 }
 
-export async function updateClassroom(classroomId: string, updates: Partial<ClassRoom>): Promise<void> {
+export async function updateClassroom(classroomId: string, updates: Partial<ClassRoom>, skipRecordUpdate: boolean = true): Promise<void> {
   const updateData: any = {};
 
   if (updates.school !== undefined) updateData.school = updates.school;
@@ -384,8 +387,10 @@ export async function updateClassroom(classroomId: string, updates: Partial<Clas
           student.id = newStudent.id;
         }
 
-        // Handle records for this student
-        await updateStudentRecords(student.id, student.records);
+        // Handle records for this student only when explicitly requested
+        if (!skipRecordUpdate) {
+          await updateStudentRecords(student.id, student.records);
+        }
       })
     );
   }
@@ -903,50 +908,40 @@ export interface MultiClassRecordInput {
 export async function saveMultiClassRecords(records: MultiClassRecordInput[]): Promise<void> {
   if (records.length === 0) return;
 
-  console.log('📡 크로스-클래스 기록 저장 시작:', records.length, '개');
+  console.log('📡 크로스-클래스 기록 저장 시작 (batch RPC):', records.length, '개');
 
-  const today = new Date();
-  const todayStr = toYMD(today);
+  const todayStr = toYMD(new Date());
 
-  // 각 학생별로 첫 번째 비어있는 슬롯 찾아서 기록
+  // 학급별로 그룹핑
+  const byClass = new Map<string, { speed: { studentId: string; timeMs: number }[]; attendance: string[] }>();
+
   for (const record of records) {
-    // 1. 학생별로 비어있는 첫 번째 슬롯 찾기
-    const { slotIndex, needNewSlot, currentSlotsCount } = await findFirstEmptySlotForStudent(
-      record.studentId,
-      record.classroomId,
-      todayStr
-    );
-
-    // 2. 새 슬롯이 필요하면 세션 slots_count 증가
-    if (needNewSlot) {
-      await ensureSlotExists(record.classroomId, todayStr, currentSlotsCount + 1);
-    } else if (currentSlotsCount === 0) {
-      // 세션이 없는 경우 생성
-      await ensureSlotExists(record.classroomId, todayStr, 1);
+    if (!byClass.has(record.classroomId)) {
+      byClass.set(record.classroomId, { speed: [], attendance: [] });
     }
-
-    // 3. 해당 슬롯에 기록 저장
-    const { error: insertError } = await supabase
-      .from('records')
-      .insert({
-        student_id: record.studentId,
-        time_ms: record.timeMs,
-        is_dnf: false,
-        slot_index: slotIndex,
-        recorded_at: new Date().toISOString(),
-        record_date: todayStr,
-        is_attendance: record.isAttendance || false,
-      });
-
-    if (insertError) {
-      console.error('❌ 기록 저장 실패:', insertError);
-      throw insertError;
+    const group = byClass.get(record.classroomId)!;
+    if (record.isAttendance) {
+      group.attendance.push(record.studentId);
+    } else {
+      group.speed.push({ studentId: record.studentId, timeMs: record.timeMs });
     }
-
-    console.log(`✅ ${record.studentId} 학생 슬롯 ${slotIndex}에 기록 저장 완료`);
   }
 
-  console.log('🎉 모든 크로스-클래스 기록 저장 완료');
+  // 학급별 병렬 RPC 호출
+  await Promise.all(
+    Array.from(byClass.entries()).map(async ([classroomId, group]) => {
+      const promises: Promise<void>[] = [];
+      if (group.speed.length > 0) {
+        promises.push(saveSpeedRecordsBatch(group.speed, classroomId));
+      }
+      if (group.attendance.length > 0) {
+        promises.push(saveAttendanceBatch(group.attendance, classroomId));
+      }
+      await Promise.all(promises);
+    })
+  );
+
+  console.log('🎉 모든 크로스-클래스 기록 저장 완료 (batch RPC)');
 }
 
 // 속도측정 일괄 저장 (RPC 방식 - 고성능)
