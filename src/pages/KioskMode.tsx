@@ -13,7 +13,7 @@ const KioskMode: React.FC = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const classId = searchParams.get('classId');
-  const { user, classrooms, refreshClassrooms } = useApp();
+  const { user, classrooms } = useApp();
   const selectedClassroom = classrooms.find(c => c.id === classId);
 
   const storageKey = classId ? `kiosk_speed_students_${classId}` : 'kiosk_speed_students';
@@ -64,12 +64,11 @@ const KioskMode: React.FC = () => {
       );
 
       toast.success(`${student.name} 기록이 저장되었습니다.`);
-      refreshClassrooms();
     } catch (error) {
       console.error('Failed to save record:', error);
       toast.error('기록 저장에 실패했습니다.');
     }
-  }, [refreshClassrooms]);
+  }, []);
 
   const handleSaveAllRecords = useCallback(async () => {
     if (isSavingAll) return;
@@ -109,14 +108,13 @@ const KioskMode: React.FC = () => {
       );
 
       toast.success(`${studentsToSave.length}명의 기록이 저장되었습니다.`);
-      refreshClassrooms();
     } catch (error) {
       console.error('Failed to save records:', error);
       toast.error('기록 저장에 실패했습니다.');
     } finally {
       setIsSavingAll(false);
     }
-  }, [kioskStudents, refreshClassrooms, isSavingAll]);
+  }, [kioskStudents, isSavingAll]);
 
   const savableCount = kioskStudents.filter(
     s => (s.status === 'paused' || s.status === 'actions') && s.elapsedTime > 0
