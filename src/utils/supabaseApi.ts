@@ -235,6 +235,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
   if (!user.user) {
     throw new Error('User not authenticated');
   }
+  let newStudents: any[] | null = null;
 
 // Create classroom
   const { data: newClassroom, error: classroomError } = await supabase
@@ -264,7 +265,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
       is_hidden: student.isHidden,
     }));
 
-    const { data: newStudents, error: studentsError } = await supabase
+    const { data: insertedStudents, error: studentsError } = await supabase
       .from('students')
       .insert(studentsToInsert)
       .select();
@@ -273,6 +274,7 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
       console.error('Error creating students:', studentsError);
       throw studentsError;
     }
+    newStudents = insertedStudents;
 
     // Create records for students if they have any
     const recordsToInsert: any[] = [];
@@ -301,16 +303,17 @@ export async function createClassroom(classroom: Omit<ClassRoom, 'id' | 'created
     }
   }
 
-  // Fetch the complete classroom with students and records
-  const [createdClassroom] = await Promise.all([
-    getClassrooms().then(classrooms => classrooms.find(c => c.id === newClassroom.id))
-  ]);
+  // 직접 조합하여 반환 (전체 재조회 제거)
+  const appStudents: Student[] = classroom.students.map((student, idx) => ({
+    ...student,
+    id: classroom.students.length > 0 && newStudents ? newStudents[idx]?.id || student.id : student.id,
+    records: student.records, // 새 학급이므로 records는 그대로 유지
+  }));
 
-  if (!createdClassroom) {
-    throw new Error('Failed to retrieve created classroom');
-  }
-
-  return createdClassroom;
+  return convertDbClassroomToAppClassroom(
+    newClassroom as DatabaseClassroom,
+    appStudents
+  );
 }
 
 export async function updateClassroom(classroomId: string, updates: Partial<ClassRoom>): Promise<void> {
