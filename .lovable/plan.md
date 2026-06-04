@@ -1,69 +1,50 @@
+## 문제 원인
 
+`src/components/RecordInput.tsx`의 `debouncedSave` (46–110줄)가 마지막 키 입력 후 **1초**가 지나면 자동으로 저장하고 입력칸을 비웁니다.
 
-## 검토 결과: 대부분 안전하나 주의 필요한 부분 2곳
+타자가 빠르지 않은 경우 "13.2"까지 입력하고 다음 숫자 "3"을 누르기 전에 1초가 흘러버려서, "13.2"로 확정 저장되고 input이 clear되는 현상이 발생합니다. (이미지의 김기림 39.70, 박시우 46.51 등이 의도와 다르게 끊겨 저장된 사례로 보임)
 
-### 수정 1: 키오스크 `refreshClassrooms()` 제거 — ⚠️ 주의 필요
-
-**문제 없음**: 키오스크는 독립 UI이므로 저장 후 전체 데이터를 다시 불러올 필요 없음.
-
-**단, 주의점**: `refreshClassrooms()`가 `useCallback` 의존성 배열에 포함되어 있음 (`KioskAttendance.tsx` 104줄, `KioskMode.tsx` 72줄). 제거 시 의존성 배열에서도 함께 제거해야 함. 빠뜨리면 lint 경고만 발생하고 동작에는 문제없음.
-
-**결론: 안전**
+또 한 가지 부수 문제: 유효성 검사(`validateTimeInput`)가 "13.2"도 유효한 값으로 통과시키기 때문에, 사용자가 백분의초 두 자리를 다 입력하기 전에 저장돼 버립니다.
 
 ---
 
-### 수정 2: `createClassroom()` 전체 재조회 제거 — ✅ 안전
+## 개선 방안
 
-이미 insert한 학급/학생/기록 데이터를 직접 조합하여 반환하면 됨. `getClassrooms()`를 호출할 필요 없음. 새 학급에는 방금 만든 학생만 있으므로 데이터 누락 위험 없음.
+자동 저장 자체는 유지하되, **확정 시점을 사용자 의도가 명확한 순간으로 옮기는** 방향이 가장 안전합니다.
 
-**결론: 안전**
+### 수정 1: 자동 저장 debounce 시간 연장
 
----
+`debouncedSave`의 setTimeout 지연을 **1000ms → 2500ms**로 증가.
 
-### 수정 3: `handleDeleteAllSessions()` 병렬화 — ⚠️ 주의 필요
+- 빠르게 입력하는 경우 영향 없음
+- 천천히 입력해도 두 자리 백분의초를 충분히 칠 시간 확보
+- 너무 길게 잡으면(예: 5초) 자동 저장의 의미가 약해지므로 2.5초가 균형점
 
-`for...await` → `Promise.all`로 변경하는 것은 일반적으로 안전하나, **동시에 너무 많은 날짜(예: 50개 이상)를 삭제하면 Supabase 연결 풀 한도에 도달할 수 있음**. 하지만 현실적으로 날짜가 50개를 넘는 경우는 드물므로 문제없음.
+### 수정 2: 키/포커스 이벤트로 즉시 저장 보장
 
-**안전장치**: 날짜가 많을 경우를 대비해 10개씩 청크로 나눠 병렬 실행하면 더 안전함. 하지만 현재 규모에서는 단순 `Promise.all`로도 충분.
+현재 `handleKeyDown`의 Enter/Tab/Arrow 키와 `handleInputBlur`는 단순히 포커스 이동/에러 표시만 하고 있어, 자동 저장이 발동되기 전 사용자가 이동하면 입력이 사라질 수 있음.
 
-**결론: 안전 (현실적 규모에서)**
+다음 시점에 **debounce를 우회해 즉시 저장**을 트리거:
+- `Enter`, `Tab`, `Arrow*` 키를 눌러 다른 셀로 이동할 때
+- 입력 칸이 `blur`될 때
 
----
+구현:
+- 저장 로직을 `debouncedSave`에서 분리하여 `saveRecord(student, slotIndex, value)` 공통 함수로 만든다
+- `debouncedSave`는 2.5초 후 `saveRecord`를 호출
+- `handleKeyDown`(이동 키 분기)과 `handleInputBlur`에서는 보류 중인 timeout을 clear하고 `saveRecord`를 즉시 호출
 
-### 수정 4: `updateClassroom()`에서 불필요한 `updateStudentRecords` 생략 — ⚠️ 가장 주의 필요
+### 수정 3 (선택): 자릿수 휴리스틱
 
-**현재 상황 분석**:
-- `StudentList.tsx`에서 이름 변경, 숨김 토글, 학생 추가/삭제 시 `updateClassroom({ students: updatedStudents })`를 호출
-- 이때 `students` 배열에 각 학생의 `records`가 포함되어 있어 `updateStudentRecords()`가 매번 호출됨
-- `EditClassModal.tsx`는 `...classroom`을 통째로 전달하므로 students와 records까지 포함됨
+`validateTimeInput`은 그대로 두되, 자동 저장 조건에 "마지막 문자가 숫자이고, 소수점 뒤 자릿수가 1자리인 경우 한 번 더 대기" 같은 휴리스틱을 추가할지 여부.
 
-**위험 포인트**: 단순히 "records가 변경되지 않았으면 건너뛰기"를 구현할 때, **어떤 기준으로 "변경 여부"를 판단할지**가 핵심:
-- 호출부에서 records를 항상 포함하고 있으므로, records 필드가 있다 = 변경됨이라고 판단하면 안 됨
-- 실제로 records 내용이 변경되었는지 비교(diff)해야 하는데, 이는 구현 복잡도가 높음
-
-**더 안전한 접근**: `updateClassroom`에 `skipRecordUpdate: boolean` 같은 명시적 플래그를 추가하고, 실제로 기록을 수정하는 호출부(`RecordSession.tsx`, `RecordInput.tsx`)에서만 `false`로 설정. 나머지(이름 변경, 숨김 토글 등)에서는 `true`로 설정.
-
-**결론: 구현 방식에 따라 위험할 수 있음 → 명시적 플래그 방식 권장**
+→ 수정 1+2만으로 체감 문제는 거의 해결되므로 **수정 3은 생략 권장**. 복잡도만 늘어남.
 
 ---
 
-### 수정 5: `saveMultiClassRecords()` batch RPC 활용 — ✅ 안전
+## 영향 범위
 
-이미 `batch_save_speed_records`와 `batch_save_attendance` RPC가 존재하고, 키오스크에서 잘 동작 중. 학급별로 그룹핑 후 기존 RPC를 호출하면 됨. 기존 RPC가 슬롯 관리까지 처리하므로 로직 누락 없음.
+- 수정 파일: `src/components/RecordInput.tsx` 단일 파일
+- 기존 저장 로직, 단축키 이동, 셀 표시 UI는 그대로 유지
+- DB 호출 패턴 변화 없음 (오히려 중복 저장이 약간 줄어들 가능성)
 
-**결론: 안전**
-
----
-
-### 종합 판단
-
-| 수정 | 위험도 | 비고 |
-|------|--------|------|
-| #1 키오스크 refreshClassrooms 제거 | 낮음 | 의존성 배열 정리만 주의 |
-| #2 createClassroom 재조회 제거 | 낮음 | 단순 리팩터링 |
-| #3 삭제 병렬화 | 낮음 | 현실적 규모에서 문제없음 |
-| #4 updateStudentRecords 생략 | **중간** | 명시적 플래그 방식으로 구현해야 안전 |
-| #5 saveMultiClassRecords batch | 낮음 | 기존 RPC 재활용 |
-
-**수정 4만 구현 방식을 조정하면 전체적으로 안전하게 적용 가능합니다.** 승인하시면 수정 4는 `skipRecordUpdate` 플래그 방식으로 구현하겠습니다.
-
+승인하시면 위 수정 1, 2를 적용하겠습니다.

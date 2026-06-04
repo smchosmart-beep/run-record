@@ -42,72 +42,71 @@ const RecordInput = () => {
   const getCellId = (studentId: string, slotIndex: number) =>
     `cell-${studentId}-${slotIndex}`;
 
-  // Debounced auto-save function
+  // Core save function (debounce-independent)
+  const saveRecord = useCallback(async (student: Student, slotIndex: number, value: string) => {
+    if (!value.trim()) return;
+
+    const validation = validateTimeInput(value);
+    if (!validation.isValid) return;
+
+    const isDNF = value.toUpperCase() === 'DNF';
+    const time = isDNF ? null : parseTimeInput(value);
+
+    const newRecord: StudentRecord = {
+      id: generateRecordId(),
+      time,
+      isDNF,
+      recordedAt: new Date(),
+      recordDate: new Date(),
+      slotIndex,
+    };
+
+    const updatedRecords = student.records.filter(r => r.slotIndex !== slotIndex);
+    updatedRecords.push(newRecord);
+
+    const updatedStudents = currentClassroom.students.map(s =>
+      s.id === student.id ? { ...s, records: updatedRecords } : s
+    );
+
+    const key = getInputKey(student.id, slotIndex);
+    try {
+      await updateClassroom(currentClassroom.id, {
+        students: updatedStudents,
+      }, false);
+
+      setInputValues(prev => ({ ...prev, [key]: '' }));
+      setErrors(prev => ({ ...prev, [key]: '' }));
+    } catch (error) {
+      console.error('Failed to save record:', error);
+      setErrors(prev => ({ ...prev, [key]: '저장 실패' }));
+      toast({
+        title: "저장 실패",
+        description: "기록 저장 중 오류가 발생했습니다. 다시 시도해주세요.",
+        variant: "destructive",
+      });
+    }
+  }, [currentClassroom, updateClassroom, toast]);
+
+  // Flush any pending debounced save immediately
+  const flushSave = useCallback((student: Student, slotIndex: number, value: string) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = undefined;
+    }
+    if (value.trim()) {
+      void saveRecord(student, slotIndex, value);
+    }
+  }, [saveRecord]);
+
+  // Debounced auto-save (delayed to allow finishing the hundredths digits)
   const debouncedSave = useCallback((student: Student, slotIndex: number, value: string) => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
     }
-
-    saveTimeoutRef.current = setTimeout(async () => {
-      if (!value.trim()) return;
-
-      const validation = validateTimeInput(value);
-      if (!validation.isValid) return;
-
-      const isDNF = value.toUpperCase() === 'DNF';
-      const time = isDNF ? null : parseTimeInput(value);
-
-      const newRecord: StudentRecord = {
-        id: generateRecordId(),
-        time,
-        isDNF,
-        recordedAt: new Date(),
-        recordDate: new Date(), // Add current date
-        slotIndex,
-      };
-
-      console.log('Saving record:', {
-        studentId: student.id,
-        recordId: newRecord.id,
-        slotIndex,
-        time,
-        isDNF
-      });
-
-      // Remove any existing record for this slot
-      const updatedRecords = student.records.filter(r => r.slotIndex !== slotIndex);
-      updatedRecords.push(newRecord);
-
-      const updatedStudents = currentClassroom.students.map(s =>
-        s.id === student.id ? { ...s, records: updatedRecords } : s
-      );
-
-      try {
-        await updateClassroom(currentClassroom.id, {
-          students: updatedStudents,
-        }, false);
-
-        // Clear input and error on successful save
-        const key = getInputKey(student.id, slotIndex);
-        setInputValues(prev => ({ ...prev, [key]: '' }));
-        setErrors(prev => ({ ...prev, [key]: '' }));
-        
-        console.log('Record saved successfully');
-      } catch (error) {
-        console.error('Failed to save record:', error);
-        
-        // Keep the input value and show error
-        const key = getInputKey(student.id, slotIndex);
-        setErrors(prev => ({ ...prev, [key]: '저장 실패' }));
-        
-        toast({
-          title: "저장 실패",
-          description: "기록 저장 중 오류가 발생했습니다. 다시 시도해주세요.",
-          variant: "destructive",
-        });
-      }
-    }, 1000);
-  }, [currentClassroom, updateClassroom, toast]);
+    saveTimeoutRef.current = setTimeout(() => {
+      void saveRecord(student, slotIndex, value);
+    }, 2500);
+  }, [saveRecord]);
 
   const handleInputChange = useCallback((studentId: string, slotIndex: number, value: string) => {
     const key = getInputKey(studentId, slotIndex);
@@ -127,18 +126,36 @@ const RecordInput = () => {
 
   const handleInputBlur = useCallback((studentId: string, slotIndex: number, value: string) => {
     if (!value.trim()) return;
-    
+
     const validation = validateTimeInput(value);
     const key = getInputKey(studentId, slotIndex);
-    
+
     if (!validation.isValid && validation.error) {
       setErrors(prev => ({ ...prev, [key]: validation.error! }));
+      return;
     }
-  }, []);
+
+    const student = activeStudents.find(s => s.id === studentId);
+    if (student) {
+      flushSave(student, slotIndex, value);
+    }
+  }, [activeStudents, flushSave]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent, studentId: string, slotIndex: number) => {
     const studentIndex = activeStudents.findIndex(s => s.id === studentId);
-    
+
+    const moveKeys = ['Enter', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (moveKeys.includes(e.key)) {
+      const currentValue = (e.currentTarget as HTMLInputElement).value;
+      const student = activeStudents.find(s => s.id === studentId);
+      if (student && currentValue.trim()) {
+        const validation = validateTimeInput(currentValue);
+        if (validation.isValid) {
+          flushSave(student, slotIndex, currentValue);
+        }
+      }
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       // Move to next student in same column
@@ -199,7 +216,7 @@ const RecordInput = () => {
         nextInput?.focus();
       }
     }
-  }, [activeStudents, currentClassroom.maxRecordSlots]);
+  }, [activeStudents, currentClassroom.maxRecordSlots, flushSave]);
 
   const getExistingRecord = (student: Student, slotIndex: number): StudentRecord | null => {
     return student.records.find(r => r.slotIndex === slotIndex) || null;
