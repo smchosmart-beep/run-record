@@ -126,18 +126,36 @@ const RecordInput = () => {
 
   const handleInputBlur = useCallback((studentId: string, slotIndex: number, value: string) => {
     if (!value.trim()) return;
-    
+
     const validation = validateTimeInput(value);
     const key = getInputKey(studentId, slotIndex);
-    
+
     if (!validation.isValid && validation.error) {
       setErrors(prev => ({ ...prev, [key]: validation.error! }));
+      return;
     }
-  }, []);
+
+    const student = activeStudents.find(s => s.id === studentId);
+    if (student) {
+      flushSave(student, slotIndex, value);
+    }
+  }, [activeStudents, flushSave]);
 
   const handleKeyDown = useCallback((e: React.KeyboardEvent, studentId: string, slotIndex: number) => {
     const studentIndex = activeStudents.findIndex(s => s.id === studentId);
-    
+
+    const moveKeys = ['Enter', 'Tab', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+    if (moveKeys.includes(e.key)) {
+      const currentValue = (e.currentTarget as HTMLInputElement).value;
+      const student = activeStudents.find(s => s.id === studentId);
+      if (student && currentValue.trim()) {
+        const validation = validateTimeInput(currentValue);
+        if (validation.isValid) {
+          flushSave(student, slotIndex, currentValue);
+        }
+      }
+    }
+
     if (e.key === 'Enter') {
       e.preventDefault();
       // Move to next student in same column
@@ -198,7 +216,7 @@ const RecordInput = () => {
         nextInput?.focus();
       }
     }
-  }, [activeStudents, currentClassroom.maxRecordSlots]);
+  }, [activeStudents, currentClassroom.maxRecordSlots, flushSave]);
 
   const getExistingRecord = (student: Student, slotIndex: number): StudentRecord | null => {
     return student.records.find(r => r.slotIndex === slotIndex) || null;
