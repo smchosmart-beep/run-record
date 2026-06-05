@@ -1,73 +1,107 @@
-# Welcome to your Lovable project
+# 🏃 RRR — 달리기 기록 랭킹 (Run Record Ranking)
 
-## Project info
+> 초·중·고 학생들의 달리기 기록을 쉽고 빠르게 입력하고, 순위와 개인 기록(PB)을 한눈에 볼 수 있는 웹앱이에요.
 
-**URL**: https://lovable.dev/projects/556f1332-c371-4a4a-b76c-01ec751593aa
+선생님이 스톱워치 들고 헐레벌떡 기록 적고, 다시 엑셀에 옮기는 일… 이제 그만! 🙅‍♀️
+태블릿 하나만 있으면 학생들이 직접 출석 체크하고, 기록도 측정하고, 학급 랭킹까지 자동으로 나와요.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## ✨ 이런 게 가능해요
 
-**Use Lovable**
+- 🧑‍🏫 **학급 관리**: 학교/학년/반 만들고 학생 명단 한 번에 등록 (엔터로 줄바꿈만 하면 끝!)
+- ⏱️ **빠른 기록 입력**: PC에서는 가로 테이블, 모바일/태블릿에서는 학생별 입력 화면
+- 🏅 **자동 랭킹**: 최고기록(PB) 기준 1·2·3위 포디움 + 전체 순위표
+- 📊 **개인 차트**: 학생별 기록 변화 그래프
+- 🤖 **키오스크 모드**: 교실 앞에 태블릿 두면 학생들이 직접 출석·기록 측정
+- 📅 **날짜별 기록 관리**: 언제 측정한 기록인지 한눈에
+- ☁️ **자동 저장**: 입력하는 순간 클라우드에 저장돼서 다른 기기에서도 바로 볼 수 있어요
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/556f1332-c371-4a4a-b76c-01ec751593aa) and start prompting.
+---
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🚀 바로 써보기
 
-**Use your preferred IDE**
+별도 설치 없이 웹에서 바로 사용할 수 있어요.
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+👉 **[run-record.lovable.app](https://run-record.lovable.app)**
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+1. 회원가입 (이메일·비밀번호만 있으면 OK)
+2. 학급 만들기 → 학생 이름 붙여넣기
+3. 기록 입력 시작! 🎉
 
-Follow these steps:
+---
+
+## 💡 이렇게 쓰면 좋아요
+
+### 체육 시간 시나리오
+1. 교실 앞에 태블릿 1대를 **키오스크 모드**로 켜두기
+2. 학생들이 출석 카드 누르고, 달리기 끝나면 자기 이름 눌러 기록 저장
+3. 선생님은 다른 기기에서 실시간으로 랭킹과 기록 확인
+
+### 학기말 정리
+- 월별·전체 기간 필터로 PB(개인 최고 기록) 추이 확인
+- 1·2·3위 포디움 화면을 띄워 시상식처럼 발표
+
+---
+
+## 🛠️ 어떤 기술로 만들었나요? (개발자용)
+
+비개발자라면 이 부분은 그냥 넘기셔도 돼요 😉
+
+- **프론트엔드**: React 18 + Vite + TypeScript + Tailwind CSS + shadcn/ui
+- **백엔드/DB**: Lovable Cloud (Supabase — Postgres + Auth + RLS)
+- **빌드/배포**: Lovable에서 자동 배포
+
+---
+
+## 🧑‍💻 내 컴퓨터에서 돌려보고 싶다면
+
+Node.js만 깔려 있으면 돼요. ([nvm으로 설치](https://github.com/nvm-sh/nvm#installing-and-updating))
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
+# 1) 레포 클론
 git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
 cd <YOUR_PROJECT_NAME>
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 2) 패키지 설치
+npm install
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3) 개발 서버 실행
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+브라우저에서 `http://localhost:8080` 열면 끝!
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+> ⚠️ Lovable Cloud(Supabase) 환경변수가 필요해요. `.env` 파일에 `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY` 등이 들어있어야 정상 동작합니다.
 
-**Use GitHub Codespaces**
+---
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🎨 Lovable로 만들어졌어요
 
-## What technologies are used for this project?
+이 프로젝트는 [Lovable](https://lovable.dev)에서 **바이브 코딩**으로 만들어졌어요.
+채팅으로 "이런 기능 추가해줘"라고 말하면 AI가 코드를 짜주는 방식이에요.
 
-This project is built with:
+- 📝 **프로젝트 편집**: [Lovable 프로젝트 열기](https://lovable.dev/projects/556f1332-c371-4a4a-b76c-01ec751593aa)
+- 🔄 **GitHub 자동 동기화**: Lovable에서 수정하면 GitHub에 자동 푸시, GitHub에 푸시하면 Lovable에 자동 반영
+- 🌐 **배포**: Lovable에서 `Share → Publish` 한 번 누르면 끝
+- 🏷️ **커스텀 도메인**: `Project > Settings > Domains`에서 연결 가능
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+---
 
-## How can I deploy this project?
+## 🙋 자주 묻는 질문
 
-Simply open [Lovable](https://lovable.dev/projects/556f1332-c371-4a4a-b76c-01ec751593aa) and click on Share -> Publish.
+**Q. 학생들이 직접 입력하면 장난칠 수도 있지 않나요?**
+A. 키오스크 모드는 학급 단위로 잠겨 있고, 선생님이 언제든 기록을 수정·삭제할 수 있어요.
 
-## Can I connect a custom domain to my Lovable project?
+**Q. 데이터는 어디에 저장되나요?**
+A. Lovable Cloud(Supabase) 클라우드 DB에 안전하게 저장돼요. 본인이 만든 학급 데이터만 본인 계정에서 보입니다.
 
-Yes, you can!
+**Q. 여러 태블릿에서 동시에 써도 되나요?**
+A. 네! 동시 로그인을 지원해서 여러 기기에서 같은 계정으로 사용할 수 있어요.
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 💌 만든 사람
+
+초등 수학·체육 교육 현장의 불편함에서 출발한 프로젝트입니다.
+피드백·아이디어는 GitHub Issues로 남겨주세요 🙏
