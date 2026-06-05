@@ -32,10 +32,9 @@ const Index = () => {
         </Button>
 
         <div className="mt-12 pt-8 border-t border-muted-foreground/20">
-          <div className="text-center text-sm text-muted-foreground space-y-1">
-            <p>기획자 : 배구왕 조태현 선생님</p>
-            <p>개발자 : 파튀김</p>
-          </div>
+          <p className="text-center text-sm text-muted-foreground">
+            기획자 : 배구왕 조태현 선생님  /  개발자 : 파튀김
+          </p>
         </div>
       </div>
     </div>
