@@ -8,11 +8,12 @@ import { useApp } from '@/contexts/AppContext';
 import { RecordSession as RecordSessionComponent } from './RecordSession';
 import { format, startOfDay, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Plus, Clock, Users, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Clock, Users, Trash2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordSession } from '@/types';
 import { getRecordSessions, upsertRecordSession, deleteRecordSession } from '@/utils/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
+import { formatTime } from '@/utils/time';
 import { 
   AlertDialog, 
   AlertDialogAction, 
