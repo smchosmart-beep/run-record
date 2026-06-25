@@ -8,11 +8,12 @@ import { useApp } from '@/contexts/AppContext';
 import { RecordSession as RecordSessionComponent } from './RecordSession';
 import { format, startOfDay, isSameDay } from 'date-fns';
 import { ko } from 'date-fns/locale';
-import { Calendar as CalendarIcon, Plus, Clock, Users, Trash2 } from 'lucide-react';
+import { Calendar as CalendarIcon, Plus, Clock, Users, Trash2, Download } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { RecordSession } from '@/types';
 import { getRecordSessions, upsertRecordSession, deleteRecordSession } from '@/utils/supabaseApi';
 import { useToast } from '@/hooks/use-toast';
+import { formatTime } from '@/utils/time';
 import { 
   AlertDialog, 
   AlertDialogAction, 
@@ -34,6 +35,7 @@ const RecordDateManager = () => {
   const [loading, setLoading] = useState(false);
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (!currentClassroom) return null;
 
@@ -231,6 +233,117 @@ const RecordDateManager = () => {
     }
   };
 
+  // Sanitize for Excel sheet names (max 31 chars, no : \ / ? * [ ])
+  const sanitizeSheetName = (name: string) =>
+    name.replace(/[:\\/?*\[\]]/g, '-').slice(0, 31);
+
+  const sanitizeFileName = (name: string) =>
+    name.replace(/[<>:"/\\|?*\x00-\x1F]/g, '_');
+
+  // Export all records to a single Excel file with one sheet per date
+  const handleExportExcel = async () => {
+    if (availableDates.length === 0) return;
+    const classroom = currentClassroom; // snapshot
+    setExporting(true);
+    try {
+      const XLSX = await import('xlsx');
+      const wb = XLSX.utils.book_new();
+
+      // Visible students sorted by number
+      const students = classroom.students
+        .filter(s => !s.isHidden)
+        .sort((a, b) => a.number - b.number);
+
+      const rankingType = classroom.rankingType ?? 'fastest';
+
+      // Oldest -> newest order
+      const sortedDates = [...availableDates].sort((a, b) => a.localeCompare(b));
+
+      sortedDates.forEach(dateKey => {
+        const session = recordsByDate[dateKey];
+        const slots = Math.max(1, session.maxSlots);
+
+        const header: string[] = ['번호', '이름'];
+        for (let i = 0; i < slots; i++) header.push(`${i + 1}회차`);
+        header.push('최고기록');
+
+        const rows: (string | number)[][] = [header];
+
+        students.forEach(student => {
+          const dateRecords = student.records.filter(
+            r => format(r.recordDate, 'yyyy-MM-dd') === dateKey
+          );
+
+          const slotCells: string[] = new Array(slots).fill('');
+          const validTimes: number[] = [];
+
+          dateRecords.forEach(rec => {
+            const idx = rec.slotIndex;
+            if (idx < 0 || idx >= slots) return;
+            if (rec.isAttendance) {
+              slotCells[idx] = '인증';
+            } else if (rec.isDNF) {
+              slotCells[idx] = 'DNF';
+            } else if (rec.time !== null && rec.time !== undefined) {
+              slotCells[idx] = formatTime(rec.time);
+              validTimes.push(rec.time);
+            }
+          });
+
+          let best = '';
+          if (validTimes.length > 0) {
+            const bestMs =
+              rankingType === 'slowest'
+                ? Math.max(...validTimes)
+                : Math.min(...validTimes);
+            best = formatTime(bestMs);
+          }
+
+          rows.push([student.number, student.name, ...slotCells, best]);
+        });
+
+        const ws = XLSX.utils.aoa_to_sheet(rows);
+        // Column widths
+        ws['!cols'] = [
+          { wch: 6 },
+          { wch: 12 },
+          ...Array(slots).fill({ wch: 10 }),
+          { wch: 12 },
+        ];
+
+        const sheetName = sanitizeSheetName(format(new Date(dateKey + 'T00:00:00'), 'MM-dd'));
+        // Ensure unique sheet names (shouldn't collide but defensive)
+        let finalName = sheetName;
+        let suffix = 1;
+        while (wb.SheetNames.includes(finalName)) {
+          finalName = sanitizeSheetName(`${sheetName}_${suffix++}`);
+        }
+        XLSX.utils.book_append_sheet(wb, ws, finalName);
+      });
+
+      const today = format(new Date(), 'yyyyMMdd');
+      const fileName = sanitizeFileName(
+        `${classroom.school}_${classroom.grade}-${classroom.className}_기록_${today}.xlsx`
+      );
+
+      XLSX.writeFile(wb, fileName);
+
+      toast({
+        title: '엑셀 다운로드 완료',
+        description: `${sortedDates.length}개 날짜의 기록을 내보냈습니다.`,
+      });
+    } catch (error) {
+      console.error('엑셀 내보내기 실패:', error);
+      toast({
+        title: '다운로드 실패',
+        description: '엑셀 파일 생성 중 오류가 발생했습니다.',
+        variant: 'destructive',
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header with Date Selector */}
@@ -289,6 +402,16 @@ const RecordDateManager = () => {
               <Clock className="h-5 w-5" />
               날짜별 기록 확인
             </CardTitle>
+            <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={exporting || availableDates.length === 0}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              {exporting ? "다운로드 중..." : "엑셀 다운로드"}
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
@@ -323,6 +446,7 @@ const RecordDateManager = () => {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
