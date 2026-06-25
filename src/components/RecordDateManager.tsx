@@ -402,6 +402,16 @@ const RecordDateManager = () => {
               <Clock className="h-5 w-5" />
               날짜별 기록 확인
             </CardTitle>
+            <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleExportExcel}
+              disabled={exporting || availableDates.length === 0}
+            >
+              <Download className="h-4 w-4 mr-1" />
+              {exporting ? "다운로드 중..." : "엑셀 다운로드"}
+            </Button>
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
