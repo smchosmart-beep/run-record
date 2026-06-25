@@ -35,6 +35,7 @@ const RecordDateManager = () => {
   const [loading, setLoading] = useState(false);
   const [deletingDate, setDeletingDate] = useState<string | null>(null);
   const [deletingAll, setDeletingAll] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   if (!currentClassroom) return null;
 
